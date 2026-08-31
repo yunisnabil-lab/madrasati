@@ -22,8 +22,8 @@ const DASH_TEXT = {
     thName: 'الاسم',
     thSection: 'الفصل',
     roleNames: { admin: 'صلاحية كاملة', recorder: 'تسجيل حضور', viewer: 'عرض فقط' },
-    emptyStudents: 'لسه معملتش استيراد لأي طلاب.',
-    emptyChart: 'مفيش بيانات فصول لعرضها.',
+    emptyStudents: 'لم يتم استيراد أي طلاب بعد.',
+    emptyChart: 'لا توجد بيانات فصول لعرضها.',
   },
   en: {
     dir: 'ltr',

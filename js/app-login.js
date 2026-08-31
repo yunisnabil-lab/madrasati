@@ -43,8 +43,6 @@
     document.getElementById('footText').textContent = t.foot;
     document.getElementById('brandSub').textContent = t.brandSub;
     document.getElementById('statCaption').textContent = t.statCaption;
-    document.getElementById('statAttendance').textContent = t.statAttendance;
-    document.getElementById('statStaff').textContent = t.statStaff;
     document.getElementById('brandFoot').textContent = t.brandFoot;
 
     document.getElementById('langAr').classList.toggle('is-active', lang === 'ar');
@@ -54,7 +52,6 @@
     hideError();
 
     currentLang = lang;
-    refreshStaticNumerals();
     const countEl = document.getElementById('studentCount');
     countEl.textContent = localizeNumeral(parseInt(countEl.dataset.target, 10).toLocaleString('en-US'));
     // wait one frame so the toggled label widths are laid out before measuring
@@ -76,11 +73,6 @@
   function localizeNumeral(str) {
     // الأرقام دايمًا لاتينية بخط Inter، حتى في الوضع العربي (قرار مقصود)
     return str;
-  }
-
-  function refreshStaticNumerals() {
-    document.getElementById('statAttendanceNum').textContent = localizeNumeral('98.4%');
-    document.getElementById('statStaffNum').textContent = localizeNumeral('184');
   }
 
   function animateCount(el) {

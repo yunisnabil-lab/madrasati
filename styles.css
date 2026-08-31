@@ -148,33 +148,33 @@ a { color: inherit; }
 
 /* ---------- Brand pane: the register motif ---------- */
 
-.brand-pane {
+/* ---------- Navy material — shared by the login brand pane and the app sidebar ---------- */
+
+.brand-pane,
+.sidebar {
   position: relative;
   background:
-    radial-gradient(85% 60% at 82% 8%, rgba(255, 255, 255, 0.10) 0%, transparent 60%),
-    radial-gradient(70% 55% at 8% 78%, rgba(255, 255, 255, 0.05) 0%, transparent 65%),
-    radial-gradient(120% 90% at 15% -10%, rgba(255, 255, 255, 0.06) 0%, transparent 55%),
+    radial-gradient(90% 65% at 85% 6%, rgba(255, 255, 255, 0.16) 0%, transparent 62%),
+    radial-gradient(75% 60% at 6% 82%, rgba(255, 255, 255, 0.08) 0%, transparent 68%),
+    radial-gradient(130% 95% at 15% -12%, rgba(255, 255, 255, 0.09) 0%, transparent 58%),
     linear-gradient(165deg, var(--accent) 0%, var(--accent-deep) 100%);
   color: #F3F6F4;
-  display: flex;
-  padding: 52px 60px;
-  overflow: hidden;
 }
 
-.brand-pane::before {
-  /* faint horizontal ruling, like an attendance ledger */
+.brand-pane::after,
+.sidebar::after {
+  /* soft vignette — the material feels lit, not flat */
   content: "";
   position: absolute;
   inset: 0;
-  background-image: repeating-linear-gradient(
-    to bottom,
-    var(--accent-line) 0,
-    var(--accent-line) 1px,
-    transparent 1px,
-    transparent 44px
-  );
-  mask-image: linear-gradient(to bottom, transparent, black 12%, black 88%, transparent);
+  background: radial-gradient(140% 100% at 50% 45%, transparent 45%, rgba(0, 0, 0, 0.16) 100%);
   pointer-events: none;
+}
+
+.brand-pane {
+  display: flex;
+  padding: 52px 60px;
+  overflow: hidden;
 }
 
 .brand-pane::after {
@@ -557,14 +557,13 @@ a { color: inherit; }
 .sidebar {
   width: 260px;
   flex-shrink: 0;
-  background: var(--accent);
-  color: #F3F6F4;
   display: flex;
   flex-direction: column;
   padding: 22px 16px;
   position: sticky;
   top: 0;
   height: 100vh;
+  overflow: hidden;
 }
 
 .sidebar-brand {
@@ -1010,3 +1009,71 @@ html[dir="rtl"] .topbar-search input { padding: 9px 38px 9px 14px; }
   from { background-position: 200% 0; }
   to { background-position: -200% 0; }
 }
+
+/* ============================================================
+   Dashboard motion
+   ============================================================ */
+
+.metric-card {
+  transition: border-color 0.15s var(--ease), box-shadow 0.15s var(--ease), transform 0.15s var(--ease);
+  animation: rise 0.45s var(--ease) both;
+}
+
+.metric-card:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 4px 14px rgba(16, 24, 40, 0.06);
+  transform: translateY(-2px);
+}
+
+.stat-grid .metric-card:nth-child(1) { animation-delay: 0.02s; }
+.stat-grid .metric-card:nth-child(2) { animation-delay: 0.07s; }
+.stat-grid .metric-card:nth-child(3) { animation-delay: 0.12s; }
+
+.panel {
+  animation: rise 0.5s var(--ease) 0.16s both;
+  transition: box-shadow 0.15s var(--ease);
+}
+
+.panel-grid > .panel:nth-child(2) { animation-delay: 0.22s; }
+
+.nav-item i svg {
+  transition: transform 0.15s var(--ease);
+}
+
+.nav-item:hover i svg { transform: scale(1.08); }
+
+.icon-btn {
+  transition: background 0.15s var(--ease), transform 0.1s var(--ease);
+}
+
+.icon-btn:active { transform: scale(0.92); }
+
+.sidebar-user {
+  transition: background 0.15s var(--ease);
+}
+
+.sidebar-user:hover { background: rgba(255, 255, 255, 0.05); }
+
+/* chart bars grow in from zero */
+.bar-col .bar {
+  height: 0 !important;
+  transition: height 0.7s var(--ease);
+}
+
+.bar-col .bar.grown {
+  height: var(--target-h) !important;
+}
+
+/* table rows stagger in */
+.data-table tbody tr {
+  animation: rise 0.35s var(--ease) both;
+}
+
+.data-table tbody tr:nth-child(1) { animation-delay: 0.05s; }
+.data-table tbody tr:nth-child(2) { animation-delay: 0.10s; }
+.data-table tbody tr:nth-child(3) { animation-delay: 0.15s; }
+.data-table tbody tr:nth-child(4) { animation-delay: 0.20s; }
+.data-table tbody tr:nth-child(5) { animation-delay: 0.25s; }
+.data-table tbody tr:nth-child(6) { animation-delay: 0.30s; }
+
+.m-value { transition: opacity 0.2s var(--ease); }

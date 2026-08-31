@@ -75,6 +75,21 @@
 
   // ---------- Data: stat cards ----------
 
+  // ---------- Motion: animated count-up for a number element ----------
+
+  function animateValue(el, target) {
+    if (!target && target !== 0) { el.textContent = '—'; return; }
+    const duration = 700;
+    const start = performance.now();
+    function tick(now) {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      el.textContent = Math.round(target * eased).toLocaleString('en-US');
+      if (progress < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
   async function loadStats() {
     const [studentsRes, staffRes, sectionsRes] = await Promise.all([
       supabaseClient.from('students').select('id', { count: 'exact', head: true }),
@@ -82,9 +97,9 @@
       supabaseClient.from('sections').select('id', { count: 'exact', head: true }),
     ]);
 
-    document.getElementById('mStudents').textContent = studentsRes.count != null ? studentsRes.count.toLocaleString('en-US') : '—';
-    document.getElementById('mStaff').textContent = staffRes.count != null ? staffRes.count.toLocaleString('en-US') : '—';
-    document.getElementById('mSections').textContent = sectionsRes.count != null ? sectionsRes.count.toLocaleString('en-US') : '—';
+    animateValue(document.getElementById('mStudents'), studentsRes.count);
+    animateValue(document.getElementById('mStaff'), staffRes.count);
+    animateValue(document.getElementById('mSections'), sectionsRes.count);
   }
 
   // ---------- Data: chart — students per grade ----------
@@ -130,13 +145,22 @@
     const max = Math.max.apply(null, rows.map(function (r) { return r.total; }).concat([1]));
 
     chartEl.innerHTML = rows.map(function (r) {
-      const pct = Math.round((r.total / max) * 100);
+      const pct = Math.max(Math.round((r.total / max) * 100), 4);
       return '<div class="bar-col">' +
         '<span class="bar-val">' + r.total.toLocaleString('en-US') + '</span>' +
-        '<div class="bar" style="height:' + Math.max(pct, 4) + '%"></div>' +
+        '<div class="bar" style="--target-h:' + pct + '%"></div>' +
         '<span class="bar-label">' + r.name + '</span>' +
         '</div>';
     }).join('');
+
+    // trigger the grow-in transition on the next frame
+    requestAnimationFrame(function () {
+      requestAnimationFrame(function () {
+        chartEl.querySelectorAll('.bar').forEach(function (bar) {
+          bar.classList.add('grown');
+        });
+      });
+    });
   }
 
   // ---------- Data: recent students table ----------

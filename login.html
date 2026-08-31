@@ -12,35 +12,57 @@
 
     <!-- Brand pane -->
     <aside class="brand-pane">
-      <div class="brand-mark">
-        مدرستي
-        <span>مجمع زايد التعليمي - الخوانيج</span>
-      </div>
+      <div class="brand-pane-inner">
 
-      <div class="brand-hero">
-        <div class="stat" id="studentCount">٢,٢٣١</div>
-        <div class="stat-label">طالب مسجّل في النظام، جاهزين لتسجيل حضورهم اليوم</div>
-      </div>
+        <div class="brand-mark">
+          <div class="brand-word">مدرستي</div>
+          <div class="brand-sub" id="brandSub">مجمع زايد التعليمي — الخوانيج</div>
+        </div>
 
-      <div class="brand-foot">
-        نظام إدارة مدرسي متكامل<br>
-        حضور وغياب · تقارير · صلاحيات
+        <div class="brand-hero">
+          <div class="stat-main">
+            <div class="stat-num" id="studentCount" data-target="2231">0</div>
+            <div class="stat-caption" id="statCaption">طالب مسجّل حاليًا</div>
+          </div>
+
+          <div class="stat-row">
+            <div class="stat-sub">
+              <div class="stat-sub-num" id="statAttendanceNum">98.4%</div>
+              <div class="stat-sub-caption" id="statAttendance">نسبة الحضور اليوم</div>
+            </div>
+            <div class="stat-divider"></div>
+            <div class="stat-sub">
+              <div class="stat-sub-num" id="statStaffNum">184</div>
+              <div class="stat-sub-caption" id="statStaff">عضو هيئة تدريس وإدارة</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="brand-foot" id="brandFoot">
+          نظام إدارة مدرسي متكامل — حضور وغياب، تقارير، صلاحيات
+        </div>
+
       </div>
     </aside>
 
     <!-- Form pane -->
     <main class="form-pane">
-      <button class="lang-toggle" id="langToggle" type="button">English</button>
+
+      <div class="lang-switch" id="langSwitch" role="group" aria-label="Language">
+        <button type="button" class="lang-opt is-active" data-lang="ar" id="langAr">عربي</button>
+        <button type="button" class="lang-opt" data-lang="en" id="langEn">English</button>
+        <span class="lang-thumb" id="langThumb"></span>
+      </div>
 
       <div class="form-wrap">
         <div class="form-head">
           <h1 id="titleText">تسجيل الدخول</h1>
-          <p id="subtitleText">ادخل ببيانات حسابك للوصول للنظام</p>
+          <p id="subtitleText">ادخل ببيانات حسابك للوصول إلى النظام</p>
         </div>
 
-        <div class="error-box" id="errorBox"></div>
+        <div class="error-box" id="errorBox" role="alert" aria-live="polite"></div>
 
-        <form id="loginForm">
+        <form id="loginForm" novalidate>
           <div class="field">
             <label for="email" id="emailLabel">البريد الإلكتروني</label>
             <input type="email" id="email" name="email" placeholder="name@example.com" required autocomplete="username">
@@ -51,7 +73,20 @@
             <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
           </div>
 
-          <button type="submit" class="submit-btn" id="submitBtn">دخول</button>
+          <div class="field-row">
+            <label class="remember">
+              <input type="checkbox" id="rememberMe">
+              <span id="rememberLabel">تذكرني</span>
+            </label>
+            <button type="button" class="forgot-link" id="forgotLink">نسيت كلمة المرور؟</button>
+          </div>
+
+          <div class="forgot-note" id="forgotNote"></div>
+
+          <button type="submit" class="submit-btn" id="submitBtn">
+            <span id="submitLabel">دخول</span>
+            <span class="spinner" id="submitSpinner" aria-hidden="true"></span>
+          </button>
         </form>
 
         <div class="form-foot" id="footText">

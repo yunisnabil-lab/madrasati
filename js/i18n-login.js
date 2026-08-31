@@ -1,0 +1,31 @@
+// نصوص شاشة تسجيل الدخول بالعربي والإنجليزي
+const LOGIN_TEXT = {
+  ar: {
+    dir: 'rtl',
+    title: 'تسجيل الدخول',
+    subtitle: 'ادخل ببيانات حسابك للوصول للنظام',
+    email: 'البريد الإلكتروني',
+    password: 'كلمة المرور',
+    submit: 'دخول',
+    submitLoading: 'جاري الدخول...',
+    foot: 'مشكلة في الدخول؟ تواصل مع إدارة المدرسة',
+    langToggle: 'English',
+    heroLabel: 'طالب مسجّل في النظام، جاهزين لتسجيل حضورهم اليوم',
+    errInvalid: 'البريد الإلكتروني أو كلمة المرور غير صحيحة',
+    errGeneric: 'حصلت مشكلة في الاتصال، حاول تاني',
+  },
+  en: {
+    dir: 'ltr',
+    title: 'Sign in',
+    subtitle: 'Enter your account details to access the system',
+    email: 'Email address',
+    password: 'Password',
+    submit: 'Sign in',
+    submitLoading: 'Signing in...',
+    foot: "Trouble signing in? Contact your school's admin",
+    langToggle: 'العربية',
+    heroLabel: 'students registered in the system, ready to be marked present today',
+    errInvalid: 'Incorrect email or password',
+    errGeneric: 'Something went wrong. Please try again',
+  },
+};

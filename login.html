@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>مدرستي — تسجيل الدخول</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="page">
+
+    <!-- Brand pane -->
+    <aside class="brand-pane">
+      <div class="brand-mark">
+        مدرستي
+        <span>مجمع زايد التعليمي - الخوانيج</span>
+      </div>
+
+      <div class="brand-hero">
+        <div class="stat" id="studentCount">٢,٢٣١</div>
+        <div class="stat-label">طالب مسجّل في النظام، جاهزين لتسجيل حضورهم اليوم</div>
+      </div>
+
+      <div class="brand-foot">
+        نظام إدارة مدرسي متكامل<br>
+        حضور وغياب · تقارير · صلاحيات
+      </div>
+    </aside>
+
+    <!-- Form pane -->
+    <main class="form-pane">
+      <button class="lang-toggle" id="langToggle" type="button">English</button>
+
+      <div class="form-wrap">
+        <div class="form-head">
+          <h1 id="titleText">تسجيل الدخول</h1>
+          <p id="subtitleText">ادخل ببيانات حسابك للوصول للنظام</p>
+        </div>
+
+        <div class="error-box" id="errorBox"></div>
+
+        <form id="loginForm">
+          <div class="field">
+            <label for="email" id="emailLabel">البريد الإلكتروني</label>
+            <input type="email" id="email" name="email" placeholder="name@example.com" required autocomplete="username">
+          </div>
+
+          <div class="field">
+            <label for="password" id="passwordLabel">كلمة المرور</label>
+            <input type="password" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+          </div>
+
+          <button type="submit" class="submit-btn" id="submitBtn">دخول</button>
+        </form>
+
+        <div class="form-foot" id="footText">
+          مشكلة في الدخول؟ تواصل مع إدارة المدرسة
+        </div>
+      </div>
+    </main>
+
+  </div>
+
+<script src="js/lib/supabase.js"></script>
+<script src="js/config.js"></script>
+<script src="js/i18n-login.js"></script>
+<script src="js/app-login.js"></script>
+</body>
+</html>

@@ -1,0 +1,311 @@
+/* ============================================================
+   مدرستي — Design tokens
+   Palette grounded in the product's subject: an attendance
+   register / school ledger. Deep emerald ink instead of the
+   generic SaaS blue or AI-cliche terracotta.
+   ============================================================ */
+
+@font-face {
+  font-family: 'Plex Arabic';
+  src: url('/fonts/ibm-plex-sans-arabic-arabic-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plex Arabic';
+  src: url('/fonts/ibm-plex-sans-arabic-arabic-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plex Arabic';
+  src: url('/fonts/ibm-plex-sans-arabic-arabic-600-normal.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plex Arabic';
+  src: url('/fonts/ibm-plex-sans-arabic-arabic-700-normal.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plex Latin';
+  src: url('/fonts/ibm-plex-sans-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plex Latin';
+  src: url('/fonts/ibm-plex-sans-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plex Latin';
+  src: url('/fonts/ibm-plex-sans-latin-600-normal.woff2') format('woff2');
+  font-weight: 600;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Plex Latin';
+  src: url('/fonts/ibm-plex-sans-latin-700-normal.woff2') format('woff2');
+  font-weight: 700;
+  font-display: swap;
+}
+
+:root {
+  /* Color */
+  --bg: #FAF9F6;
+  --surface: #FFFFFF;
+  --ink: #1A2420;
+  --ink-muted: #5C665F;
+  --ink-faint: #8B9389;
+  --accent: #12513F;
+  --accent-hover: #0D3F31;
+  --accent-soft: #E7EFEA;
+  --border: #E1DED4;
+  --border-strong: #C9C4B6;
+  --danger: #B3261E;
+  --danger-soft: #FBEAE9;
+
+  /* Type */
+  --font-ar: 'Plex Arabic', 'Segoe UI', Tahoma, sans-serif;
+  --font-en: 'Plex Latin', 'Segoe UI', sans-serif;
+
+  /* Layout */
+  --radius: 10px;
+  --radius-sm: 6px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-ar);
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+}
+
+[dir="ltr"] body, .lang-en {
+  font-family: var(--font-en);
+}
+
+button, input {
+  font-family: inherit;
+}
+
+a { color: inherit; }
+
+/* ---------- Layout: two panes ---------- */
+
+.page {
+  display: grid;
+  grid-template-columns: 1.05fr 1fr;
+  width: 100%;
+  min-height: 100vh;
+}
+
+@media (max-width: 860px) {
+  .page { grid-template-columns: 1fr; }
+  .brand-pane { display: none; }
+}
+
+/* ---------- Brand pane: the register motif ---------- */
+
+.brand-pane {
+  position: relative;
+  background: var(--accent);
+  color: #F3F6F4;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 48px 56px;
+  overflow: hidden;
+}
+
+.brand-pane::before {
+  /* faint horizontal ruling, like an attendance ledger */
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.045) 0,
+    rgba(255, 255, 255, 0.045) 1px,
+    transparent 1px,
+    transparent 42px
+  );
+  pointer-events: none;
+}
+
+.brand-mark {
+  position: relative;
+  font-size: 20px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.brand-mark span {
+  display: block;
+  font-size: 13px;
+  font-weight: 400;
+  color: rgba(243, 246, 244, 0.65);
+  margin-top: 4px;
+}
+
+.brand-hero {
+  position: relative;
+}
+
+.brand-hero .stat {
+  font-size: 76px;
+  font-weight: 700;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.brand-hero .stat-label {
+  margin-top: 14px;
+  font-size: 16px;
+  color: rgba(243, 246, 244, 0.8);
+  max-width: 30ch;
+  line-height: 1.6;
+}
+
+.brand-foot {
+  position: relative;
+  font-size: 13px;
+  color: rgba(243, 246, 244, 0.55);
+  line-height: 1.7;
+}
+
+/* ---------- Form pane ---------- */
+
+.form-pane {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px;
+}
+
+.form-wrap {
+  width: 100%;
+  max-width: 380px;
+  margin: 0 auto;
+}
+
+.form-head h1 {
+  font-size: 26px;
+  font-weight: 600;
+  margin: 0 0 8px;
+}
+
+.form-head p {
+  margin: 0 0 32px;
+  color: var(--ink-muted);
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.field {
+  margin-bottom: 18px;
+}
+
+.field label {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 7px;
+}
+
+.field input {
+  width: 100%;
+  padding: 11px 14px;
+  font-size: 15px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.field input::placeholder {
+  color: var(--ink-faint);
+}
+
+.field input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.field input:focus-visible {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 600;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  margin-top: 6px;
+}
+
+.submit-btn:hover { background: var(--accent-hover); }
+
+.submit-btn:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.error-box {
+  display: none;
+  background: var(--danger-soft);
+  color: var(--danger);
+  border: 1px solid rgba(179, 38, 30, 0.25);
+  border-radius: var(--radius-sm);
+  padding: 11px 14px;
+  font-size: 13.5px;
+  line-height: 1.6;
+  margin-bottom: 18px;
+}
+
+.error-box.show { display: block; }
+
+.form-foot {
+  margin-top: 28px;
+  font-size: 13px;
+  color: var(--ink-faint);
+  text-align: center;
+}
+
+.lang-toggle {
+  position: absolute;
+  top: 24px;
+  inset-inline-end: 24px;
+  background: none;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  padding: 6px 14px;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+
+.form-pane { position: relative; }

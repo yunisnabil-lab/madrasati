@@ -28,6 +28,23 @@ export default function Login() {
       return;
     }
 
+    const { data: staffRow, error: staffError } = await supabase
+      .from('staff')
+      .select('id, full_name, role, status, school_id, avatar_url, email')
+      .eq('id', signInData.user.id)
+      .maybeSingle();
+
+    if (staffError) {
+      setError('DEBUG: ' + staffError.message + ' (code: ' + (staffError.code || '—') + ')');
+      setLoading(false);
+      return;
+    }
+    if (!staffRow) {
+      setError('DEBUG: no staff row found for user id ' + signInData.user.id);
+      setLoading(false);
+      return;
+    }
+
     await fetchStaff(signInData.user.id);
     setLoading(false);
     navigate('/');

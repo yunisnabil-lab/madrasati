@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import AuthShell from '../components/AuthShell';
 
 export default function RegisterComplete() {
-  const { t, refreshStaff } = useApp();
+  const { t, fetchStaff } = useApp();
   const [status, setStatus] = useState('working'); // working | done | error
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export default function RegisterComplete() {
         .maybeSingle();
 
       if (existing) {
-        await refreshStaff();
+        await fetchStaff(user.id);
         if (!cancelled) setStatus('done');
         return;
       }
@@ -42,13 +42,13 @@ export default function RegisterComplete() {
         role: null,
       });
 
-      if (!error) await refreshStaff();
+      if (!error) await fetchStaff(user.id);
       if (!cancelled) setStatus(error ? 'error' : 'done');
     }
 
     run();
     return () => { cancelled = true; };
-  }, [refreshStaff]);
+  }, [fetchStaff]);
 
   return (
     <AuthShell>

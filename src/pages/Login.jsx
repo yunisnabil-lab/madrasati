@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import AuthShell from '../components/AuthShell';
 
 export default function Login() {
-  const { t, refreshStaff } = useApp();
+  const { t, fetchStaff } = useApp();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -20,7 +20,7 @@ export default function Login() {
     if (!email.trim() || !password) { setError(t.errRequired); return; }
     setLoading(true);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
 
     if (signInError) {
       setError(t.errInvalid);
@@ -28,7 +28,7 @@ export default function Login() {
       return;
     }
 
-    await refreshStaff();
+    await fetchStaff(signInData.user.id);
     setLoading(false);
     navigate('/');
   }

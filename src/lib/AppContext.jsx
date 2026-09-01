@@ -62,6 +62,7 @@ export function AppProvider({ children }) {
     dark, setDark,
     session, staff, staffLoading,
     refreshStaff,
+    fetchStaff,
     signOut,
   };
 

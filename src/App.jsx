@@ -5,6 +5,8 @@ import Register from './pages/Register';
 import RegisterComplete from './pages/RegisterComplete';
 import Pending from './pages/Pending';
 import Dashboard from './pages/Dashboard';
+import Attendance from './pages/Attendance';
+import Layout from './components/Layout';
 
 function Gate({ children }) {
   const { session, staff, staffLoading } = useApp();
@@ -46,7 +48,8 @@ function Router() {
         <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
         <Route path="/register-complete" element={<RegisterComplete />} />
         <Route path="/pending" element={<PendingGuard><Pending /></PendingGuard>} />
-        <Route path="/" element={<Gate><Dashboard /></Gate>} />
+        <Route path="/" element={<Gate><Layout><Dashboard /></Layout></Gate>} />
+        <Route path="/attendance" element={<Gate><Layout><Attendance /></Layout></Gate>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

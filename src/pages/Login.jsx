@@ -44,6 +44,11 @@ export default function Login() {
       setLoading(false);
       return;
     }
+    if (staffRow.status !== 'approved') {
+      setError('DEBUG: row found — status="' + staffRow.status + '" role="' + staffRow.role + '" id=' + staffRow.id + ' (signed-in as ' + signInData.user.id + ', ' + signInData.user.email + ')');
+      setLoading(false);
+      return;
+    }
 
     await fetchStaff(signInData.user.id);
     setLoading(false);

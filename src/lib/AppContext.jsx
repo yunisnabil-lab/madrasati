@@ -53,11 +53,15 @@ export function AppProvider({ children }) {
     setStaff(null);
   }, []);
 
+  const refreshStaff = useCallback(() => {
+    return fetchStaff(session ? session.user.id : null);
+  }, [fetchStaff, session]);
+
   const value = {
     lang, setLang, t,
     dark, setDark,
     session, staff, staffLoading,
-    refreshStaff: () => fetchStaff(session ? session.user.id : null),
+    refreshStaff,
     signOut,
   };
 

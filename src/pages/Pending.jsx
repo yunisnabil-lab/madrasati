@@ -1,9 +1,16 @@
 import { Clock } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import { useApp } from '../lib/AppContext';
 import AuthShell from '../components/AuthShell';
 
 export default function Pending() {
   const { t, signOut } = useApp();
+  const navigate = useNavigate();
+
+  async function handleSignOut() {
+    await signOut();
+    navigate('/login', { replace: true });
+  }
 
   return (
     <AuthShell>
@@ -13,7 +20,7 @@ export default function Pending() {
         </div>
         <h1 className="text-xl font-semibold text-navy mb-2">{t.pendingTitle}</h1>
         <p className="text-sm text-slate-500 leading-relaxed mb-7">{t.pendingBody}</p>
-        <button onClick={signOut} className="text-royal font-medium text-sm">{t.signOut}</button>
+        <button onClick={handleSignOut} className="text-royal font-medium text-sm">{t.signOut}</button>
       </div>
     </AuthShell>
   );

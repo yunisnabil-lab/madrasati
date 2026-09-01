@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import AuthShell from '../components/AuthShell';
@@ -9,16 +10,17 @@ export default function Login() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    if (!email || !password) { setError(t.errRequired); return; }
+    if (!email.trim() || !password) { setError(t.errRequired); return; }
     setLoading(true);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
 
     if (signInError) {
       setError(t.errInvalid);
@@ -44,20 +46,32 @@ export default function Login() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">{t.email}</label>
+          <label htmlFor="loginEmail" className="block text-sm font-medium text-slate-700 mb-2">{t.email}</label>
           <input
+            id="loginEmail"
             type="email" value={email} onChange={(e) => setEmail(e.target.value)}
             placeholder="name@example.com"
             className="w-full rounded-lg border border-slate-300 px-3.5 py-3 text-sm outline-none focus:border-royal focus:ring-4 focus:ring-royal/10 transition"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-slate-700 mb-2">{t.password}</label>
-          <input
-            type="password" value={password} onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full rounded-lg border border-slate-300 px-3.5 py-3 text-sm outline-none focus:border-royal focus:ring-4 focus:ring-royal/10 transition"
-          />
+          <label htmlFor="loginPassword" className="block text-sm font-medium text-slate-700 mb-2">{t.password}</label>
+          <div className="relative">
+            <input
+              id="loginPassword"
+              type={showPassword ? 'text' : 'password'} value={password} onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="w-full rounded-lg border border-slate-300 px-3.5 py-3 pe-11 text-sm outline-none focus:border-royal focus:ring-4 focus:ring-royal/10 transition"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((v) => !v)}
+              className="absolute inset-y-0 end-0 flex items-center px-3.5 text-slate-400 hover:text-slate-600"
+              tabIndex={-1}
+            >
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+            </button>
+          </div>
         </div>
         <button
           type="submit" disabled={loading}

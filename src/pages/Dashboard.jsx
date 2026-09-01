@@ -114,13 +114,15 @@ export default function Dashboard() {
   }, [loadStats, loadGradeChart, loadRecent, loadRequests]);
 
   async function approve(id, role) {
-    await supabase.from('staff').update({ status: 'approved', role }).eq('id', id);
+    const { error } = await supabase.from('staff').update({ status: 'approved', role }).eq('id', id);
+    if (error) { window.alert(lang === 'ar' ? 'تعذّرت الموافقة، حاول مرة أخرى.' : 'Could not approve. Please try again.'); return; }
     setRequests((r) => r.filter((row) => row.id !== id));
     loadStats();
   }
 
   async function reject(id) {
-    await supabase.from('staff').delete().eq('id', id);
+    const { error } = await supabase.from('staff').delete().eq('id', id);
+    if (error) { window.alert(lang === 'ar' ? 'تعذّر الرفض، حاول مرة أخرى.' : 'Could not reject. Please try again.'); return; }
     setRequests((r) => r.filter((row) => row.id !== id));
   }
 
@@ -151,11 +153,17 @@ export default function Dashboard() {
       <div className={`min-h-screen transition-colors duration-300 ${dark ? 'bg-navy text-slate-200' : 'bg-slate-100 text-slate-800'}`}>
 
         <header className={`sticky top-0 z-20 backdrop-blur-md border-b transition-colors duration-300 ${dark ? 'bg-navy/70 border-slate-800' : 'bg-white/80 border-slate-200/60 shadow-sm'}`}>
+          {(profileOpen || notifOpen || schoolOpen) && (
+            <div
+              className="fixed inset-0 z-10"
+              onClick={() => { setProfileOpen(false); setNotifOpen(false); setSchoolOpen(false); }}
+            />
+          )}
           <div className="max-w-7xl mx-auto px-5 py-3.5 flex items-center gap-4">
 
             {/* Profile — first in DOM so it renders at the visual end (right in RTL) */}
             <div className="relative">
-              <button onClick={() => setProfileOpen((v) => !v)} className="flex items-center gap-2.5">
+              <button onClick={() => { setProfileOpen((v) => !v); setNotifOpen(false); setSchoolOpen(false); }} className="flex items-center gap-2.5">
                 <div className="text-end hidden md:block">
                   <div className="text-xs font-medium leading-tight">{staff ? staff.full_name : '...'}</div>
                   <div className={`text-[11px] leading-tight ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{staff ? t.roleNames[staff.role] : ''}</div>
@@ -203,7 +211,7 @@ export default function Dashboard() {
             {/* Notifications */}
             <div className="relative">
               <button
-                onClick={() => setNotifOpen((v) => !v)}
+                onClick={() => { setNotifOpen((v) => !v); setProfileOpen(false); setSchoolOpen(false); }}
                 className={`relative h-9 w-9 rounded-full flex items-center justify-center transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-100'}`}
               >
                 <Bell size={16} />
@@ -250,7 +258,7 @@ export default function Dashboard() {
             {/* School switcher — last in DOM so it renders at the visual start (left in RTL) */}
             <div className="relative">
               <button
-                onClick={() => setSchoolOpen((v) => !v)}
+                onClick={() => { setSchoolOpen((v) => !v); setProfileOpen(false); setNotifOpen(false); }}
                 className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
               >
                 <span className="hidden sm:block">{t.school} — {t.schoolSub}</span>

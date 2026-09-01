@@ -20,8 +20,21 @@ function Gate({ children }) {
 function GuestOnly({ children }) {
   const { session, staff, staffLoading } = useApp();
   if (session === undefined) return null;
-  if (session && staff && staff.status === 'approved') return <Navigate to="/" replace />;
-  if (session && !staffLoading && (!staff || staff.status !== 'approved') && staff !== null) return <Navigate to="/pending" replace />;
+  if (!session) return children;
+  if (staffLoading) {
+    return <div className="min-h-screen flex items-center justify-center bg-pearl text-slate-400 text-sm">...</div>;
+  }
+  if (staff && staff.status === 'approved') return <Navigate to="/" replace />;
+  return <Navigate to="/pending" replace />;
+}
+
+function PendingGuard({ children }) {
+  const { session, staff, staffLoading } = useApp();
+  if (session === undefined || (session && staffLoading)) {
+    return <div className="min-h-screen flex items-center justify-center bg-pearl text-slate-400 text-sm">...</div>;
+  }
+  if (!session) return <Navigate to="/login" replace />;
+  if (staff && staff.status === 'approved') return <Navigate to="/" replace />;
   return children;
 }
 
@@ -32,7 +45,7 @@ function Router() {
         <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
         <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
         <Route path="/register-complete" element={<RegisterComplete />} />
-        <Route path="/pending" element={<Pending />} />
+        <Route path="/pending" element={<PendingGuard><Pending /></PendingGuard>} />
         <Route path="/" element={<Gate><Dashboard /></Gate>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

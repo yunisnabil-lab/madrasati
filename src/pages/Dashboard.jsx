@@ -1,9 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Search, Bell, ChevronDown, Sun, Moon, Users, GraduationCap,
-  School as SchoolIcon, Clock, LogOut, Camera,
-} from 'lucide-react';
+import { Users, GraduationCap, School as SchoolIcon, Clock } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
@@ -33,7 +30,7 @@ function CustomTooltip({ active, payload, label, dark }) {
 }
 
 export default function Dashboard() {
-  const { t, lang, setLang, dark, setDark, staff, signOut, refreshStaff } = useApp();
+  const { t, lang, dark, staff } = useApp();
   const isAdmin = staff && staff.role === 'admin';
 
   const [kpi, setKpi] = useState({ students: null, staffCount: null, sections: null });
@@ -45,12 +42,7 @@ export default function Dashboard() {
   const [recentLoading, setRecentLoading] = useState(true);
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [chartType, setChartType] = useState('bar');
-  const [notifOpen, setNotifOpen] = useState(false);
-  const [schoolOpen, setSchoolOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
   const [roleChoice, setRoleChoice] = useState({});
-  const [uploading, setUploading] = useState(false);
-  const fileRef = useRef(null);
 
   const loadStats = useCallback(async () => {
     setStatsLoading(true);
@@ -126,21 +118,6 @@ export default function Dashboard() {
     setRequests((r) => r.filter((row) => row.id !== id));
   }
 
-  async function handleAvatarChange(e) {
-    const file = e.target.files[0];
-    if (!file || !staff) return;
-    setUploading(true);
-    const ext = file.name.split('.').pop();
-    const path = `${staff.id}/avatar.${ext}`;
-    const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-    if (!upErr) {
-      const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
-      await supabase.from('staff').update({ avatar_url: pub.publicUrl + '?t=' + Date.now() }).eq('id', staff.id);
-      await refreshStaff();
-    }
-    setUploading(false);
-  }
-
   const kpiCards = [
     { label: t.totalStudents, value: kpi.students, icon: GraduationCap, hint: lang === 'ar' ? 'مسجّلون في النظام' : 'enrolled in the system' },
     { label: t.staffMembers, value: kpi.staffCount, icon: Users, hint: lang === 'ar' ? 'حسابات معتمدة' : 'approved accounts' },
@@ -151,133 +128,6 @@ export default function Dashboard() {
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
       <div className={`min-h-screen transition-colors duration-300 ${dark ? 'bg-navy text-slate-200' : 'bg-slate-100 text-slate-800'}`}>
-
-        <header className={`sticky top-0 z-20 backdrop-blur-md border-b transition-colors duration-300 ${dark ? 'bg-navy/70 border-slate-800' : 'bg-white/80 border-slate-200/60 shadow-sm'}`}>
-          {(profileOpen || notifOpen || schoolOpen) && (
-            <div
-              className="fixed inset-0 z-10"
-              onClick={() => { setProfileOpen(false); setNotifOpen(false); setSchoolOpen(false); }}
-            />
-          )}
-          <div className="max-w-7xl mx-auto px-5 py-3.5 flex items-center gap-4">
-
-            {/* Profile — first in DOM so it renders at the visual end (right in RTL) */}
-            <div className="relative">
-              <button onClick={() => { setProfileOpen((v) => !v); setNotifOpen(false); setSchoolOpen(false); }} className="flex items-center gap-2.5">
-                <div className="text-end hidden md:block">
-                  <div className="text-xs font-medium leading-tight">{staff ? staff.full_name : '...'}</div>
-                  <div className={`text-[11px] leading-tight ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{staff ? t.roleNames[staff.role] : ''}</div>
-                </div>
-                <div className="relative h-9 w-9 rounded-full">
-                  {staff && staff.avatar_url ? (
-                    <img src={staff.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
-                  ) : (
-                    <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold">
-                      {staff ? initials(staff.full_name) : '--'}
-                    </div>
-                  )}
-                </div>
-              </button>
-              <AnimatePresence>
-                {profileOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                    className={`absolute end-0 mt-2 w-52 rounded-xl border shadow-xl py-1.5 z-30 ${dark ? 'bg-navy-soft border-slate-700' : 'bg-white border-slate-100'}`}
-                  >
-                    <button
-                      onClick={() => { fileRef.current && fileRef.current.click(); setProfileOpen(false); }}
-                      className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
-                    >
-                      <Camera size={14} /> {t.uploadPhoto}{uploading ? '…' : ''}
-                    </button>
-                    <button
-                      onClick={() => setDark((d) => !d)}
-                      className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
-                    >
-                      {dark ? <Sun size={14} /> : <Moon size={14} />} {dark ? (lang === 'ar' ? 'الوضع الفاتح' : 'Light mode') : (lang === 'ar' ? 'الوضع الغامق' : 'Dark mode')}
-                    </button>
-                    <button
-                      onClick={signOut}
-                      className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
-                    >
-                      <LogOut size={14} /> {t.signOut}
-                    </button>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-              <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
-            </div>
-
-            {/* Notifications */}
-            <div className="relative">
-              <button
-                onClick={() => { setNotifOpen((v) => !v); setProfileOpen(false); setSchoolOpen(false); }}
-                className={`relative h-9 w-9 rounded-full flex items-center justify-center transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-100'}`}
-              >
-                <Bell size={16} />
-                {isAdmin && requests.length > 0 && (
-                  <span className="absolute top-2 end-2 h-1.5 w-1.5 rounded-full bg-gold" />
-                )}
-              </button>
-              <AnimatePresence>
-                {notifOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                    className={`absolute end-0 mt-2 w-72 rounded-xl border shadow-xl py-2 z-30 ${dark ? 'bg-navy-soft border-slate-700' : 'bg-white border-slate-100'}`}
-                  >
-                    <div className="px-3.5 py-1.5 text-xs font-semibold">{t.notifications}</div>
-                    {isAdmin && requests.length > 0 ? (
-                      requests.map((r) => (
-                        <div key={r.id} className="px-3.5 py-2 text-xs">
-                          <span className={dark ? 'text-slate-400' : 'text-slate-500'}>{t.newRequestNotif}</span>{' '}
-                          <span className="font-medium">{r.full_name}</span>
-                        </div>
-                      ))
-                    ) : (
-                      <div className={`px-3.5 py-2 text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noNotifications}</div>
-                    )}
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-
-            {/* Language */}
-            <button
-              onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-              className={`hidden sm:block text-xs font-semibold tracking-wide px-1 ${dark ? 'text-slate-300' : 'text-slate-500'}`}
-            >
-              AR/EN
-            </button>
-
-            {/* Search */}
-            <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2 text-sm ${dark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
-              <Search size={15} />
-              <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
-            </div>
-
-            {/* School switcher — last in DOM so it renders at the visual start (left in RTL) */}
-            <div className="relative">
-              <button
-                onClick={() => { setSchoolOpen((v) => !v); setProfileOpen(false); setNotifOpen(false); }}
-                className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
-              >
-                <span className="hidden sm:block">{t.school} — {t.schoolSub}</span>
-                <ChevronDown size={14} className={dark ? 'text-slate-500' : 'text-slate-400'} />
-              </button>
-              <AnimatePresence>
-                {schoolOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                    className={`absolute mt-2 w-56 rounded-xl border shadow-xl py-1.5 z-30 ${dark ? 'bg-navy-soft border-slate-700' : 'bg-white border-slate-100'}`}
-                  >
-                    <div className="px-3.5 py-2 text-sm font-medium">{t.school}</div>
-                    <div className={`px-3.5 py-1 text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.schoolSub}</div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          </div>
-        </header>
 
         <main className="max-w-7xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">

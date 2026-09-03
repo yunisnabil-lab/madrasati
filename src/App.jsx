@@ -6,6 +6,7 @@ import RegisterComplete from './pages/RegisterComplete';
 import Pending from './pages/Pending';
 import Dashboard from './pages/Dashboard';
 import Attendance from './pages/Attendance';
+import Students from './pages/Students';
 import Layout from './components/Layout';
 
 function Gate({ children }) {
@@ -50,6 +51,7 @@ function Router() {
         <Route path="/pending" element={<PendingGuard><Pending /></PendingGuard>} />
         <Route path="/" element={<Gate><Layout><Dashboard /></Layout></Gate>} />
         <Route path="/attendance" element={<Gate><Layout><Attendance /></Layout></Gate>} />
+        <Route path="/students" element={<Gate><Layout><Students /></Layout></Gate>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

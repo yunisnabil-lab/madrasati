@@ -1,10 +1,11 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ClipboardCheck } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, GraduationCap } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 
 const ITEMS = [
   { to: '/', icon: LayoutDashboard, key: 'navDashboard', end: true },
   { to: '/attendance', icon: ClipboardCheck, key: 'navAttendance', end: false },
+  { to: '/students', icon: GraduationCap, key: 'navStudents', end: false },
 ];
 
 export default function Sidebar() {

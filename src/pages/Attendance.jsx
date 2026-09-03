@@ -109,10 +109,10 @@ export default function Attendance() {
     setStatusMap((m) => ({ ...m, [studentId]: status }));
   };
 
-  const markAllPresent = () => {
+  const markAllAs = (status) => {
     setStatusMap((m) => {
       const next = { ...m };
-      students.forEach((s) => { next[s.id] = 'present'; });
+      students.forEach((s) => { next[s.id] = status; });
       return next;
     });
   };
@@ -211,14 +211,20 @@ export default function Attendance() {
             </div>
 
             {students.length > 0 && (
-              <button
-                onClick={markAllPresent}
-                className={`text-xs font-medium px-4 py-2.5 rounded-lg border transition-colors whitespace-nowrap ${
-                  dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'
-                }`}
-              >
-                {t.markAllPresent}
-              </button>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => markAllAs('present')}
+                  className="text-xs font-medium px-4 py-2.5 rounded-lg border border-transparent bg-emerald-500 hover:bg-emerald-600 text-white transition-colors whitespace-nowrap"
+                >
+                  {t.markAllPresent}
+                </button>
+                <button
+                  onClick={() => markAllAs('absent')}
+                  className="text-xs font-medium px-4 py-2.5 rounded-lg border border-transparent bg-rose-500 hover:bg-rose-600 text-white transition-colors whitespace-nowrap"
+                >
+                  {t.markAllAbsent}
+                </button>
+              </div>
             )}
           </div>
 
@@ -258,9 +264,8 @@ export default function Attendance() {
                           return (
                             <button
                               key={opt.value}
-                              title={t[opt.key]}
                               onClick={() => setStatus(s.id, opt.value)}
-                              className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors border ${
+                              className={`flex items-center gap-1.5 h-8 px-2.5 rounded-lg transition-colors border text-xs font-medium ${
                                 active
                                   ? `${dark ? styles.onDark : styles.onLight} border-transparent`
                                   : dark
@@ -268,7 +273,8 @@ export default function Attendance() {
                                   : 'border-slate-200 text-slate-400 hover:bg-slate-50'
                               }`}
                             >
-                              <Icon size={14} />
+                              <Icon size={13} />
+                              <span className="hidden sm:inline">{t[opt.key]}</span>
                             </button>
                           );
                         })}

@@ -1,6 +1,7 @@
+import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, ChevronDown, Sun, Moon, LogOut, Camera } from 'lucide-react';
+import { Search, Bell, ChevronDown, Sun, Moon, LogOut, Camera, UserCircle2 } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 
@@ -9,9 +10,23 @@ function initials(name) {
   return ((parts[0] ? parts[0][0] : '') + (parts[1] ? parts[1][0] : '')).toUpperCase();
 }
 
+function useLiveNow() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const id = setInterval(() => setNow(new Date()), 30000);
+    return () => clearInterval(id);
+  }, []);
+  return now;
+}
+
 export default function Header() {
+  const navigate = useNavigate();
   const { t, lang, setLang, dark, setDark, staff, signOut, refreshStaff } = useApp();
   const isAdmin = staff && staff.role === 'admin';
+  const now = useLiveNow();
+  const dateTimeStr = new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', {
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit',
+  }).format(now);
 
   const [requests, setRequests] = useState([]);
   const [notifOpen, setNotifOpen] = useState(false);
@@ -48,7 +63,7 @@ export default function Header() {
   }
 
   return (
-    <header className={`sticky top-0 z-20 backdrop-blur-md border-b transition-colors duration-300 ${dark ? 'bg-navy/70 border-slate-800' : 'bg-white/80 border-slate-200/60 shadow-sm'}`}>
+    <header className={`no-print sticky top-0 z-20 backdrop-blur-md border-b transition-colors duration-300 ${dark ? 'bg-navy/70 border-slate-800' : 'bg-white/80 border-slate-200/60 shadow-sm'}`}>
       {(profileOpen || notifOpen || schoolOpen) && (
         <div
           className="fixed inset-0 z-10"
@@ -80,6 +95,12 @@ export default function Header() {
                 initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
                 className={`absolute end-0 mt-2 w-52 rounded-xl border shadow-xl py-1.5 z-30 ${dark ? 'bg-navy-soft border-slate-700' : 'bg-white border-slate-100'}`}
               >
+                <button
+                  onClick={() => { navigate('/profile'); setProfileOpen(false); }}
+                  className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
+                >
+                  <UserCircle2 size={14} /> {t.viewProfile}
+                </button>
                 <button
                   onClick={() => { fileRef.current && fileRef.current.click(); setProfileOpen(false); }}
                   className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-xs text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
@@ -145,19 +166,33 @@ export default function Header() {
           AR/EN
         </button>
 
+        {/* Live date/time */}
+        <div className={`hidden lg:block text-xs font-medium whitespace-nowrap px-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+          {dateTimeStr}
+        </div>
+
+        {/* Prominent sign-out */}
+        <button
+          onClick={signOut}
+          title={t.signOut}
+          className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${dark ? 'text-rose-400 hover:bg-rose-500/10' : 'text-rose-500 hover:bg-rose-50'}`}
+        >
+          <LogOut size={16} />
+        </button>
+
         {/* Search */}
         <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2 text-sm ${dark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
           <Search size={15} />
           <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
         </div>
 
-        {/* School switcher — last in DOM so it renders at the visual start (left in RTL) */}
-        <div className="relative">
+        {/* School switcher — last in DOM so it renders at the visual start (left in RTL); hidden on phones, not critical there */}
+        <div className="relative hidden sm:block">
           <button
             onClick={() => { setSchoolOpen((v) => !v); setProfileOpen(false); setNotifOpen(false); }}
             className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
           >
-            <span className="hidden sm:block">{t.school} — {t.schoolSub}</span>
+            <span>{t.school} — {t.schoolSub}</span>
             <ChevronDown size={14} className={dark ? 'text-slate-500' : 'text-slate-400'} />
           </button>
           <AnimatePresence>

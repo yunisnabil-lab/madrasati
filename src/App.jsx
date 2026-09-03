@@ -1,12 +1,20 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './lib/AppContext';
 import Login from './pages/Login';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 import Register from './pages/Register';
 import RegisterComplete from './pages/RegisterComplete';
 import Pending from './pages/Pending';
 import Dashboard from './pages/Dashboard';
 import Attendance from './pages/Attendance';
+import SingleAttendance from './pages/SingleAttendance';
 import Students from './pages/Students';
+import StudentLookup from './pages/StudentLookup';
+import DailyReport from './pages/DailyReport';
+import PeriodReport from './pages/PeriodReport';
+import StaffAssignments from './pages/StaffAssignments';
+import Profile from './pages/Profile';
 import Layout from './components/Layout';
 
 function Gate({ children }) {
@@ -41,17 +49,37 @@ function PendingGuard({ children }) {
   return children;
 }
 
+function NotRecorder({ children, fallback = '/attendance' }) {
+  const { staff } = useApp();
+  if (staff?.role === 'recorder') return <Navigate to={fallback} replace />;
+  return children;
+}
+
+function AdminOnly({ children, fallback = '/attendance' }) {
+  const { staff } = useApp();
+  if (staff?.role !== 'admin') return <Navigate to={fallback} replace />;
+  return children;
+}
+
 function Router() {
   return (
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<GuestOnly><Login /></GuestOnly>} />
+        <Route path="/forgot-password" element={<GuestOnly><ForgotPassword /></GuestOnly>} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
         <Route path="/register-complete" element={<RegisterComplete />} />
         <Route path="/pending" element={<PendingGuard><Pending /></PendingGuard>} />
-        <Route path="/" element={<Gate><Layout><Dashboard /></Layout></Gate>} />
+        <Route path="/" element={<Gate><NotRecorder><Layout><Dashboard /></Layout></NotRecorder></Gate>} />
         <Route path="/attendance" element={<Gate><Layout><Attendance /></Layout></Gate>} />
-        <Route path="/students" element={<Gate><Layout><Students /></Layout></Gate>} />
+        <Route path="/single-attendance" element={<Gate><Layout><SingleAttendance /></Layout></Gate>} />
+        <Route path="/students" element={<Gate><NotRecorder><Layout><Students /></Layout></NotRecorder></Gate>} />
+        <Route path="/lookup" element={<Gate><Layout><StudentLookup /></Layout></Gate>} />
+        <Route path="/daily-report" element={<Gate><NotRecorder><Layout><DailyReport /></Layout></NotRecorder></Gate>} />
+        <Route path="/period-report" element={<Gate><NotRecorder><Layout><PeriodReport /></Layout></NotRecorder></Gate>} />
+        <Route path="/profile" element={<Gate><Layout><Profile /></Layout></Gate>} />
+        <Route path="/staff-assignments" element={<Gate><AdminOnly><Layout><StaffAssignments /></Layout></AdminOnly></Gate>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

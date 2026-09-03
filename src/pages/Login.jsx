@@ -35,18 +35,19 @@ export default function Login() {
       .maybeSingle();
 
     if (staffError) {
-      setError('DEBUG: ' + staffError.message + ' (code: ' + (staffError.code || '—') + ')');
+      setError(t.errGeneric);
       setLoading(false);
       return;
     }
     if (!staffRow) {
-      setError('DEBUG: no staff row found for user id ' + signInData.user.id);
+      setError(t.errGeneric);
       setLoading(false);
       return;
     }
     if (staffRow.status !== 'approved') {
-      setError('DEBUG: row found — status="' + staffRow.status + '" role="' + staffRow.role + '" id=' + staffRow.id + ' (signed-in as ' + signInData.user.id + ', ' + signInData.user.email + ')');
+      await fetchStaff(signInData.user.id);
       setLoading(false);
+      navigate('/pending');
       return;
     }
 
@@ -77,7 +78,10 @@ export default function Login() {
           />
         </div>
         <div>
-          <label htmlFor="loginPassword" className="block text-sm font-medium text-slate-700 mb-2">{t.password}</label>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="loginPassword" className="block text-sm font-medium text-slate-700">{t.password}</label>
+            <Link to="/forgot-password" className="text-xs font-medium text-royal">{t.forgotPassword}</Link>
+          </div>
           <div className="relative">
             <input
               id="loginPassword"

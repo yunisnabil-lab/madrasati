@@ -45,3 +45,13 @@
 
 html, body, #root { height: 100%; }
 body { margin: 0; }
+
+/* ---------------- Print (shared across every page) ---------------- */
+@media print {
+  .no-print { display: none !important; }
+  @page { size: landscape; margin: 12mm; }
+  body { background: #fff !important; }
+  .print-area { box-shadow: none !important; }
+  .print-only { display: block !important; }
+}
+.print-only { display: none; }

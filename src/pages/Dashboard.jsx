@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, GraduationCap, School as SchoolIcon, Clock } from 'lucide-react';
+import { Users, GraduationCap, School as SchoolIcon, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useApp } from '../lib/AppContext';
+import { sectionLabel as fmtSectionLabel } from '../lib/sections';
 import { supabase } from '../lib/supabase';
 import { cardFloating, skeleton } from '../lib/theme';
 
@@ -47,7 +48,7 @@ export default function Dashboard() {
   const loadStats = useCallback(async () => {
     setStatsLoading(true);
     const [s, st, sec] = await Promise.all([
-      supabase.from('students').select('id', { count: 'exact', head: true }),
+      supabase.from('students').select('id', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('staff').select('id', { count: 'exact', head: true }).eq('status', 'approved'),
       supabase.from('sections').select('id', { count: 'exact', head: true }),
     ]);
@@ -58,7 +59,7 @@ export default function Dashboard() {
   const loadGradeChart = useCallback(async () => {
     setChartLoading(true);
     const { data: secs } = await supabase.from('sections').select('id, grade_name, grade_order');
-    const { data: studs } = await supabase.from('students').select('section_id');
+    const { data: studs } = await supabase.from('students').select('section_id').eq('is_active', true);
     if (!secs || !studs) { setChartLoading(false); return; }
     const bySection = {};
     studs.forEach((s) => { bySection[s.section_id] = (bySection[s.section_id] || 0) + 1; });
@@ -79,7 +80,8 @@ export default function Dashboard() {
     setRecentLoading(true);
     const { data } = await supabase
       .from('students')
-      .select('name_ar, name_en, sections(grade_name, section_name)')
+      .select('name_ar, name_en, sections(grade_name, section_name, stream, section_number)')
+      .eq('is_active', true)
       .order('created_at', { ascending: false })
       .limit(5);
     setRecent(data || []);
@@ -252,7 +254,7 @@ export default function Dashboard() {
                         <div className="min-w-0 flex-1">
                           <div className={`truncate font-medium ${dark ? 'text-slate-200' : 'text-slate-800'}`}>{lang === 'ar' ? s.name_ar : (s.name_en || s.name_ar)}</div>
                           <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
-                            {s.sections ? `${s.sections.grade_name} — ${s.sections.section_name}` : '—'}
+                            {s.sections ? fmtSectionLabel(s.sections, lang) : '—'}
                           </div>
                         </div>
                       </div>
@@ -352,8 +354,192 @@ export default function Dashboard() {
               )}
             </motion.div>
           )}
+
+          {isAdmin && <StaffManagement t={t} lang={lang} dark={dark} currentStaffId={staff.id} />}
+
+          {isAdmin && <ResetAttendanceZone t={t} lang={lang} dark={dark} school_id={staff.school_id} />}
         </main>
       </div>
+    </div>
+  );
+}
+
+function StaffManagement({ t, lang, dark, currentStaffId }) {
+  const [staffList, setStaffList] = useState(null);
+  const [savingId, setSavingId] = useState(null);
+  const [confirmRevokeId, setConfirmRevokeId] = useState(null);
+
+  const load = useCallback(async () => {
+    const { data } = await supabase
+      .from('staff')
+      .select('id, full_name, email, role, status')
+      .in('status', ['approved', 'revoked'])
+      .order('full_name', { ascending: true });
+    setStaffList(data || []);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const changeRole = async (id, role) => {
+    setSavingId(id);
+    await supabase.from('staff').update({ role }).eq('id', id);
+    setSavingId(null);
+    load();
+  };
+
+  const revoke = async (id) => {
+    setSavingId(id);
+    await supabase.from('staff').update({ status: 'revoked' }).eq('id', id);
+    setSavingId(null);
+    setConfirmRevokeId(null);
+    load();
+  };
+
+  const restore = async (id) => {
+    setSavingId(id);
+    await supabase.from('staff').update({ status: 'approved' }).eq('id', id);
+    setSavingId(null);
+    load();
+  };
+
+  return (
+    <div className={cardFloating(dark, 'p-5 mt-6')}>
+      <h3 className="text-sm font-semibold mb-1">{t.staffManagementTitle}</h3>
+      <p className={`text-xs mb-4 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.staffManagementSub}</p>
+
+      {staffList === null ? (
+        <div className="space-y-2">{[...Array(3)].map((_, i) => <div key={i} className={skeleton(dark, 'h-11 w-full')} />)}</div>
+      ) : staffList.length === 0 ? (
+        <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noStaffYet}</p>
+      ) : (
+        <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+          {staffList.map((s) => (
+            <li key={s.id} className="flex flex-wrap items-center gap-3 py-3">
+              <div className="flex-1 min-w-[140px]">
+                <div className="text-sm font-medium flex items-center gap-2">
+                  {s.full_name}
+                  {s.id === currentStaffId && (
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded-full ${dark ? 'bg-royal/20 text-royal-light' : 'bg-royal/10 text-royal'}`}>{t.thatsYou}</span>
+                  )}
+                  {s.status === 'revoked' && (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500">{t.revokedBadge}</span>
+                  )}
+                </div>
+                <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{s.email}</div>
+              </div>
+
+              {s.status === 'approved' ? (
+                <>
+                  <select
+                    value={s.role || ''}
+                    onChange={(e) => changeRole(s.id, e.target.value)}
+                    disabled={savingId === s.id || s.id === currentStaffId}
+                    className={`text-xs rounded-lg px-2.5 py-2 border outline-none disabled:opacity-50 ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
+                  >
+                    <option value="recorder">{t.roleNames.recorder}</option>
+                    <option value="viewer">{t.roleNames.viewer}</option>
+                    <option value="admin">{t.roleNames.admin}</option>
+                  </select>
+
+                  {s.id !== currentStaffId && (
+                    confirmRevokeId === s.id ? (
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={() => revoke(s.id)} className="text-xs font-medium px-3 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white">
+                          {t.confirmYesDelete}
+                        </button>
+                        <button onClick={() => setConfirmRevokeId(null)} className={`text-xs font-medium px-3 py-2 rounded-lg border ${dark ? 'border-slate-700' : 'border-slate-200'}`}>
+                          {t.cancel}
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setConfirmRevokeId(s.id)}
+                        className={`text-xs font-medium px-3 py-2 rounded-lg ${dark ? 'text-rose-400 hover:bg-rose-500/10' : 'text-rose-500 hover:bg-rose-50'}`}
+                      >
+                        {t.revokeAccess}
+                      </button>
+                    )
+                  )}
+                </>
+              ) : (
+                <button
+                  onClick={() => restore(s.id)}
+                  disabled={savingId === s.id}
+                  className="text-xs font-medium px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-60"
+                >
+                  {t.restoreAccess}
+                </button>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+function ResetAttendanceZone({ t, lang, dark, school_id }) {  const [confirmText, setConfirmText] = useState('');
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState(null);
+
+  const CONFIRM_WORD = lang === 'ar' ? 'حذف الكل' : 'DELETE ALL';
+
+  const runReset = async () => {
+    setBusy(true);
+    setMsg(null);
+    const { error } = await supabase.from('attendance_records').delete().eq('school_id', school_id);
+    setBusy(false);
+    setConfirming(false);
+    setConfirmText('');
+    if (error) {
+      setMsg({ type: 'err', text: t.saveError });
+    } else {
+      setMsg({ type: 'ok', text: t.resetDone });
+    }
+  };
+
+  return (
+    <div className={cardFloating(dark, 'p-5 mt-6 border-2 border-dashed border-rose-300 dark:border-rose-900')}>
+      <div className="flex items-center gap-2 mb-1">
+        <AlertTriangle size={16} className="text-rose-500" />
+        <h3 className="text-sm font-semibold text-rose-500">{t.resetAttendanceTitle}</h3>
+      </div>
+      <p className={`text-xs mb-3 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.resetAttendanceSub}</p>
+
+      {!confirming ? (
+        <button
+          onClick={() => setConfirming(true)}
+          className="text-sm font-medium px-4 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white transition-colors"
+        >
+          {t.resetAttendanceBtn}
+        </button>
+      ) : (
+        <div className={`rounded-lg p-3.5 ${dark ? 'bg-rose-500/10' : 'bg-rose-50'}`}>
+          <p className="text-sm font-medium text-rose-600 mb-2">{t.resetConfirmWarning}</p>
+          <p className={`text-xs mb-2 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+            {t.typeToConfirm.replace('{word}', CONFIRM_WORD)}
+          </p>
+          <input
+            value={confirmText}
+            onChange={(e) => setConfirmText(e.target.value)}
+            className={`w-full sm:w-64 rounded-lg px-3 py-2 text-sm outline-none border mb-3 ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={runReset}
+              disabled={confirmText !== CONFIRM_WORD || busy}
+              className="flex items-center gap-2 text-sm font-medium px-4 py-2 rounded-lg bg-rose-500 hover:bg-rose-600 text-white disabled:opacity-40"
+            >
+              {busy && <Loader2 size={14} className="animate-spin" />} {t.confirmYesDelete}
+            </button>
+            <button onClick={() => { setConfirming(false); setConfirmText(''); }} className={`text-sm font-medium px-4 py-2 rounded-lg border ${dark ? 'border-slate-700' : 'border-slate-200'}`}>
+              {t.cancel}
+            </button>
+          </div>
+        </div>
+      )}
+      {msg && <p className={`text-xs mt-2 ${msg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{msg.text}</p>}
     </div>
   );
 }

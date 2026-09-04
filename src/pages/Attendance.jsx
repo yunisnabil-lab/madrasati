@@ -58,7 +58,7 @@ export default function Attendance() {
       setSectionsLoading(true);
       const { data } = await supabase
         .from('sections')
-        .select('id, grade_name, section_name, grade_order, stream, section_number');
+        .select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
       setSections(data || []);
       setSectionsLoading(false);
     })();
@@ -66,11 +66,9 @@ export default function Attendance() {
 
   // resolved list of section ids to load students/attendance for
   const activeSectionIds = useMemo(() => {
-    if (!grade || !sectionSel) return [];
-    if (sectionSel === '__ALL__') {
-      return sectionsFor(sections, grade, stream).map((s) => s.id);
-    }
-    return [sectionSel];
+    if (!grade) return [];
+    if (sectionSel && sectionSel !== '__ALL__') return [sectionSel];
+    return sectionsFor(sections, grade, stream).map((s) => s.id);
   }, [sections, grade, stream, sectionSel]);
 
   const sectionMap = useMemo(() => {
@@ -171,7 +169,7 @@ export default function Attendance() {
           school_id: staff.school_id,
           student_id: s.id,
           date,
-          period,
+          period: Number(period),
           status,
           recorded_by: staff.id,
         });
@@ -179,10 +177,11 @@ export default function Attendance() {
     });
 
     let hadError = false;
+    let debugMsg = '';
 
     if (toInsert.length) {
       const { error } = await supabase.from('attendance_records').insert(toInsert);
-      if (error) hadError = true;
+      if (error) { hadError = true; debugMsg = `INSERT: ${error.message} (code: ${error.code || '—'})`; }
     }
 
     for (const u of toUpdate) {
@@ -190,12 +189,13 @@ export default function Attendance() {
         .from('attendance_records')
         .update({ status: u.status })
         .eq('id', u.id);
-      if (error) hadError = true;
+      if (error) { hadError = true; debugMsg = `UPDATE: ${error.message} (code: ${error.code || '—'})`; }
     }
 
     setSaving(false);
     if (hadError) {
-      setSaveMsg({ type: 'err', text: t.saveError });
+      console.error('Attendance save error:', debugMsg);
+      setSaveMsg({ type: 'err', text: 'DEBUG: ' + debugMsg });
     } else {
       setSaveMsg({ type: 'ok', text: t.savedSuccess });
       loadRoster();
@@ -204,7 +204,7 @@ export default function Attendance() {
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
-      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-200' : 'text-slate-800'}`}>
+      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-5xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.attendanceTitle}</h1>

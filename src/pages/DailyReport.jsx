@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Printer, Download } from 'lucide-react';
+import { Printer, Download, PieChart as PieIcon } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -33,7 +34,7 @@ export default function DailyReport() {
 
   const loadSectionsIfNeeded = async () => {
     if (sectionsLoaded) return;
-    const { data } = await supabase.from('sections').select('id, grade_name, section_name, grade_order, stream, section_number');
+    const { data } = await supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
     setSections(data || []);
     setSectionsLoaded(true);
   };
@@ -52,7 +53,7 @@ export default function DailyReport() {
 
     const { data: studs } = await supabase
       .from('students')
-      .select('id, sis_no, name_ar, name_en, section_id, is_active, sections(grade_name, section_name, stream, section_number)')
+      .select('id, sis_no, name_ar, name_en, section_id, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number)')
       .in('section_id', activeSectionIds)
       .eq('is_active', true)
       .order('name_ar', { ascending: true });
@@ -76,11 +77,11 @@ export default function DailyReport() {
         id: s.id,
         sis_no: s.sis_no,
         name: lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar),
-        grade: s.sections?.grade_name,
+        grade: (lang === 'en' && s.sections?.grade_name_en) ? s.sections.grade_name_en : s.sections?.grade_name,
         section: s.sections,
         section_id: s.section_id,
         section_label: fmtSectionLabel(s.sections, lang),
-        status: day ? day.status : 'present',
+        status: day ? day.status : 'not_recorded',
       };
     });
 
@@ -124,6 +125,7 @@ export default function DailyReport() {
     absent: rows.filter((r) => r.status === 'absent').length,
     late: rows.filter((r) => r.status === 'late').length,
     excused: rows.filter((r) => r.status === 'excused').length,
+    not_recorded: rows.filter((r) => r.status === 'not_recorded').length,
   } : null;
 
   const exportCsv = () => {
@@ -138,7 +140,7 @@ export default function DailyReport() {
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
-      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-200' : 'text-slate-800'}`}>
+      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-5xl mx-auto px-5 py-7 print-area">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 no-print">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.dailyReportTitle}</h1>
@@ -188,8 +190,8 @@ export default function DailyReport() {
           ) : (
             <>
               {/* KPI + filter + actions */}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5 no-print">
-                {STATUS_LIST.map((k) => (
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5 no-print">
+                {[...STATUS_LIST, 'not_recorded'].map((k) => (
                   <button
                     key={k}
                     onClick={() => setFilter(filter === k ? 'all' : k)}
@@ -201,6 +203,31 @@ export default function DailyReport() {
                   </button>
                 ))}
               </div>
+
+              {rows.length > 0 && (
+                <div className={cardFloating(dark, 'p-5 mb-5 print-area')}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <PieIcon size={15} className={dark ? 'text-slate-400' : 'text-slate-500'} />
+                    <h3 className="text-sm font-semibold">{t.chartTitle}</h3>
+                  </div>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={[...STATUS_LIST, 'not_recorded'].map((k) => ({ name: t[STATUS_META[k].key], value: counts[k], color: STATUS_META[k].color })).filter((d) => d.value > 0)}
+                        dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2}
+                        label={({ name, value }) => `${name}: ${value}`}
+                        labelLine={false}
+                      >
+                        {[...STATUS_LIST, 'not_recorded'].map((k) => (
+                          <Cell key={k} fill={STATUS_META[k].color} />
+                        ))}
+                      </Pie>
+                      <Tooltip />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
 
               {sectionGroups.length > 1 && (
                 <div className="flex flex-wrap items-center gap-2 mb-3 no-print">

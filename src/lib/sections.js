@@ -38,15 +38,20 @@ export function sortSections(sections) {
   });
 }
 
-// Human readable label for one section row, e.g.
-// "الصف الحادي عشر — متقدم — شعبة 1" / "الصف الرابع — شعبة 4"
+// Human readable label for one section row. Per the school's request, the
+// section itself is shown using its raw section_name value exactly as
+// stored in the database (e.g. "01/01", "02[General]/1") rather than a
+// cleaned-up "Section N" — only the grade name and stream are still
+// shown in friendly form alongside it. In English mode, uses grade_name_en
+// when the school has filled it in; otherwise falls back to the Arabic name.
+// e.g. "الصف الحادي عشر — متقدم — 11[Advanced]/1"
 export function sectionLabel(section, lang) {
   if (!section) return '';
-  const parts = [section.grade_name];
+  const gradeName = (lang === 'en' && section.grade_name_en) ? section.grade_name_en : section.grade_name;
+  const parts = [gradeName];
   const stLabel = streamLabel(section.stream, lang);
   if (stLabel) parts.push(stLabel);
-  const secWord = lang === 'ar' ? 'شعبة' : 'Section';
-  parts.push(`${secWord} ${section.section_number ?? '—'}`);
+  parts.push(section.section_name ?? '—');
   return parts.join(' — ');
 }
 
@@ -54,10 +59,10 @@ export function sectionLabel(section, lang) {
 export function distinctGrades(sections) {
   const map = new Map();
   sections.forEach((s) => {
-    if (!map.has(s.grade_name)) map.set(s.grade_name, s.grade_order ?? 999);
+    if (!map.has(s.grade_name)) map.set(s.grade_name, { grade_order: s.grade_order ?? 999, grade_name_en: s.grade_name_en || null });
   });
   return [...map.entries()]
-    .map(([grade_name, grade_order]) => ({ grade_name, grade_order }))
+    .map(([grade_name, info]) => ({ grade_name, grade_order: info.grade_order, grade_name_en: info.grade_name_en }))
     .sort((a, b) => a.grade_order - b.grade_order);
 }
 

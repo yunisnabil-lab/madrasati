@@ -72,7 +72,7 @@ export default function Students() {
   const loadAll = useCallback(async () => {
     setLoading(true);
     const [secRes, studRes] = await Promise.all([
-      supabase.from('sections').select('id, grade_name, section_name, grade_order, stream, section_number'),
+      supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number'),
       fetchAllRows(() => supabase.from('students').select('id, sis_no, name_ar, name_en, section_id, emirates_id, id_4_digits, email, parent_email, moe_username, is_active').order('name_ar', { ascending: true })),
     ]);
     setSections(secRes.data || []);
@@ -378,7 +378,7 @@ export default function Students() {
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
-      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-200' : 'text-slate-800'}`}>
+      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-6xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 flex flex-wrap items-start justify-between gap-3">
             <div>

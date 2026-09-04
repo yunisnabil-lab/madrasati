@@ -5,6 +5,7 @@ import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tool
 import { useApp } from '../lib/AppContext';
 import { sectionLabel as fmtSectionLabel } from '../lib/sections';
 import { supabase } from '../lib/supabase';
+import { STATUS_META } from '../lib/status';
 import { cardFloating, skeleton } from '../lib/theme';
 
 function initials(name) {
@@ -25,7 +26,7 @@ function CustomTooltip({ active, payload, label, dark }) {
   return (
     <div className={`rounded-lg px-3 py-2 text-xs shadow-lg border ${dark ? 'bg-navy-soft border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}>
       <div className="font-medium">{label}</div>
-      <div className="text-royal-light font-en">{payload[0].value}</div>
+      <div className="text-royal-light font-en">{payload[0].value}%</div>
     </div>
   );
 }
@@ -56,32 +57,40 @@ export default function Dashboard() {
     setStatsLoading(false);
   }, []);
 
-  const loadGradeChart = useCallback(async () => {
+  const loadAbsenceRateChart = useCallback(async () => {
     setChartLoading(true);
-    const { data: secs } = await supabase.from('sections').select('id, grade_name, grade_order');
-    const { data: studs } = await supabase.from('students').select('section_id').eq('is_active', true);
-    if (!secs || !studs) { setChartLoading(false); return; }
-    const bySection = {};
-    studs.forEach((s) => { bySection[s.section_id] = (bySection[s.section_id] || 0) + 1; });
-    const byGrade = {};
-    secs.forEach((sec) => {
-      const key = sec.grade_name;
-      if (!byGrade[key]) byGrade[key] = { total: 0, order: sec.grade_order != null ? sec.grade_order : 99 };
-      byGrade[key].total += bySection[sec.id] || 0;
+    const days = [];
+    const pad = (n) => String(n).padStart(2, '0');
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+    }
+    const { data: recs } = await supabase
+      .from('attendance_records')
+      .select('date, status')
+      .gte('date', days[0])
+      .lte('date', days[days.length - 1]);
+    const byDay = {};
+    days.forEach((d) => { byDay[d] = { total: 0, absent: 0 }; });
+    (recs || []).forEach((r) => {
+      if (!byDay[r.date]) return;
+      byDay[r.date].total += 1;
+      if (r.status === 'absent') byDay[r.date].absent += 1;
     });
-    const rows = Object.keys(byGrade)
-      .map((name) => ({ name, v: byGrade[name].total, order: byGrade[name].order }))
-      .sort((a, b) => a.order - b.order);
+    const rows = days.map((d) => ({
+      name: new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', { weekday: 'short' }).format(new Date(`${d}T00:00:00`)),
+      v: byDay[d].total > 0 ? Math.round((byDay[d].absent / byDay[d].total) * 100) : 0,
+    }));
     setGradeData(rows);
     setChartLoading(false);
-  }, []);
+  }, [lang]);
 
   const loadRecent = useCallback(async () => {
     setRecentLoading(true);
     const { data } = await supabase
-      .from('students')
-      .select('name_ar, name_en, sections(grade_name, section_name, stream, section_number)')
-      .eq('is_active', true)
+      .from('attendance_records')
+      .select('status, date, created_at, students(name_ar, name_en, sections(grade_name, grade_name_en, section_name, stream, section_number))')
       .order('created_at', { ascending: false })
       .limit(5);
     setRecent(data || []);
@@ -102,10 +111,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     loadStats();
-    loadGradeChart();
+    loadAbsenceRateChart();
     loadRecent();
     loadRequests();
-  }, [loadStats, loadGradeChart, loadRecent, loadRequests]);
+  }, [loadStats, loadAbsenceRateChart, loadRecent, loadRequests]);
 
   async function approve(id, role) {
     const { error } = await supabase.from('staff').update({ status: 'approved', role }).eq('id', id);
@@ -202,7 +211,7 @@ export default function Dashboard() {
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke={dark ? '#33415560' : '#EEF2F7'} vertical={false} />
                       <XAxis dataKey="name" tick={{ fontSize: 11, fill: dark ? '#64748B' : '#94A3B8' }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 11, fill: dark ? '#64748B' : '#94A3B8' }} axisLine={false} tickLine={false} width={28} />
+                      <YAxis domain={[0, 100]} tickFormatter={(v) => v + '%'} tick={{ fontSize: 11, fill: dark ? '#64748B' : '#94A3B8' }} axisLine={false} tickLine={false} width={32} />
                       <Tooltip content={<CustomTooltip dark={dark} />} cursor={{ fill: dark ? '#ffffff08' : '#00000005' }} />
                       <Bar dataKey="v" fill="url(#barGradient)" radius={[8, 8, 0, 0]} maxBarSize={46} />
                     </BarChart>
@@ -216,7 +225,7 @@ export default function Dashboard() {
                       </defs>
                       <CartesianGrid strokeDasharray="3 3" stroke={dark ? '#33415560' : '#EEF2F7'} vertical={false} />
                       <XAxis dataKey="name" tick={{ fontSize: 11, fill: dark ? '#64748B' : '#94A3B8' }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 11, fill: dark ? '#64748B' : '#94A3B8' }} axisLine={false} tickLine={false} width={28} />
+                      <YAxis domain={[0, 100]} tickFormatter={(v) => v + '%'} tick={{ fontSize: 11, fill: dark ? '#64748B' : '#94A3B8' }} axisLine={false} tickLine={false} width={32} />
                       <Tooltip content={<CustomTooltip dark={dark} />} />
                       <Area type="monotone" dataKey="v" stroke="#2563EB" strokeWidth={2.5} fill="url(#areaGradient)" />
                     </AreaChart>
@@ -231,7 +240,7 @@ export default function Dashboard() {
               className={`lg:col-span-2 ${cardFloating(dark)} p-5`}>
               <div className="mb-4">
                 <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>{t.recentStudentsTitle}</h2>
-                <p className={`text-xs mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-500'}`}>{lang === 'ar' ? 'أحدث الطلاب المضافين إلى النظام' : 'Newest students added to the system'}</p>
+                <p className={`text-xs mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-500'}`}>{t.recentAttendanceSub}</p>
               </div>
               <div className="space-y-1">
                 {recentLoading ? (
@@ -246,19 +255,27 @@ export default function Dashboard() {
                   ))
                 ) : (
                   <>
-                    {recent.map((s, i) => (
-                      <div key={i} className={`flex items-center gap-3 text-sm rounded-xl px-2 -mx-2 py-2.5 transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
-                        <div className={`h-10 w-10 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}>
-                          {initials(s.name_ar)}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className={`truncate font-medium ${dark ? 'text-slate-200' : 'text-slate-800'}`}>{lang === 'ar' ? s.name_ar : (s.name_en || s.name_ar)}</div>
-                          <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
-                            {s.sections ? fmtSectionLabel(s.sections, lang) : '—'}
+                    {recent.map((r, i) => {
+                      const s = r.students || {};
+                      const meta = STATUS_META[r.status] || STATUS_META.present;
+                      const Icon = meta.icon;
+                      return (
+                        <div key={i} className={`flex items-center gap-3 text-sm rounded-xl px-2 -mx-2 py-2.5 transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+                          <div className={`h-10 w-10 rounded-full flex items-center justify-center text-xs font-semibold flex-shrink-0 ${AVATAR_COLORS[i % AVATAR_COLORS.length]}`}>
+                            {initials(s.name_ar)}
                           </div>
+                          <div className="min-w-0 flex-1">
+                            <div className={`truncate font-medium ${dark ? 'text-slate-100' : 'text-slate-800'}`}>{lang === 'ar' ? s.name_ar : (s.name_en || s.name_ar)}</div>
+                            <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                              {s.sections ? fmtSectionLabel(s.sections, lang) : '—'} · {r.date}
+                            </div>
+                          </div>
+                          <span className="inline-flex items-center gap-1 text-xs font-medium shrink-0" style={{ color: meta.color }}>
+                            <Icon size={13} /> {t[meta.key]}
+                          </span>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                     {recent.length === 0 && <div className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>—</div>}
                   </>
                 )}
@@ -306,7 +323,7 @@ export default function Dashboard() {
                               <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-semibold ${dark ? 'bg-royal/15 text-royal-light' : 'bg-royal/10 text-royal'}`}>
                                 {initials(r.full_name)}
                               </div>
-                              <span className={`font-medium ${dark ? 'text-slate-200' : 'text-slate-800'}`}>{r.full_name}</span>
+                              <span className={`font-medium ${dark ? 'text-slate-100' : 'text-slate-800'}`}>{r.full_name}</span>
                             </div>
                           </td>
                           <td className={`py-3.5 font-en hidden sm:table-cell ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{r.email}</td>

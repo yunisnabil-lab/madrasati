@@ -31,7 +31,7 @@ export default function AuthShell({ children }) {
 
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.08, duration: 0.5 }} className="relative">
             <div className="text-2xl font-semibold leading-relaxed max-w-[26ch]">
-              {lang === 'ar' ? 'نظام إدارة مدرسي متكامل' : 'A complete school management platform'}
+              {lang === 'ar' ? 'نظام إدارة الحضور بالمدرسة' : 'School Attendance Management System'}
             </div>
           </motion.div>
 

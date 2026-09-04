@@ -13,17 +13,14 @@ export function normalizeArabic(text) {
     .replace(/\s+/g, ' ');
 }
 
-function firstWord(text) {
-  const n = normalizeArabic(text);
-  return n.split(' ')[0] || '';
-}
-
 // Returns true if `student` matches the (already-trimmed) raw query.
 // Rules:
 // - a numeric-looking query matches the student ID (sis_no) by substring
-// - otherwise the query must match the STUDENT'S FIRST NAME (ar or en) via
-//   startsWith — never a full-name includes() — so searching "احمد" finds
-//   "أحمد محمد علي" but not "محمد أحمد سعيد"
+// - otherwise the (normalized) query must match the START of the
+//   student's full name (ar or en) — so searching "احمد" finds "أحمد محمد
+//   علي" but not "محمد أحمد سعيد" (that would need "محمد"), and typing a
+//   full name like "احمد محمد" still matches correctly since we compare
+//   against the whole name, not just its first word
 // - it also matches identifier fields (email, emirates_id, moe_username,
 //   parent_email) via substring, since those aren't names
 export function matchesStudentSearch(student, rawQuery) {
@@ -37,8 +34,8 @@ export function matchesStudentSearch(student, rawQuery) {
 
   const nq = normalizeArabic(q);
 
-  if (firstWord(student.name_ar).startsWith(nq)) return true;
-  if (firstWord(student.name_en).startsWith(nq)) return true;
+  if (normalizeArabic(student.name_ar).startsWith(nq)) return true;
+  if (normalizeArabic(student.name_en).startsWith(nq)) return true;
 
   const idFields = [student.email, student.emirates_id, student.moe_username, student.parent_email, student.sis_no];
   return idFields.some((f) => (f || '').toLowerCase().includes(q.toLowerCase()));

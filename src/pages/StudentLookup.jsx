@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ArrowRight, Flag, Printer, Check, X, Clock3, FileWarning, ShieldCheck, MessageCircle, Trash2, Loader2 } from 'lucide-react';
+import { Search, ArrowRight, Flag, Printer, Check, X, Clock3, FileWarning, ShieldCheck, MessageCircle, Trash2, Loader2, Mail, RefreshCw } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -93,15 +93,15 @@ export default function StudentLookup() {
     (async () => {
       const { data } = await supabase
         .from('sections')
-        .select('id, grade_name, section_name, grade_order, stream, section_number');
+        .select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
       setSections(data || []);
     })();
   }, []);
 
   const activeSectionIds = useMemo(() => {
-    if (!grade || !sectionSel) return null;
-    if (sectionSel === '__ALL__') return sectionsFor(sections, grade, stream).map((s) => s.id);
-    return [sectionSel];
+    if (!grade) return null;
+    if (sectionSel && sectionSel !== '__ALL__') return [sectionSel];
+    return sectionsFor(sections, grade, stream).map((s) => s.id);
   }, [sections, grade, stream, sectionSel]);
 
   const sectionFilterKey = activeSectionIds ? activeSectionIds.join(',') : null;
@@ -113,7 +113,7 @@ export default function StudentLookup() {
       setSearching(true);
       const { data } = await supabase
         .from('students')
-        .select('id, sis_no, name_ar, name_en, section_id, email, parent_email, emirates_id, moe_username, is_active, sections(grade_name, section_name, stream, section_number, grade_order)')
+        .select('id, sis_no, name_ar, name_en, section_id, email, parent_email, emirates_id, moe_username, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)')
         .in('section_id', sectionFilterKey.split(','))
         .order('name_ar', { ascending: true });
       setSectionRoster(data || []);
@@ -138,7 +138,7 @@ export default function StudentLookup() {
     setSearching(true);
     const { data } = await fetchAllRows(() => supabase
       .from('students')
-      .select('id, sis_no, name_ar, name_en, section_id, email, parent_email, emirates_id, moe_username, is_active, sections(grade_name, section_name, stream, section_number, grade_order)'));
+      .select('id, sis_no, name_ar, name_en, section_id, email, parent_email, emirates_id, moe_username, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)'));
     const matched = (data || []).filter((s) => matchesStudentSearch(s, q));
     matched.sort((a, b) => (a.sections?.grade_order ?? 999) - (b.sections?.grade_order ?? 999));
     setGlobalMatches(matched);
@@ -190,7 +190,7 @@ export default function StudentLookup() {
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
-      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-200' : 'text-slate-800'}`}>
+      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-4xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.lookupTitle}</h1>
@@ -402,17 +402,20 @@ function StudentProfileCard({
           <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputCls} />
         </div>
         {(fromDate || toDate) && (
-          <button onClick={() => { setFromDate(''); setToDate(''); }} className={`text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+          <button onClick={() => { setFromDate(''); setToDate(''); onOverrideSaved && onOverrideSaved(); }} className={`text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
             {t.showAll}
           </button>
         )}
+        <button onClick={() => onOverrideSaved && onOverrideSaved()} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+          <RefreshCw size={14} /> {t.refresh}
+        </button>
         <button onClick={() => window.print()} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
           <Printer size={14} /> {t.printReport}
         </button>
       </div>
 
       <div className="no-print">
-        <WhatsAppShare student={student} name={name} stats={stats} fromDate={fromDate} toDate={toDate} t={t} lang={lang} dark={dark} inputCls={inputCls} />
+        <WhatsAppShare student={student} name={name} stats={stats} history={history} sectionLabel={fmtSectionLabel(student.sections, lang)} fromDate={fromDate} toDate={toDate} t={t} lang={lang} dark={dark} inputCls={inputCls} />
       </div>
 
       {isAdmin && (
@@ -518,7 +521,7 @@ function OverridePanel({ student, staff, t, lang, dark, inputCls, onSaved }) {
 
     setSaving(false);
     if (error) {
-      setMsg({ type: 'err', text: t.saveError });
+      console.error('Override/record save error:', error); setMsg({ type: 'err', text: 'DEBUG: ' + error.message + ' (code: ' + (error.code || '—') + ')' });
     } else {
       setMsg({ type: 'ok', text: t.overrideSaved });
       setExistingOverride({ status });
@@ -533,7 +536,7 @@ function OverridePanel({ student, staff, t, lang, dark, inputCls, onSaved }) {
     const { error } = await supabase.from('attendance_records').delete().eq('id', existingOverride.id);
     setSaving(false);
     if (error) {
-      setMsg({ type: 'err', text: t.saveError });
+      console.error('Override/record save error:', error); setMsg({ type: 'err', text: 'DEBUG: ' + error.message + ' (code: ' + (error.code || '—') + ')' });
     } else {
       setMsg({ type: 'ok', text: t.overrideRemoved });
       setExistingOverride(null);
@@ -589,43 +592,91 @@ function OverridePanel({ student, staff, t, lang, dark, inputCls, onSaved }) {
   );
 }
 
-function WhatsAppShare({ student, name, stats, fromDate, toDate, t, lang, dark, inputCls }) {
+function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, dark, inputCls }) {
   const [phone, setPhone] = useState('');
+  const [email, setEmail] = useState(student.parent_email || '');
+  const [sendingEmail, setSendingEmail] = useState(false);
+  const [emailMsg, setEmailMsg] = useState(null);
 
-  const periodLabel = lang === 'ar'
-    ? (fromDate || toDate ? `${fromDate || '...'} إلى ${toDate || '...'}` : 'كل السجل')
-    : (fromDate || toDate ? `${fromDate || '...'} to ${toDate || '...'}` : 'entire history');
+  const dayName = (dateStr) => new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', { weekday: 'long' }).format(new Date(`${dateStr}T00:00:00`));
+  const rowIcon = (status) => (status === 'present' ? '✅' : status === 'absent' ? '❌' : status === 'late' ? '⏰' : status === 'excused' ? '📝' : '❔');
+
+  const MAX_RECORD_LINES = 30;
+  const sorted = [...history].sort((a, b) => b.date.localeCompare(a.date));
+  const truncated = sorted.length > MAX_RECORD_LINES;
+  const recordLines = sorted
+    .slice(0, MAX_RECORD_LINES)
+    .map((r) => `${rowIcon(r.status)} ${r.date} (${dayName(r.date)}) — ${t[STATUS_META[r.status]?.key] || r.status}`)
+    .join('\n') + (truncated ? `\n${lang === 'ar' ? `... و${sorted.length - MAX_RECORD_LINES} سجل أقدم` : `... and ${sorted.length - MAX_RECORD_LINES} older record(s)`}` : '');
 
   const message = lang === 'ar'
-    ? `تقرير حضور الطالب: ${name}\nالفترة: ${periodLabel}\nأيام الحضور: ${stats.present} | أيام الغياب: ${stats.absent} | نسبة الحضور: ${stats.rate}%`
-    : `Attendance report for: ${name}\nPeriod: ${periodLabel}\nDays present: ${stats.present} | Days absent: ${stats.absent} | Attendance rate: ${stats.rate}%`;
+    ? `📋 تقرير حضور الطالب - ${t.school} - ${t.schoolSub}\n━━━━━━━━━━━━━━━━━━\n👤 الاسم: ${name}\n🔢 رقم الطالب: ${student.sis_no}\n🏫 الصف - الشعبة: ${sectionLabel}\n━━━━━━━━━━━━━━━━━━\n📊 نسبة الحضور: ${stats.rate}%\n✅ أيام الحضور: ${stats.present}   ❌ أيام الغياب: ${stats.absent}   ⏰ أيام التأخير: ${stats.late}\n━━━━━━━━━━━━━━━━━━\n📅 السجل الكامل:\n${recordLines || '—'}\n━━━━━━━━━━━━━━━━━━\nيرجى مراجعة سجل الحضور والغياب الخاص بالطالب مع إدارة المدرسة.`
+    : `📋 Attendance Report - ${t.school} - ${t.schoolSub}\n━━━━━━━━━━━━━━━━━━\n👤 Name: ${name}\n🔢 Student ID: ${student.sis_no}\n🏫 Grade - Section: ${sectionLabel}\n━━━━━━━━━━━━━━━━━━\n📊 Attendance rate: ${stats.rate}%\n✅ Days present: ${stats.present}   ❌ Days absent: ${stats.absent}   ⏰ Days late: ${stats.late}\n━━━━━━━━━━━━━━━━━━\n📅 Full record:\n${recordLines || '—'}\n━━━━━━━━━━━━━━━━━━\nPlease reach out to the school administration for more details.`;
 
   const link = buildWhatsAppLink(phone, message);
 
+  const sendEmail = async () => {
+    setSendingEmail(true);
+    setEmailMsg(null);
+    const { data, error } = await supabase.functions.invoke('send-report-email', {
+      body: { studentId: student.id, to: email.trim(), message },
+    });
+    setSendingEmail(false);
+    if (error || (data && data.error)) {
+      setEmailMsg({ type: 'err', text: t.emailSendError });
+    } else {
+      setEmailMsg({ type: 'ok', text: t.emailSent });
+    }
+  };
+
   return (
-    <div className={cardFloating(dark, 'p-4 mb-5 flex flex-col sm:flex-row gap-3 sm:items-end')}>
-      <div className="flex-1">
-        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.parentPhone}</label>
-        <input
-          type="tel"
-          value={phone}
-          onChange={(e) => setPhone(e.target.value)}
-          placeholder={t.parentPhonePlaceholder}
-          className={`${inputCls} font-en`}
-          dir="ltr"
-        />
+    <div className={cardFloating(dark, 'p-4 mb-5 space-y-4')}>
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+        <div className="flex-1">
+          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.parentPhone}</label>
+          <input
+            type="tel"
+            value={phone}
+            onChange={(e) => setPhone(e.target.value)}
+            placeholder={t.parentPhonePlaceholder}
+            className={`${inputCls} font-en`}
+            dir="ltr"
+          />
+        </div>
+        <a
+          href={link || undefined}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={(e) => { if (!link) e.preventDefault(); }}
+          className={`flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-lg text-white transition-colors whitespace-nowrap ${
+            link ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-slate-300 cursor-not-allowed'
+          }`}
+        >
+          <MessageCircle size={15} /> {t.sendWhatsApp}
+        </a>
       </div>
-      <a
-        href={link || undefined}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={(e) => { if (!link) e.preventDefault(); }}
-        className={`flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-lg text-white transition-colors whitespace-nowrap ${
-          link ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-slate-300 cursor-not-allowed'
-        }`}
-      >
-        <MessageCircle size={15} /> {t.sendWhatsApp}
-      </a>
+
+      <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+        <div className="flex-1">
+          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.parentEmail}</label>
+          <input
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="parent@example.com"
+            className={`${inputCls} font-en`}
+            dir="ltr"
+          />
+        </div>
+        <button
+          onClick={sendEmail}
+          disabled={sendingEmail || !email.trim()}
+          className="flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-lg text-white transition-colors whitespace-nowrap bg-royal hover:bg-royal-light disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {sendingEmail ? <Loader2 size={15} className="animate-spin" /> : <Mail size={15} />} {t.sendEmail}
+        </button>
+      </div>
+      {emailMsg && <p className={`text-xs ${emailMsg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{emailMsg.text}</p>}
     </div>
   );
 }

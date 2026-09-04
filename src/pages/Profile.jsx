@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
   Camera, Pencil, Check, X, Sun, Moon, LogOut, Loader2,
-  ClipboardCheck, CalendarDays, Clock4, Shield, Eye, EyeOff,
+  ClipboardCheck, CalendarDays, Clock4, Shield, Eye, EyeOff, School as SchoolIcon,
 } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
@@ -115,7 +115,7 @@ export default function Profile() {
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
-      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-200' : 'text-slate-800'}`}>
+      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-3xl mx-auto px-5 py-7">
 
           {/* hero */}
@@ -173,6 +173,17 @@ export default function Profile() {
               </div>
             </div>
           </motion.div>
+
+          {/* school context */}
+          <div className={cardFloating(dark, 'p-5 mb-5 flex items-center gap-3')}>
+            <div className={`h-11 w-11 rounded-xl flex items-center justify-center shrink-0 ${dark ? 'bg-royal/15 text-royal-light' : 'bg-royal/10 text-royal'}`}>
+              <SchoolIcon size={20} />
+            </div>
+            <div>
+              <div className="text-sm font-semibold">{t.school}</div>
+              <div className={`text-xs ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.schoolSub}</div>
+            </div>
+          </div>
 
           {/* activity stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">

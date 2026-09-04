@@ -22,7 +22,7 @@ export default function StaffAssignments() {
     setLoading(true);
     const [teachRes, secRes, asgRes] = await Promise.all([
       supabase.from('staff').select('id, full_name, email').eq('role', 'recorder').eq('status', 'approved').order('full_name'),
-      supabase.from('sections').select('id, grade_name, section_name, grade_order, stream, section_number'),
+      supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number'),
       supabase.from('staff_sections').select('staff_id, section_id'),
     ]);
     setTeachers(teachRes.data || []);
@@ -80,7 +80,7 @@ export default function StaffAssignments() {
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
-      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-200' : 'text-slate-800'}`}>
+      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-3xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.assignmentsTitle}</h1>
@@ -149,7 +149,7 @@ export default function StaffAssignments() {
                                 : dark ? 'border-slate-700 text-slate-400 hover:bg-white/5' : 'border-slate-200 text-slate-500 hover:bg-slate-50'
                             }`}
                           >
-                            {s.stream ? `${s.stream} ` : ''}{s.section_number ?? s.section_name}
+                            {s.section_name ?? '—'}
                           </button>
                         );
                       })}

@@ -48,15 +48,17 @@ export default function SingleAttendance() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('sections').select('id, grade_name, section_name, grade_order, stream, section_number');
+      const { data } = await supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
       setSections(data || []);
     })();
   }, []);
 
   const activeSectionIds = useMemo(() => {
-    if (!grade || !sectionSel) return null;
-    if (sectionSel === '__ALL__') return sectionsFor(sections, grade, stream).map((s) => s.id);
-    return [sectionSel];
+    if (!grade) return null; // nothing chosen yet — fall through to the global search box
+    // as soon as a grade is picked, narrow to it (and stream, if picked) right
+    // away — don't wait for a specific section/"all" choice before filtering
+    if (sectionSel && sectionSel !== '__ALL__') return [sectionSel];
+    return sectionsFor(sections, grade, stream).map((s) => s.id);
   }, [sections, grade, stream, sectionSel]);
 
   const sectionFilterKey = activeSectionIds ? activeSectionIds.join(',') : null;
@@ -68,7 +70,7 @@ export default function SingleAttendance() {
       setSearching(true);
       const { data } = await supabase
         .from('students')
-        .select('id, sis_no, name_ar, name_en, section_id, is_active, sections(grade_name, section_name, stream, section_number, grade_order)')
+        .select('id, sis_no, name_ar, name_en, section_id, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)')
         .in('section_id', sectionFilterKey.split(','))
         .eq('is_active', true)
         .order('name_ar', { ascending: true });
@@ -92,7 +94,7 @@ export default function SingleAttendance() {
     setSearching(true);
     const { data } = await fetchAllRows(() => supabase
       .from('students')
-      .select('id, sis_no, name_ar, name_en, section_id, is_active, sections(grade_name, section_name, stream, section_number, grade_order)')
+      .select('id, sis_no, name_ar, name_en, section_id, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)')
       .eq('is_active', true));
     const matched = (data || []).filter((s) => matchesStudentSearch(s, q));
     matched.sort((a, b) => (a.sections?.grade_order ?? 999) - (b.sections?.grade_order ?? 999));
@@ -150,7 +152,7 @@ export default function SingleAttendance() {
         school_id: staff.school_id,
         student_id: selected.id,
         date,
-        period,
+        period: Number(period),
         status,
         recorded_by: staff.id,
       }));
@@ -158,7 +160,8 @@ export default function SingleAttendance() {
 
     setSaving(false);
     if (error) {
-      setSaveMsg({ type: 'err', text: t.saveError });
+      console.error('Single attendance save error:', error);
+      setSaveMsg({ type: 'err', text: 'DEBUG: ' + error.message + ' (code: ' + (error.code || '—') + ')' });
       return;
     }
     const name = lang === 'ar' ? (selected.name_ar || selected.name_en) : (selected.name_en || selected.name_ar);
@@ -180,7 +183,7 @@ export default function SingleAttendance() {
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
-      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-200' : 'text-slate-800'}`}>
+      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-3xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.singleAttTitle}</h1>

@@ -9,7 +9,7 @@ export default {
         en: ['Inter', 'sans-serif'],
       },
       colors: {
-        navy: { DEFAULT: '#0F172A', soft: '#1E293B' },
+        navy: { DEFAULT: '#131B2E', soft: '#212C42' },
         pearl: { DEFAULT: '#F8FAFC', soft: '#F1F5F9' },
         royal: { DEFAULT: '#2563EB', light: '#60A5FA', glow: '#93C5FD' },
         gold: { DEFAULT: '#D97706', light: '#F59E0B' },

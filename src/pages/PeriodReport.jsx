@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Printer, Download, Flag } from 'lucide-react';
+import { Printer, Download, Flag, PieChart as PieIcon } from 'lucide-react';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -39,7 +40,7 @@ export default function PeriodReport() {
 
   useEffect(() => {
     (async () => {
-      const { data } = await supabase.from('sections').select('id, grade_name, section_name, grade_order, stream, section_number');
+      const { data } = await supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
       setSections(data || []);
     })();
   }, []);
@@ -64,7 +65,7 @@ export default function PeriodReport() {
 
     const { data: studs } = await supabase
       .from('students')
-      .select('id, sis_no, name_ar, name_en, section_id, is_active, sections(grade_name, section_name, stream, section_number)')
+      .select('id, sis_no, name_ar, name_en, section_id, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number)')
       .in('section_id', activeSectionIds)
       .eq('is_active', true)
       .order('name_ar', { ascending: true });
@@ -106,7 +107,7 @@ export default function PeriodReport() {
         id: s.id,
         sis_no: s.sis_no,
         name: lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar),
-        grade: s.sections?.grade_name,
+        grade: (lang === 'en' && s.sections?.grade_name_en) ? s.sections.grade_name_en : s.sections?.grade_name,
         section_id: s.section_id,
         section_label: fmtSectionLabel(s.sections, lang),
         present, absent, excused, lateDays, rate, flagged,
@@ -160,7 +161,7 @@ export default function PeriodReport() {
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
-      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-200' : 'text-slate-800'}`}>
+      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-5xl mx-auto px-5 py-7 print-area">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 no-print">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.periodReportTitle}</h1>
@@ -211,6 +212,34 @@ export default function PeriodReport() {
             </div>
           ) : (
             <>
+              {rows.length > 0 && (
+                <div className={cardFloating(dark, 'p-5 mb-5 print-area')}>
+                  <div className="flex items-center gap-2 mb-3">
+                    <PieIcon size={15} className={dark ? 'text-slate-400' : 'text-slate-500'} />
+                    <h3 className="text-sm font-semibold">{t.chartTitle}</h3>
+                  </div>
+                  <ResponsiveContainer width="100%" height={220}>
+                    <PieChart>
+                      <Pie
+                        data={[
+                          { name: t.statusPresent, value: rows.reduce((s, r) => s + r.present, 0), color: '#05cd99' },
+                          { name: t.statusAbsent, value: rows.reduce((s, r) => s + r.absent, 0), color: '#ee5d50' },
+                          { name: t.statusLate, value: rows.reduce((s, r) => s + r.lateDays, 0), color: '#ffb800' },
+                          { name: t.statusExcused, value: rows.reduce((s, r) => s + r.excused, 0), color: '#8b5cf6' },
+                        ].filter((d) => d.value > 0)}
+                        dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2}
+                        label={({ name, value }) => `${name}: ${value}`}
+                        labelLine={false}
+                      >
+                        {['#05cd99', '#ee5d50', '#ffb800', '#8b5cf6'].map((c) => <Cell key={c} fill={c} />)}
+                      </Pie>
+                      <Tooltip />
+                      <Legend wrapperStyle={{ fontSize: 12 }} />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
+
               {sectionGroups.length > 1 && (
                 <div className="flex flex-wrap items-center gap-2 mb-3 no-print">
                   <span className={`text-xs font-medium ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.selectBySection}</span>

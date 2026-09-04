@@ -32,7 +32,7 @@ export default function SectionPicker({
       >
         <option value="">{t.chooseGrade}</option>
         {grades.map((g) => (
-          <option key={g.grade_name} value={g.grade_name}>{g.grade_name}</option>
+          <option key={g.grade_name} value={g.grade_name}>{(lang === 'en' && g.grade_name_en) ? g.grade_name_en : g.grade_name}</option>
         ))}
       </select>
 
@@ -59,7 +59,7 @@ export default function SectionPicker({
           <option value="__ALL__">{t.allSections}</option>
         )}
         {options.map((s) => (
-          <option key={s.id} value={s.id}>{t.section} {s.section_number ?? '—'}</option>
+          <option key={s.id} value={s.id}>{s.section_name ?? '—'}</option>
         ))}
       </select>
     </div>

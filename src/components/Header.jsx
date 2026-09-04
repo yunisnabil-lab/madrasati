@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, ChevronDown, Sun, Moon, LogOut, Camera, UserCircle2 } from 'lucide-react';
+import { Search, Bell, Sun, Moon, LogOut, Camera, UserCircle2 } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 
@@ -25,12 +25,11 @@ export default function Header() {
   const isAdmin = staff && staff.role === 'admin';
   const now = useLiveNow();
   const dateTimeStr = new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', {
-    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric', hour: 'numeric', minute: '2-digit',
+    day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
   }).format(now);
 
   const [requests, setRequests] = useState([]);
   const [notifOpen, setNotifOpen] = useState(false);
-  const [schoolOpen, setSchoolOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef(null);
@@ -64,17 +63,17 @@ export default function Header() {
 
   return (
     <header className={`no-print sticky top-0 z-20 backdrop-blur-md border-b transition-colors duration-300 ${dark ? 'bg-navy/70 border-slate-800' : 'bg-white/80 border-slate-200/60 shadow-sm'}`}>
-      {(profileOpen || notifOpen || schoolOpen) && (
+      {(profileOpen || notifOpen) && (
         <div
           className="fixed inset-0 z-10"
-          onClick={() => { setProfileOpen(false); setNotifOpen(false); setSchoolOpen(false); }}
+          onClick={() => { setProfileOpen(false); setNotifOpen(false); }}
         />
       )}
       <div className="max-w-7xl mx-auto px-5 py-3.5 flex items-center gap-4">
 
         {/* Profile — first in DOM so it renders at the visual end (right in RTL) */}
         <div className="relative">
-          <button onClick={() => { setProfileOpen((v) => !v); setNotifOpen(false); setSchoolOpen(false); }} className="flex items-center gap-2.5">
+          <button onClick={() => { setProfileOpen((v) => !v); setNotifOpen(false); }} className="flex items-center gap-2.5">
             <div className="text-end hidden md:block">
               <div className="text-xs font-medium leading-tight">{staff ? staff.full_name : '...'}</div>
               <div className={`text-[11px] leading-tight ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{staff ? t.roleNames[staff.role] : ''}</div>
@@ -128,7 +127,7 @@ export default function Header() {
         {/* Notifications */}
         <div className="relative">
           <button
-            onClick={() => { setNotifOpen((v) => !v); setProfileOpen(false); setSchoolOpen(false); }}
+            onClick={() => { setNotifOpen((v) => !v); setProfileOpen(false); }}
             className={`relative h-9 w-9 rounded-full flex items-center justify-center transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-100'}`}
           >
             <Bell size={16} />
@@ -167,7 +166,7 @@ export default function Header() {
         </button>
 
         {/* Live date/time */}
-        <div className={`hidden lg:block text-xs font-medium whitespace-nowrap px-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+        <div className={`hidden lg:block text-[11px] font-medium whitespace-nowrap ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
           {dateTimeStr}
         </div>
 
@@ -181,32 +180,11 @@ export default function Header() {
         </button>
 
         {/* Search */}
-        <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2 text-sm ${dark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
+        <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2 text-sm max-w-xs ${dark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
           <Search size={15} />
           <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
         </div>
 
-        {/* School switcher — last in DOM so it renders at the visual start (left in RTL); hidden on phones, not critical there */}
-        <div className="relative hidden sm:block">
-          <button
-            onClick={() => { setSchoolOpen((v) => !v); setProfileOpen(false); setNotifOpen(false); }}
-            className={`flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
-          >
-            <span>{t.school} — {t.schoolSub}</span>
-            <ChevronDown size={14} className={dark ? 'text-slate-500' : 'text-slate-400'} />
-          </button>
-          <AnimatePresence>
-            {schoolOpen && (
-              <motion.div
-                initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                className={`absolute mt-2 w-56 rounded-xl border shadow-xl py-1.5 z-30 ${dark ? 'bg-navy-soft border-slate-700' : 'bg-white border-slate-100'}`}
-              >
-                <div className="px-3.5 py-2 text-sm font-medium">{t.school}</div>
-                <div className={`px-3.5 py-1 text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.schoolSub}</div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
       </div>
     </header>
   );

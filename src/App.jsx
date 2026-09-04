@@ -71,7 +71,7 @@ function Router() {
         <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
         <Route path="/register-complete" element={<RegisterComplete />} />
         <Route path="/pending" element={<PendingGuard><Pending /></PendingGuard>} />
-        <Route path="/" element={<Gate><NotRecorder><Layout><Dashboard /></Layout></NotRecorder></Gate>} />
+        <Route path="/" element={<Gate><AdminOnly><Layout><Dashboard /></Layout></AdminOnly></Gate>} />
         <Route path="/attendance" element={<Gate><Layout><Attendance /></Layout></Gate>} />
         <Route path="/single-attendance" element={<Gate><Layout><SingleAttendance /></Layout></Gate>} />
         <Route path="/students" element={<Gate><NotRecorder><Layout><Students /></Layout></NotRecorder></Gate>} />

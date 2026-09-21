@@ -27,7 +27,7 @@ export function AppProvider({ children }) {
     setStaffLoading(true);
     const { data } = await supabase
       .from('staff')
-      .select('id, full_name, role, status, school_id, avatar_url, email')
+      .select('id, full_name, role, status, school_id, avatar_url, email, cycle, subject')
       .eq('id', userId)
       .maybeSingle();
     setStaff(data || null);

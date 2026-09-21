@@ -17,6 +17,7 @@ import StaffAssignments from './pages/StaffAssignments';
 import Profile from './pages/Profile';
 import Violations from './pages/Violations';
 import Lateness from './pages/Lateness';
+import ContactRequests from './pages/ContactRequests';
 import Layout from './components/Layout';
 
 function Gate({ children }) {
@@ -79,6 +80,15 @@ function ViolationsAccess({ children, fallback = '/attendance' }) {
   return children;
 }
 
+// only admin/supervisor review and approve parent-contact requests — a
+// teacher can submit one (from Student Lookup) but can't approve their own.
+function ContactRequestsAccess({ children, fallback = '/attendance' }) {
+  const { staff } = useApp();
+  const allowed = ['admin', 'supervisor'];
+  if (staff && !allowed.includes(staff.role)) return <Navigate to={fallback} replace />;
+  return children;
+}
+
 function Router() {
   return (
     <BrowserRouter>
@@ -99,6 +109,7 @@ function Router() {
         <Route path="/profile" element={<Gate><Layout><Profile /></Layout></Gate>} />
         <Route path="/violations" element={<Gate><ViolationsAccess><Layout><Violations /></Layout></ViolationsAccess></Gate>} />
         <Route path="/lateness" element={<Gate><ViolationsAccess><Layout><Lateness /></Layout></ViolationsAccess></Gate>} />
+        <Route path="/contact-requests" element={<Gate><ContactRequestsAccess><Layout><ContactRequests /></Layout></ContactRequestsAccess></Gate>} />
         <Route path="/staff-assignments" element={<Gate><AdminOnly><Layout><StaffAssignments /></Layout></AdminOnly></Gate>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

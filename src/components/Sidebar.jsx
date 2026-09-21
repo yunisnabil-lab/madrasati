@@ -7,8 +7,8 @@ const ITEMS = [
   { to: '/attendance', icon: ClipboardCheck, key: 'navAttendance', end: false },
   { to: '/single-attendance', icon: UserCheck, key: 'navSingleAttendance', end: false },
   { to: '/lookup', icon: Search, key: 'navLookup', end: false },
-  { to: '/daily-report', icon: FileText, key: 'navDailyReport', end: false, hideFor: ['recorder'] },
-  { to: '/period-report', icon: FileBarChart, key: 'navPeriodReport', end: false, hideFor: ['recorder'] },
+  { to: '/daily-report', icon: FileText, key: 'navDailyReport', end: false },
+  { to: '/period-report', icon: FileBarChart, key: 'navPeriodReport', end: false },
   { to: '/students', icon: GraduationCap, key: 'navStudents', end: false, hideFor: ['recorder'] },
   { to: '/staff-assignments', icon: UsersRound, key: 'navAssignments', end: false, hideFor: ['recorder', 'viewer'] },
 ];

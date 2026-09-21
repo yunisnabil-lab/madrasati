@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, UserCheck, FileBarChart, FileText, AlertTriangle, Clock3 } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, UserCheck, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 
 const ITEMS = [
@@ -12,6 +12,7 @@ const ITEMS = [
   { to: '/students', icon: GraduationCap, key: 'navStudents', end: false, hideFor: ['recorder', 'supervisor'] },
   { to: '/violations', icon: AlertTriangle, key: 'navViolations', end: false, hideFor: ['recorder'] },
   { to: '/lateness', icon: Clock3, key: 'navLateness', end: false, hideFor: ['recorder'] },
+  { to: '/contact-requests', icon: MessageCircle, key: 'navContactRequests', end: false, hideFor: ['recorder', 'viewer'] },
   { to: '/staff-assignments', icon: UsersRound, key: 'navAssignments', end: false, hideFor: ['recorder', 'viewer', 'supervisor'] },
 ];
 

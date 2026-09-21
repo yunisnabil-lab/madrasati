@@ -1,21 +1,28 @@
-import { useState, useMemo, useEffect, Fragment } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Printer, Download, PieChart as PieIcon, ChevronDown } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { Printer, Download, BarChart3, X } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, Cell, LabelList, Tooltip, ResponsiveContainer } from 'recharts';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionsFor, sectionLabel as fmtSectionLabel } from '../lib/sections';
-import { deriveByStudentAndDate } from '../lib/attendanceDerive';
+import { deriveByStudentAndDate, PERIODS_PER_DAY } from '../lib/attendanceDerive';
 import { STATUS_META, STATUS_LIST } from '../lib/status';
 import { exportXlsx } from '../lib/exportXlsx';
 import SectionPicker from '../components/SectionPicker';
-import PeriodBreakdown from '../components/PeriodBreakdown';
 
 function todayStr() {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+// The status to show for a row under the currently selected view: either
+// the derived whole-day status, or that row's specific-period status (a
+// period with no recorded attendance shows as not_recorded).
+function statusFor(row, view) {
+  if (view === 'day') return row.status;
+  return row.periods[view] || 'not_recorded';
 }
 
 export default function DailyReport() {
@@ -28,19 +35,11 @@ export default function DailyReport() {
   const [sectionSel, setSectionSel] = useState('__ALL__');
   const [date, setDate] = useState(todayStr());
   const [filter, setFilter] = useState('all');
+  const [view, setView] = useState('day'); // 'day' or a period number 1..PERIODS_PER_DAY
 
   const [rows, setRows] = useState(null); // null = not run yet
   const [loading, setLoading] = useState(false);
   const [printSelection, setPrintSelection] = useState(new Set());
-  const [expanded, setExpanded] = useState(new Set()); // row ids showing their period breakdown
-
-  const toggleExpand = (id) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id); else next.add(id);
-      return next;
-    });
-  };
 
   // a recorder (teacher) only sees the sections they've been assigned
   const loadSectionsIfNeeded = async () => {
@@ -105,11 +104,12 @@ export default function DailyReport() {
 
     setRows(result);
     setPrintSelection(new Set());
-    setExpanded(new Set());
+    setView('day');
+    setFilter('all');
     setLoading(false);
   };
 
-  const filtered = rows ? rows.filter((r) => filter === 'all' || r.status === filter) : [];
+  const filtered = rows ? rows.filter((r) => filter === 'all' || statusFor(r, view) === filter) : [];
   const printRows = printSelection.size > 0 ? filtered.filter((r) => printSelection.has(r.id)) : filtered;
 
   const sectionGroups = useMemo(() => {
@@ -139,17 +139,36 @@ export default function DailyReport() {
     });
   };
 
-  const counts = rows ? {
-    present: rows.filter((r) => r.status === 'present').length,
-    absent: rows.filter((r) => r.status === 'absent').length,
-    late: rows.filter((r) => r.status === 'late').length,
-    excused: rows.filter((r) => r.status === 'excused').length,
-    not_recorded: rows.filter((r) => r.status === 'not_recorded').length,
-  } : null;
+  // KPI counts for the currently selected view (a specific period, or the whole day)
+  const counts = useMemo(() => {
+    if (!rows) return null;
+    const c = { present: 0, absent: 0, late: 0, excused: 0, not_recorded: 0 };
+    rows.forEach((r) => { c[statusFor(r, view)]++; });
+    return c;
+  }, [rows, view]);
+
+  // Always whole-day counts, regardless of the selected view — this is the
+  // fixed "today's attendance" summary shown in the side panel.
+  const dayCounts = useMemo(() => {
+    if (!rows) return null;
+    const c = { present: 0, absent: 0, late: 0, excused: 0, not_recorded: 0 };
+    rows.forEach((r) => { c[r.status]++; });
+    return c;
+  }, [rows]);
+
+  const chartData = useMemo(() => {
+    if (!dayCounts) return [];
+    return [...STATUS_LIST, 'not_recorded'].map((k) => ({
+      key: k,
+      name: t[STATUS_META[k].key],
+      value: dayCounts[k],
+      color: STATUS_META[k].color,
+    }));
+  }, [dayCounts, t]);
 
   const exportCsv = () => {
     const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGrade, t.colStatus];
-    const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.grade, t[STATUS_META[r.status].key]]);
+    const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.grade, t[STATUS_META[statusFor(r, view)].key]]);
     exportXlsx(`daily-report-${date}.xlsx`, [header, ...body], { lang });
   };
 
@@ -160,7 +179,7 @@ export default function DailyReport() {
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
       <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
-        <main className="max-w-5xl mx-auto px-5 py-7 print-area">
+        <main className="max-w-6xl mx-auto px-5 py-7 print-area">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 no-print">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.dailyReportTitle}</h1>
             <p className={`text-sm mt-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.dailyReportSub}</p>
@@ -208,7 +227,44 @@ export default function DailyReport() {
             </div>
           ) : (
             <>
-              {/* KPI + filter + actions */}
+              {/* period view switcher — big, clear tabs above the student table.
+                  Periods 1..8 first, then the whole-day total last. */}
+              {rows.length > 0 && (
+                <div className={cardFloating(dark, 'p-4 mb-5 no-print')}>
+                  <div className={`text-xs font-medium mb-2.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.viewByPeriod}</div>
+                  <div className="flex flex-wrap gap-2">
+                    {[...Array(PERIODS_PER_DAY)].map((_, i) => {
+                      const p = i + 1;
+                      const active = view === p;
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => setView(p)}
+                          className={`min-w-[56px] px-4 py-3 rounded-xl text-lg font-bold font-en border-2 transition-colors ${
+                            active
+                              ? 'bg-royal text-white border-royal'
+                              : dark ? 'border-slate-700 text-slate-300 hover:bg-white/5' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                          }`}
+                        >
+                          {p}
+                        </button>
+                      );
+                    })}
+                    <button
+                      onClick={() => setView('day')}
+                      className={`px-5 py-3 rounded-xl text-base font-bold transition-colors border-2 ${
+                        view === 'day'
+                          ? 'bg-royal text-white border-royal'
+                          : dark ? 'border-slate-700 text-slate-300 hover:bg-white/5' : 'border-slate-200 text-slate-600 hover:bg-slate-50'
+                      }`}
+                    >
+                      {t.dayTotalTab}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* KPI + filter */}
               <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 mb-5 no-print">
                 {[...STATUS_LIST, 'not_recorded'].map((k) => (
                   <button
@@ -223,135 +279,138 @@ export default function DailyReport() {
                 ))}
               </div>
 
-              {rows.length > 0 && (
-                <div className={cardFloating(dark, 'p-5 mb-5 print-area')}>
-                  <div className="flex items-center gap-2 mb-3">
-                    <PieIcon size={15} className={dark ? 'text-slate-400' : 'text-slate-500'} />
-                    <h3 className="text-sm font-semibold">{t.chartTitle}</h3>
-                  </div>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie
-                        data={[...STATUS_LIST, 'not_recorded'].map((k) => ({ name: t[STATUS_META[k].key], value: counts[k], color: STATUS_META[k].color })).filter((d) => d.value > 0)}
-                        dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2}
-                        label={({ name, value }) => `${name}: ${value}`}
-                        labelLine={false}
-                      >
-                        {[...STATUS_LIST, 'not_recorded'].map((k) => (
-                          <Cell key={k} fill={STATUS_META[k].color} />
-                        ))}
-                      </Pie>
-                      <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-
-              {sectionGroups.length > 1 && (
-                <div className="flex flex-wrap items-center gap-2 mb-3 no-print">
-                  <span className={`text-xs font-medium ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.selectBySection}</span>
-                  {sectionGroups.map((g) => {
-                    const allSelected = g.ids.every((id) => printSelection.has(id));
-                    return (
-                      <button
-                        key={g.section_id}
-                        onClick={() => toggleSectionSelect(g.ids)}
-                        className={`text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
-                          allSelected
-                            ? 'bg-royal text-white border-transparent'
-                            : dark ? 'border-slate-700 text-slate-400 hover:bg-white/5' : 'border-slate-200 text-slate-500 hover:bg-slate-50'
-                        }`}
-                      >
-                        {g.label}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-
-              <div className="flex items-center justify-between mb-3 no-print">
-                <div className="flex items-center gap-3">
-                  <button onClick={() => setFilter('all')} className={`text-xs font-medium ${filter === 'all' ? (dark ? 'text-royal-light' : 'text-royal') : (dark ? 'text-slate-500' : 'text-slate-400')}`}>
-                    {t.filterAll} ({rows.length})
-                  </button>
-                  {printSelection.size > 0 && (
-                    <span className={`text-xs ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {t.selectedForPrint.replace('{n}', printSelection.size)}
-                      {' · '}
-                      <button onClick={() => setPrintSelection(new Set())} className={dark ? 'text-royal-light' : 'text-royal'}>{t.clearSelection}</button>
-                    </span>
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <button onClick={exportCsv} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
-                    <Download size={13} /> {t.exportCsv}
-                  </button>
-                  <button onClick={() => window.print()} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
-                    <Printer size={13} /> {printSelection.size > 0 ? t.printSelectedBtn.replace('{n}', printSelection.size) : t.printReport}
-                  </button>
-                </div>
-              </div>
-
-              <div className={cardFloating(dark, 'overflow-hidden')}>
-                {filtered.length === 0 ? (
-                  <div className="p-10 text-center"><p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noResultsForFilter}</p></div>
-                ) : (
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className={`border-b text-xs ${dark ? 'border-slate-800 text-slate-500' : 'border-slate-100 text-slate-400'}`}>
-                        <th className="w-9 px-4 py-3 no-print"></th>
-                        <th className="text-start font-medium px-4 py-3">{t.colNo}</th>
-                        <th className="text-start font-medium px-4 py-3 font-en">{t.colStudentNo}</th>
-                        <th className="text-start font-medium px-4 py-3">{t.colStudentName}</th>
-                        <th className="text-start font-medium px-4 py-3 hidden sm:table-cell">{t.colGrade}</th>
-                        <th className="text-start font-medium px-4 py-3">{t.colStatus}</th>
-                        <th className="text-start font-medium px-4 py-3 no-print">{t.periodsCol}</th>
-                      </tr>
-                    </thead>
-                    <tbody className={`divide-y ${dark ? 'divide-slate-800/60' : 'divide-slate-100'}`}>
-                      {filtered.map((r, i) => {
-                        const meta = STATUS_META[r.status];
-                        const Icon = meta.icon;
-                        const excludedFromPrint = printSelection.size > 0 && !printSelection.has(r.id);
-                        const isExpanded = expanded.has(r.id);
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                {/* main table (right side in RTL — first in reading order) */}
+                <div className="lg:col-span-2 order-2 lg:order-1">
+                  {sectionGroups.length > 1 && (
+                    <div className="flex flex-wrap items-center gap-2 mb-3 no-print">
+                      <span className={`text-xs font-medium ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.selectBySection}</span>
+                      {sectionGroups.map((g) => {
+                        const allSelected = g.ids.every((id) => printSelection.has(id));
                         return (
-                          <Fragment key={r.id}>
-                            <tr className={excludedFromPrint ? 'no-print' : ''}>
-                              <td className="px-4 py-2.5 no-print">
-                                <input type="checkbox" checked={printSelection.has(r.id)} onChange={() => togglePrintSelect(r.id)} className="accent-royal" />
-                              </td>
-                              <td className="px-4 py-2.5">{i + 1}</td>
-                              <td className="px-4 py-2.5 font-en">{r.sis_no}</td>
-                              <td className="px-4 py-2.5 font-medium">{r.name}</td>
-                              <td className="px-4 py-2.5 hidden sm:table-cell">{r.grade}</td>
-                              <td className="px-4 py-2.5">
-                                <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: meta.color }}>
-                                  <Icon size={13} /> {t[meta.key]}
-                                </span>
-                              </td>
-                              <td className="px-4 py-2.5 no-print">
-                                <button
-                                  onClick={() => toggleExpand(r.id)}
-                                  className={`flex items-center gap-1 text-xs font-medium ${dark ? 'text-royal-light' : 'text-royal'}`}
-                                >
-                                  {isExpanded ? t.hidePeriods : t.showPeriods}
-                                  <ChevronDown size={13} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                                </button>
-                              </td>
-                            </tr>
-                            {isExpanded && (
-                              <tr className="no-print">
-                                <td colSpan={7} className={`px-4 pb-3 pt-0 ${dark ? 'bg-black/10' : 'bg-slate-50/60'}`}>
-                                  <PeriodBreakdown periods={r.periods} lang={lang} dark={dark} />
-                                </td>
-                              </tr>
-                            )}
-                          </Fragment>
+                          <button
+                            key={g.section_id}
+                            onClick={() => toggleSectionSelect(g.ids)}
+                            className={`text-xs font-medium px-2.5 py-1.5 rounded-lg border transition-colors ${
+                              allSelected
+                                ? 'bg-royal text-white border-transparent'
+                                : dark ? 'border-slate-700 text-slate-400 hover:bg-white/5' : 'border-slate-200 text-slate-500 hover:bg-slate-50'
+                            }`}
+                          >
+                            {g.label}
+                          </button>
                         );
                       })}
-                    </tbody>
-                  </table>
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between mb-3 no-print">
+                    <div className="flex items-center gap-3">
+                      <button onClick={() => setFilter('all')} className={`text-xs font-medium ${filter === 'all' ? (dark ? 'text-royal-light' : 'text-royal') : (dark ? 'text-slate-500' : 'text-slate-400')}`}>
+                        {t.filterAll} ({rows.length})
+                      </button>
+                      {printSelection.size > 0 && (
+                        <span className={`text-xs ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          {t.selectedForPrint.replace('{n}', printSelection.size)}
+                          {' · '}
+                          <button onClick={() => setPrintSelection(new Set())} className={dark ? 'text-royal-light' : 'text-royal'}>{t.clearSelection}</button>
+                        </span>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <button onClick={exportCsv} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                        <Download size={13} /> {t.exportCsv}
+                      </button>
+                      <button onClick={() => window.print()} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                        <Printer size={13} /> {printSelection.size > 0 ? t.printSelectedBtn.replace('{n}', printSelection.size) : t.printReport}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className={cardFloating(dark, 'overflow-hidden print-area')}>
+                    {filtered.length === 0 ? (
+                      <div className="p-10 text-center"><p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noResultsForFilter}</p></div>
+                    ) : (
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className={`border-b text-xs ${dark ? 'border-slate-800 text-slate-500' : 'border-slate-100 text-slate-400'}`}>
+                            <th className="w-9 px-4 py-3 no-print"></th>
+                            <th className="text-start font-medium px-4 py-3">{t.colNo}</th>
+                            <th className="text-start font-medium px-4 py-3 font-en">{t.colStudentNo}</th>
+                            <th className="text-start font-medium px-4 py-3">{t.colStudentName}</th>
+                            <th className="text-start font-medium px-4 py-3 hidden sm:table-cell">{t.colGrade}</th>
+                            <th className="text-start font-medium px-4 py-3">
+                              {t.colStatus}{view !== 'day' && <span className="font-en"> — {t.periodN.replace('{n}', view)}</span>}
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody className={`divide-y ${dark ? 'divide-slate-800/60' : 'divide-slate-100'}`}>
+                          {filtered.map((r, i) => {
+                            const st = statusFor(r, view);
+                            const meta = STATUS_META[st];
+                            const Icon = meta.icon;
+                            const excludedFromPrint = printSelection.size > 0 && !printSelection.has(r.id);
+                            return (
+                              <tr key={r.id} className={excludedFromPrint ? 'no-print' : ''}>
+                                <td className="px-4 py-2.5 no-print">
+                                  <input type="checkbox" checked={printSelection.has(r.id)} onChange={() => togglePrintSelect(r.id)} className="accent-royal" />
+                                </td>
+                                <td className="px-4 py-2.5">{i + 1}</td>
+                                <td className="px-4 py-2.5 font-en">{r.sis_no}</td>
+                                <td className="px-4 py-2.5 font-medium">{r.name}</td>
+                                <td className="px-4 py-2.5 hidden sm:table-cell">{r.grade}</td>
+                                <td className="px-4 py-2.5">
+                                  <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: meta.color }}>
+                                    <Icon size={13} /> {t[meta.key]}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </div>
+
+                {/* side panel (left side in RTL — last in reading order):
+                    today's whole-day absence total + a status breakdown chart */}
+                {rows.length > 0 && (
+                  <div className="lg:col-span-1 order-1 lg:order-2 space-y-5 no-print">
+                    <div className={cardFloating(dark, 'p-5 flex items-center gap-4')}>
+                      <div className="h-12 w-12 rounded-xl bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
+                        <X size={22} />
+                      </div>
+                      <div>
+                        <div className="text-2xl font-bold" style={{ color: STATUS_META.absent.color }}>{dayCounts.absent}</div>
+                        <div className={`text-xs mt-0.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.todayAbsenceStat}</div>
+                      </div>
+                    </div>
+
+                    <div className={cardFloating(dark, 'p-5')}>
+                      <div className="flex items-center gap-2 mb-3">
+                        <BarChart3 size={15} className={dark ? 'text-slate-400' : 'text-slate-500'} />
+                        <h3 className="text-sm font-semibold">{t.chartTitle}</h3>
+                      </div>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 24, bottom: 0, left: 0 }}>
+                          <XAxis type="number" hide />
+                          <YAxis
+                            type="category" dataKey="name" width={80} tickLine={false} axisLine={false}
+                            tick={{ fontSize: 12, fill: dark ? '#94a3b8' : '#64748b' }}
+                          />
+                          <Tooltip
+                            contentStyle={{ fontSize: 12, borderRadius: 8 }}
+                            formatter={(value) => [value, '']}
+                          />
+                          <Bar dataKey="value" radius={[4, 4, 4, 4]} barSize={18}>
+                            {chartData.map((d) => <Cell key={d.key} fill={d.color} />)}
+                            <LabelList dataKey="value" position="right" style={{ fontSize: 12, fontWeight: 600, fill: dark ? '#e2e8f0' : '#334155' }} />
+                          </Bar>
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </div>
                 )}
               </div>
             </>

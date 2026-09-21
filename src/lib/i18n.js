@@ -279,6 +279,9 @@ export const TEXT = {
     showPeriods: 'عرض الحصص',
     hidePeriods: 'إخفاء الحصص',
     noPeriodsRecorded: 'لا توجد حصص مسجّلة لهذا اليوم.',
+    viewByPeriod: 'عرض حسب الحصة',
+    dayTotalTab: 'الحضور الإجمالي',
+    todayAbsenceStat: 'غياب اليوم',
     // period report
     navPeriodReport: 'تقرير فترة',
     periodReportTitle: 'تقرير فترة',
@@ -602,6 +605,9 @@ export const TEXT = {
     showPeriods: 'Show periods',
     hidePeriods: 'Hide periods',
     noPeriodsRecorded: 'No periods recorded for this day.',
+    viewByPeriod: 'View by period',
+    dayTotalTab: 'Overall attendance',
+    todayAbsenceStat: "Today's absence",
     // period report
     navPeriodReport: 'Period Report',
     periodReportTitle: 'Period Report',

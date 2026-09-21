@@ -174,10 +174,10 @@ export default function Dashboard() {
   }
 
   const kpiCards = [
-    { label: t.totalStudents, value: kpi.students, icon: GraduationCap, hint: lang === 'ar' ? 'مسجّلون في النظام' : 'enrolled in the system' },
-    { label: t.staffMembers, value: kpi.staffCount, icon: Users, hint: lang === 'ar' ? 'حسابات معتمدة' : 'approved accounts' },
-    { label: t.sections, value: kpi.sections, icon: SchoolIcon, hint: lang === 'ar' ? 'فصل دراسي نشط' : 'active sections' },
-    ...(isAdmin ? [{ label: t.pendingReq, value: requests.length, icon: Clock, hint: lang === 'ar' ? 'بانتظار المراجعة' : 'awaiting review' }] : []),
+    { label: t.totalStudents, value: kpi.students, icon: GraduationCap, hint: lang === 'ar' ? 'مسجّلون في النظام' : 'enrolled in the system', accent: dark ? 'bg-royal/20 text-royal-light' : 'bg-royal/10 text-royal' },
+    { label: t.staffMembers, value: kpi.staffCount, icon: Users, hint: lang === 'ar' ? 'حسابات معتمدة' : 'approved accounts', accent: dark ? 'bg-gold/20 text-gold-light' : 'bg-gold/10 text-gold' },
+    { label: t.sections, value: kpi.sections, icon: SchoolIcon, hint: lang === 'ar' ? 'فصل دراسي نشط' : 'active sections', accent: dark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-500/10 text-emerald-600' },
+    ...(isAdmin ? [{ label: t.pendingReq, value: requests.length, icon: Clock, hint: lang === 'ar' ? 'بانتظار المراجعة' : 'awaiting review', accent: dark ? 'bg-rose-500/20 text-rose-400' : 'bg-rose-500/10 text-rose-600' }] : []),
   ];
 
   return (
@@ -201,7 +201,7 @@ export default function Dashboard() {
                 >
                   <div className="flex items-center justify-between">
                     <span className={`text-[15px] font-medium ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{item.label}</span>
-                    <div className={`h-11 w-11 rounded-full flex items-center justify-center ${dark ? 'bg-royal/15 text-royal-light' : 'bg-royal/10 text-royal'}`}>
+                    <div className={`h-11 w-11 rounded-full flex items-center justify-center ${item.accent}`}>
                       <Icon size={19} />
                     </div>
                   </div>

@@ -1,16 +1,18 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, UserCheck, FileBarChart, FileText } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, UserCheck, FileBarChart, FileText, AlertTriangle, Clock3 } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 
 const ITEMS = [
-  { to: '/', icon: LayoutDashboard, key: 'navDashboard', end: true, hideFor: ['recorder', 'viewer'] },
-  { to: '/attendance', icon: ClipboardCheck, key: 'navAttendance', end: false },
-  { to: '/single-attendance', icon: UserCheck, key: 'navSingleAttendance', end: false },
-  { to: '/lookup', icon: Search, key: 'navLookup', end: false },
-  { to: '/daily-report', icon: FileText, key: 'navDailyReport', end: false },
-  { to: '/period-report', icon: FileBarChart, key: 'navPeriodReport', end: false },
-  { to: '/students', icon: GraduationCap, key: 'navStudents', end: false, hideFor: ['recorder'] },
-  { to: '/staff-assignments', icon: UsersRound, key: 'navAssignments', end: false, hideFor: ['recorder', 'viewer'] },
+  { to: '/', icon: LayoutDashboard, key: 'navDashboard', end: true, hideFor: ['recorder', 'viewer', 'supervisor'] },
+  { to: '/attendance', icon: ClipboardCheck, key: 'navAttendance', end: false, hideFor: ['supervisor'] },
+  { to: '/single-attendance', icon: UserCheck, key: 'navSingleAttendance', end: false, hideFor: ['supervisor'] },
+  { to: '/lookup', icon: Search, key: 'navLookup', end: false, hideFor: ['supervisor'] },
+  { to: '/daily-report', icon: FileText, key: 'navDailyReport', end: false, hideFor: ['supervisor'] },
+  { to: '/period-report', icon: FileBarChart, key: 'navPeriodReport', end: false, hideFor: ['supervisor'] },
+  { to: '/students', icon: GraduationCap, key: 'navStudents', end: false, hideFor: ['recorder', 'supervisor'] },
+  { to: '/violations', icon: AlertTriangle, key: 'navViolations', end: false, hideFor: ['recorder'] },
+  { to: '/lateness', icon: Clock3, key: 'navLateness', end: false, hideFor: ['recorder'] },
+  { to: '/staff-assignments', icon: UsersRound, key: 'navAssignments', end: false, hideFor: ['recorder', 'viewer', 'supervisor'] },
 ];
 
 function visibleItems(role) {

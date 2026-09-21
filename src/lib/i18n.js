@@ -77,8 +77,10 @@ export const TEXT = {
     subjectNames: {
       arabic: 'اللغة العربية', english: 'اللغة الإنجليزية', math: 'الرياضيات', science: 'العلوم',
       social_studies: 'الدراسات الاجتماعية', islamic_education: 'التربية الإسلامية',
-      computer: 'الحاسب الآلي', art: 'التربية الفنية', music: 'التربية الموسيقية',
-      pe: 'التربية الرياضية', quran: 'القرآن الكريم', other: 'أخرى',
+      computer: 'الذكاء الاصطناعي والتكنولوجيا', art: 'التربية الفنية', music: 'التربية الموسيقية',
+      pe: 'التربية الرياضية', quran: 'القرآن الكريم',
+      physics: 'الفيزياء', chemistry: 'الكيمياء', biology: 'الأحياء', health_sciences: 'العلوم الصحية',
+      other: 'أخرى',
     },
     uploadPhoto: 'رفع صورة',
     notifications: 'الإشعارات',
@@ -273,6 +275,10 @@ export const TEXT = {
     colStatus: 'الحالة',
     noReportYet: 'اختر الفصل والتاريخ واضغط "عرض التقرير"',
     noResultsForFilter: 'لا يوجد طلاب مطابقين لهذا الفلتر',
+    periodsCol: 'الحصص',
+    showPeriods: 'عرض الحصص',
+    hidePeriods: 'إخفاء الحصص',
+    noPeriodsRecorded: 'لا توجد حصص مسجّلة لهذا اليوم.',
     // period report
     navPeriodReport: 'تقرير فترة',
     periodReportTitle: 'تقرير فترة',
@@ -394,8 +400,10 @@ export const TEXT = {
     subjectNames: {
       arabic: 'Arabic', english: 'English', math: 'Math', science: 'Science',
       social_studies: 'Social Studies', islamic_education: 'Islamic Education',
-      computer: 'Computer Science', art: 'Art', music: 'Music',
-      pe: 'Physical Education', quran: 'Quran', other: 'Other',
+      computer: 'AI and Technology', art: 'Art', music: 'Music',
+      pe: 'Physical Education', quran: 'Quran',
+      physics: 'Physics', chemistry: 'Chemistry', biology: 'Biology', health_sciences: 'Health Sciences',
+      other: 'Other',
     },
     uploadPhoto: 'Upload photo',
     notifications: 'Notifications',
@@ -590,6 +598,10 @@ export const TEXT = {
     colStatus: 'Status',
     noReportYet: 'Choose a section and date, then press "Show report"',
     noResultsForFilter: 'No students match this filter',
+    periodsCol: 'Periods',
+    showPeriods: 'Show periods',
+    hidePeriods: 'Hide periods',
+    noPeriodsRecorded: 'No periods recorded for this day.',
     // period report
     navPeriodReport: 'Period Report',
     periodReportTitle: 'Period Report',
@@ -645,6 +657,7 @@ export const TEXT = {
 export const CYCLE_KEYS = ['cycle1', 'cycle2', 'cycle3'];
 export const SUBJECT_KEYS = [
   'arabic', 'english', 'math', 'science', 'social_studies',
-  'islamic_education', 'computer', 'art', 'music', 'pe', 'quran', 'other',
+  'islamic_education', 'computer', 'art', 'music', 'pe', 'quran',
+  'physics', 'chemistry', 'biology', 'health_sciences', 'other',
 ];
 export const VIOLATION_TYPE_KEYS = ['fighting', 'phone', 'no_homework', 'disrespect', 'uniform', 'bullying', 'other'];

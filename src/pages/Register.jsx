@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Mail, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
+import { CYCLE_KEYS, SUBJECT_KEYS } from '../lib/i18n';
 import AuthShell from '../components/AuthShell';
 
 export default function Register() {
@@ -12,6 +13,8 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [cycle, setCycle] = useState('');
+  const [subject, setSubject] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -21,7 +24,7 @@ export default function Register() {
     e.preventDefault();
     setError('');
 
-    if (!fullName.trim() || !email.trim() || !password) { setError(t.errRequired); return; }
+    if (!fullName.trim() || !email.trim() || !password || !cycle || !subject) { setError(t.errRequired); return; }
     if (password.length < 8) { setError(t.errPasswordShort); return; }
     if (password !== confirmPassword) { setError(t.errPasswordMismatch); return; }
 
@@ -30,7 +33,7 @@ export default function Register() {
       email: email.trim(),
       password,
       options: {
-        data: { full_name: fullName.trim() },
+        data: { full_name: fullName.trim(), cycle, subject },
         emailRedirectTo: window.location.origin + '/register-complete',
       },
     });
@@ -114,6 +117,31 @@ export default function Register() {
                 className="w-full rounded-lg border border-slate-300 px-3.5 py-3 text-sm outline-none focus:border-royal focus:ring-4 focus:ring-royal/10 transition"
               />
             </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label htmlFor="regCycle" className="block text-sm font-medium text-slate-700 mb-2">{t.cycle}</label>
+                <select
+                  id="regCycle"
+                  value={cycle} onChange={(e) => setCycle(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3.5 py-3 text-sm outline-none focus:border-royal focus:ring-4 focus:ring-royal/10 transition bg-white"
+                >
+                  <option value="">{t.chooseCycle}</option>
+                  {CYCLE_KEYS.map((k) => <option key={k} value={k}>{t.cycleNames[k]}</option>)}
+                </select>
+              </div>
+              <div>
+                <label htmlFor="regSubject" className="block text-sm font-medium text-slate-700 mb-2">{t.subject}</label>
+                <select
+                  id="regSubject"
+                  value={subject} onChange={(e) => setSubject(e.target.value)}
+                  className="w-full rounded-lg border border-slate-300 px-3.5 py-3 text-sm outline-none focus:border-royal focus:ring-4 focus:ring-royal/10 transition bg-white"
+                >
+                  <option value="">{t.chooseSubject}</option>
+                  {SUBJECT_KEYS.map((k) => <option key={k} value={k}>{t.subjectNames[k]}</option>)}
+                </select>
+              </div>
+            </div>
+            <p className="text-xs text-slate-400 -mt-2">{t.cycleSubjectLockedNote}</p>
             <button
               type="submit" disabled={loading}
               className="w-full rounded-lg bg-navy text-white font-semibold py-3 text-sm transition hover:bg-navy-soft disabled:opacity-70 active:scale-[0.985]"

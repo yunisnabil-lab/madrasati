@@ -17,6 +17,7 @@ const ROLE_STYLE = {
   admin: { bg: 'bg-gold/15', text: 'text-gold', dot: '#e8b923' },
   viewer: { bg: 'bg-royal/15', text: 'text-royal', dot: '#3b5bdb' },
   recorder: { bg: 'bg-emerald-500/15', text: 'text-emerald-600', dot: '#05cd99' },
+  supervisor: { bg: 'bg-violet-500/15', text: 'text-violet-600', dot: '#8b5cf6' },
 };
 
 function relativeTime(iso, lang) {
@@ -184,6 +185,20 @@ export default function Profile() {
               <div className={`text-xs ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.schoolSub}</div>
             </div>
           </div>
+
+          {(staff.cycle || staff.subject) && (
+            <div className={cardFloating(dark, 'p-5 mb-5 grid grid-cols-2 gap-4')}>
+              <div>
+                <div className={`text-xs mb-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.cycle}</div>
+                <div className="text-sm font-semibold">{staff.cycle ? (t.cycleNames[staff.cycle] || staff.cycle) : '—'}</div>
+              </div>
+              <div>
+                <div className={`text-xs mb-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.subject}</div>
+                <div className="text-sm font-semibold">{staff.subject ? (t.subjectNames[staff.subject] || staff.subject) : '—'}</div>
+              </div>
+              <p className={`col-span-2 text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.cycleSubjectLockedNote}</p>
+            </div>
+          )}
 
           {/* activity stats */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-5">

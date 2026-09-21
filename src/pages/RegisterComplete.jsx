@@ -40,6 +40,8 @@ export default function RegisterComplete() {
         email: user.email,
         status: 'pending',
         role: null,
+        cycle: (user.user_metadata && user.user_metadata.cycle) || null,
+        subject: (user.user_metadata && user.user_metadata.subject) || null,
       });
 
       if (!error) await fetchStaff(user.id);

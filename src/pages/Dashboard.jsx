@@ -1,12 +1,14 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, GraduationCap, School as SchoolIcon, Clock, AlertTriangle, Loader2 } from 'lucide-react';
+import { Users, GraduationCap, School as SchoolIcon, Clock, AlertTriangle, Loader2, ChevronDown, Layers } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useApp } from '../lib/AppContext';
-import { sectionLabel as fmtSectionLabel } from '../lib/sections';
+import { sectionLabel as fmtSectionLabel, sortSections } from '../lib/sections';
 import { supabase } from '../lib/supabase';
 import { STATUS_META } from '../lib/status';
 import { cardFloating, skeleton } from '../lib/theme';
+import { deriveByStudentAndDate } from '../lib/attendanceDerive';
+import { CYCLE_KEYS, SUBJECT_KEYS } from '../lib/i18n';
 
 function initials(name) {
   const parts = (name || '').trim().split(/\s+/);
@@ -46,6 +48,10 @@ export default function Dashboard() {
   const [chartType, setChartType] = useState('bar');
   const [roleChoice, setRoleChoice] = useState({});
 
+  const [overviewOpen, setOverviewOpen] = useState(false);
+  const [sectionBreakdown, setSectionBreakdown] = useState(null); // null = not loaded yet
+  const [sectionBreakdownLoading, setSectionBreakdownLoading] = useState(false);
+
   const loadStats = useCallback(async () => {
     setStatsLoading(true);
     const [s, st, sec] = await Promise.all([
@@ -68,15 +74,23 @@ export default function Dashboard() {
     }
     const { data: recs } = await supabase
       .from('attendance_records')
-      .select('date, status')
+      .select('student_id, date, status, period')
       .gte('date', days[0])
       .lte('date', days[days.length - 1]);
+
+    // derive one status per student per day (3+ absent periods = day
+    // absent) instead of counting raw per-period rows, which previously
+    // over/under-counted whenever a student had more than one record for
+    // the same day (per-period rows plus an override, or several periods)
+    const derived = deriveByStudentAndDate(recs || []);
     const byDay = {};
     days.forEach((d) => { byDay[d] = { total: 0, absent: 0 }; });
-    (recs || []).forEach((r) => {
-      if (!byDay[r.date]) return;
-      byDay[r.date].total += 1;
-      if (r.status === 'absent') byDay[r.date].absent += 1;
+    derived.forEach((dayMap) => {
+      dayMap.forEach((info, date) => {
+        if (!byDay[date]) return;
+        byDay[date].total += 1;
+        if (info.status === 'absent') byDay[date].absent += 1;
+      });
     });
     const rows = days.map((d) => ({
       name: new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', { weekday: 'short' }).format(new Date(`${d}T00:00:00`)),
@@ -102,7 +116,7 @@ export default function Dashboard() {
     setRequestsLoading(true);
     const { data } = await supabase
       .from('staff')
-      .select('id, full_name, email, created_at')
+      .select('id, full_name, email, created_at, cycle, subject')
       .eq('status', 'pending')
       .order('created_at', { ascending: false });
     setRequests(data || []);
@@ -115,6 +129,35 @@ export default function Dashboard() {
     loadRecent();
     loadRequests();
   }, [loadStats, loadAbsenceRateChart, loadRecent, loadRequests]);
+
+  // lazy-loaded the first time the overview panel is expanded
+  const loadSectionBreakdown = useCallback(async () => {
+    if (sectionBreakdown !== null) return;
+    setSectionBreakdownLoading(true);
+    const { data } = await supabase
+      .from('students')
+      .select('section_id, sections(id, grade_name, grade_name_en, section_name, stream, section_number, grade_order)')
+      .eq('is_active', true);
+    const counts = new Map(); // section_id -> { section, count }
+    (data || []).forEach((s) => {
+      if (!s.section_id) return;
+      const existing = counts.get(s.section_id);
+      if (existing) { existing.count += 1; }
+      else counts.set(s.section_id, { section: s.sections, count: 1 });
+    });
+    const rows = sortSections([...counts.values()].map((v) => v.section).filter(Boolean))
+      .map((sec) => ({ section: sec, count: counts.get(sec.id)?.count || 0 }));
+    setSectionBreakdown(rows);
+    setSectionBreakdownLoading(false);
+  }, [sectionBreakdown]);
+
+  const toggleOverview = () => {
+    setOverviewOpen((v) => {
+      const next = !v;
+      if (next) loadSectionBreakdown();
+      return next;
+    });
+  };
 
   async function approve(id, role) {
     const { error } = await supabase.from('staff').update({ status: 'approved', role }).eq('id', id);
@@ -173,6 +216,105 @@ export default function Dashboard() {
               );
             })}
           </div>
+
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
+            className={`${cardFloating(dark)} mb-6 overflow-hidden`}>
+            <button
+              onClick={toggleOverview}
+              className={`w-full flex items-center justify-between px-5 py-4 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
+            >
+              <div className="flex items-center gap-2.5">
+                <div className={`h-9 w-9 rounded-full flex items-center justify-center ${dark ? 'bg-royal/15 text-royal-light' : 'bg-royal/10 text-royal'}`}>
+                  <Layers size={16} />
+                </div>
+                <div>
+                  <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>
+                    {lang === 'ar' ? 'نظرة عامة' : 'Overview'}
+                  </h2>
+                  <p className={`text-xs mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-500'}`}>
+                    {lang === 'ar' ? 'الإجمالي وأعداد الطلاب في كل فصل' : 'Totals and student counts per section'}
+                  </p>
+                </div>
+              </div>
+              <ChevronDown
+                size={18}
+                className={`shrink-0 transition-transform duration-200 ${overviewOpen ? 'rotate-180' : ''} ${dark ? 'text-slate-400' : 'text-slate-400'}`}
+              />
+            </button>
+
+            <AnimatePresence initial={false}>
+              {overviewOpen && (
+                <motion.div
+                  initial={{ height: 0, opacity: 0 }}
+                  animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }}
+                  transition={{ duration: 0.22 }}
+                  className="overflow-hidden"
+                >
+                  <div className={`px-5 pb-5 pt-1 border-t ${dark ? 'border-slate-800' : 'border-slate-100'}`}>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 mt-3">
+                      <div className={`rounded-xl px-4 py-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
+                        <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.totalStudents}</div>
+                        <div className={`text-lg font-bold font-en mt-1 ${dark ? 'text-white' : 'text-navy'}`}>
+                          {kpi.students != null ? kpi.students.toLocaleString('en-US') : '—'}
+                        </div>
+                      </div>
+                      <div className={`rounded-xl px-4 py-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
+                        <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.staffMembers}</div>
+                        <div className={`text-lg font-bold font-en mt-1 ${dark ? 'text-white' : 'text-navy'}`}>
+                          {kpi.staffCount != null ? kpi.staffCount.toLocaleString('en-US') : '—'}
+                        </div>
+                      </div>
+                      <div className={`rounded-xl px-4 py-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
+                        <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.sections}</div>
+                        <div className={`text-lg font-bold font-en mt-1 ${dark ? 'text-white' : 'text-navy'}`}>
+                          {kpi.sections != null ? kpi.sections.toLocaleString('en-US') : '—'}
+                        </div>
+                      </div>
+                      <div className={`rounded-xl px-4 py-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
+                        <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                          {lang === 'ar' ? 'متوسط الفصل' : 'Avg. per section'}
+                        </div>
+                        <div className={`text-lg font-bold font-en mt-1 ${dark ? 'text-white' : 'text-navy'}`}>
+                          {kpi.students != null && kpi.sections
+                            ? Math.round(kpi.students / kpi.sections).toLocaleString('en-US')
+                            : '—'}
+                        </div>
+                      </div>
+                    </div>
+
+                    <h3 className={`text-xs font-semibold mb-2 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+                      {lang === 'ar' ? 'أعضاء الفصول' : 'Section membership'}
+                    </h3>
+
+                    {sectionBreakdownLoading || sectionBreakdown === null ? (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {[...Array(6)].map((_, i) => <div key={i} className={skeleton(dark, 'h-10 w-full')} />)}
+                      </div>
+                    ) : sectionBreakdown.length === 0 ? (
+                      <div className={`text-sm py-4 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>—</div>
+                    ) : (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                        {sectionBreakdown.map((row) => (
+                          <div
+                            key={row.section.id}
+                            className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${dark ? 'bg-black/20' : 'bg-slate-50'}`}
+                          >
+                            <span className={`truncate ${dark ? 'text-slate-300' : 'text-slate-700'}`}>
+                              {fmtSectionLabel(row.section, lang)}
+                            </span>
+                            <span className={`font-en font-semibold shrink-0 ms-2 ${dark ? 'text-royal-light' : 'text-royal'}`}>
+                              {row.count}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-6">
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}
@@ -323,7 +465,14 @@ export default function Dashboard() {
                               <div className={`h-9 w-9 rounded-full flex items-center justify-center text-xs font-semibold ${dark ? 'bg-royal/15 text-royal-light' : 'bg-royal/10 text-royal'}`}>
                                 {initials(r.full_name)}
                               </div>
-                              <span className={`font-medium ${dark ? 'text-slate-100' : 'text-slate-800'}`}>{r.full_name}</span>
+                              <div className="min-w-0">
+                                <div className={`font-medium ${dark ? 'text-slate-100' : 'text-slate-800'}`}>{r.full_name}</div>
+                                {(r.cycle || r.subject) && (
+                                  <div className={`text-[11px] mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                    {[r.cycle && t.cycleNames[r.cycle], r.subject && t.subjectNames[r.subject]].filter(Boolean).join(' · ')}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </td>
                           <td className={`py-3.5 font-en hidden sm:table-cell ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{r.email}</td>
@@ -344,6 +493,7 @@ export default function Dashboard() {
                               >
                                 <option value="viewer">{t.roleNames.viewer}</option>
                                 <option value="recorder">{t.roleNames.recorder}</option>
+                                <option value="supervisor">{t.roleNames.supervisor}</option>
                                 <option value="admin">{t.roleNames.admin}</option>
                               </select>
                               <button
@@ -389,7 +539,7 @@ function StaffManagement({ t, lang, dark, currentStaffId }) {
   const load = useCallback(async () => {
     const { data } = await supabase
       .from('staff')
-      .select('id, full_name, email, role, status')
+      .select('id, full_name, email, role, status, cycle, subject')
       .in('status', ['approved', 'revoked'])
       .order('full_name', { ascending: true });
     setStaffList(data || []);
@@ -400,6 +550,20 @@ function StaffManagement({ t, lang, dark, currentStaffId }) {
   const changeRole = async (id, role) => {
     setSavingId(id);
     await supabase.from('staff').update({ role }).eq('id', id);
+    setSavingId(null);
+    load();
+  };
+
+  const changeCycle = async (id, cycle) => {
+    setSavingId(id);
+    await supabase.from('staff').update({ cycle: cycle || null }).eq('id', id);
+    setSavingId(null);
+    load();
+  };
+
+  const changeSubject = async (id, subject) => {
+    setSavingId(id);
+    await supabase.from('staff').update({ subject: subject || null }).eq('id', id);
     setSavingId(null);
     load();
   };
@@ -455,7 +619,28 @@ function StaffManagement({ t, lang, dark, currentStaffId }) {
                   >
                     <option value="recorder">{t.roleNames.recorder}</option>
                     <option value="viewer">{t.roleNames.viewer}</option>
+                    <option value="supervisor">{t.roleNames.supervisor}</option>
                     <option value="admin">{t.roleNames.admin}</option>
+                  </select>
+
+                  <select
+                    value={s.cycle || ''}
+                    onChange={(e) => changeCycle(s.id, e.target.value)}
+                    disabled={savingId === s.id}
+                    className={`text-xs rounded-lg px-2.5 py-2 border outline-none disabled:opacity-50 ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
+                  >
+                    <option value="">{t.chooseCycle}</option>
+                    {CYCLE_KEYS.map((k) => <option key={k} value={k}>{t.cycleNames[k]}</option>)}
+                  </select>
+
+                  <select
+                    value={s.subject || ''}
+                    onChange={(e) => changeSubject(s.id, e.target.value)}
+                    disabled={savingId === s.id}
+                    className={`text-xs rounded-lg px-2.5 py-2 border outline-none disabled:opacity-50 ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
+                  >
+                    <option value="">{t.chooseSubject}</option>
+                    {SUBJECT_KEYS.map((k) => <option key={k} value={k}>{t.subjectNames[k]}</option>)}
                   </select>
 
                   {s.id !== currentStaffId && (

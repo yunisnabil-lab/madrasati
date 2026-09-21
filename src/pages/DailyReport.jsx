@@ -18,7 +18,7 @@ function todayStr() {
 }
 
 export default function DailyReport() {
-  const { t, lang, dark } = useApp();
+  const { t, lang, dark, staff } = useApp();
 
   const [sections, setSections] = useState([]);
   const [sectionsLoaded, setSectionsLoaded] = useState(false);
@@ -32,13 +32,20 @@ export default function DailyReport() {
   const [loading, setLoading] = useState(false);
   const [printSelection, setPrintSelection] = useState(new Set());
 
+  // a recorder (teacher) only sees the sections they've been assigned
   const loadSectionsIfNeeded = async () => {
-    if (sectionsLoaded) return;
+    if (sectionsLoaded || !staff) return;
     const { data } = await supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
-    setSections(data || []);
+    let list = data || [];
+    if (staff.role === 'recorder') {
+      const { data: assigned } = await supabase.from('staff_sections').select('section_id').eq('staff_id', staff.id);
+      const allowed = new Set((assigned || []).map((a) => a.section_id));
+      list = list.filter((s) => allowed.has(s.id));
+    }
+    setSections(list);
     setSectionsLoaded(true);
   };
-  useEffect(() => { loadSectionsIfNeeded(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => { loadSectionsIfNeeded(); }, [staff]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeSectionIds = useMemo(() => {
     if (!grade) return [];

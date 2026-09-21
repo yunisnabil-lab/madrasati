@@ -28,6 +28,7 @@ export default function SingleAttendance() {
   const [period, setPeriod] = useState('');
 
   const [sections, setSections] = useState([]);
+  const [assignedSectionIds, setAssignedSectionIds] = useState(null); // recorder's allowed section ids, or null = no restriction
   const [grade, setGrade] = useState('');
   const [stream, setStream] = useState('');
   const [sectionSel, setSectionSel] = useState(''); // section_id or '__ALL__'
@@ -46,12 +47,24 @@ export default function SingleAttendance() {
 
   const [sessionLog, setSessionLog] = useState([]); // [{name, status}]
 
+  // a recorder (teacher) only sees the sections they've been assigned
   useEffect(() => {
+    if (!staff) return;
     (async () => {
       const { data } = await supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
-      setSections(data || []);
+      let list = data || [];
+      if (staff.role === 'recorder') {
+        const { data: assigned } = await supabase.from('staff_sections').select('section_id').eq('staff_id', staff.id);
+        const allowedIds = (assigned || []).map((a) => a.section_id);
+        setAssignedSectionIds(allowedIds);
+        const allowed = new Set(allowedIds);
+        list = list.filter((s) => allowed.has(s.id));
+      } else {
+        setAssignedSectionIds(null);
+      }
+      setSections(list);
     })();
-  }, []);
+  }, [staff]);
 
   const activeSectionIds = useMemo(() => {
     if (!grade) return null; // nothing chosen yet — fall through to the global search box
@@ -96,7 +109,11 @@ export default function SingleAttendance() {
       .from('students')
       .select('id, sis_no, name_ar, name_en, section_id, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)')
       .eq('is_active', true));
-    const matched = (data || []).filter((s) => matchesStudentSearch(s, q));
+    let matched = (data || []).filter((s) => matchesStudentSearch(s, q));
+    if (assignedSectionIds) {
+      const allowed = new Set(assignedSectionIds);
+      matched = matched.filter((s) => allowed.has(s.section_id));
+    }
     matched.sort((a, b) => (a.sections?.grade_order ?? 999) - (b.sections?.grade_order ?? 999));
     setGlobalMatches(matched);
     setSearching(false);

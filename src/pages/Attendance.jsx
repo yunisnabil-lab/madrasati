@@ -52,17 +52,25 @@ export default function Attendance() {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null); // { type: 'ok' | 'err', text }
 
-  // load sections once
+  // load sections once — a recorder (teacher) only sees the sections
+  // they've been assigned by the admin (staff_sections)
   useEffect(() => {
+    if (!staff) return;
     (async () => {
       setSectionsLoading(true);
       const { data } = await supabase
         .from('sections')
         .select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
-      setSections(data || []);
+      let list = data || [];
+      if (staff.role === 'recorder') {
+        const { data: assigned } = await supabase.from('staff_sections').select('section_id').eq('staff_id', staff.id);
+        const allowed = new Set((assigned || []).map((a) => a.section_id));
+        list = list.filter((s) => allowed.has(s.id));
+      }
+      setSections(list);
       setSectionsLoading(false);
     })();
-  }, []);
+  }, [staff]);
 
   // resolved list of section ids to load students/attendance for
   const activeSectionIds = useMemo(() => {

@@ -414,9 +414,11 @@ function StudentProfileCard({
         </button>
       </div>
 
-      <div className="no-print">
-        <WhatsAppShare student={student} name={name} stats={stats} history={history} sectionLabel={fmtSectionLabel(student.sections, lang)} fromDate={fromDate} toDate={toDate} t={t} lang={lang} dark={dark} inputCls={inputCls} />
-      </div>
+      {staff?.role !== 'recorder' && (
+        <div className="no-print">
+          <WhatsAppShare student={student} name={name} stats={stats} history={history} sectionLabel={fmtSectionLabel(student.sections, lang)} fromDate={fromDate} toDate={toDate} t={t} lang={lang} dark={dark} inputCls={inputCls} />
+        </div>
+      )}
 
       {isAdmin && (
         <div className="no-print">

@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, Sun, Moon, LogOut, Camera, UserCircle2, GraduationCap } from 'lucide-react';
+import { Search, Bell, Sun, Moon, LogOut, Camera, UserCircle2 } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 
@@ -72,27 +72,27 @@ export default function Header() {
   }
 
   return (
-    <header className="no-print sticky top-0 z-20 shadow-xl shadow-royal/30 border-b border-royal-glow/30 bg-gradient-to-l from-royal via-royal to-royal-light">
+    <header className={`no-print sticky top-0 z-20 backdrop-blur-md border-b shadow-lg transition-colors duration-300 ${dark ? 'bg-navy/70 border-slate-800' : 'bg-white/80 border-slate-200/60'}`}>
       {(profileOpen || notifOpen) && (
         <div
           className="fixed inset-0 z-10"
           onClick={() => { setProfileOpen(false); setNotifOpen(false); }}
         />
       )}
-      <div className="max-w-7xl mx-auto px-7 py-5 flex items-center gap-6 text-white">
+      <div className="max-w-7xl mx-auto px-5 py-3.5 flex items-center gap-4">
 
         {/* Profile — first in DOM so it renders at the visual end (right in RTL) */}
         <div className="relative">
-          <button onClick={() => { setProfileOpen((v) => !v); setNotifOpen(false); }} className="flex items-center gap-3">
+          <button onClick={() => { setProfileOpen((v) => !v); setNotifOpen(false); }} className="flex items-center gap-2.5">
             <div className="text-end hidden md:block">
-              <div className="text-sm font-semibold leading-tight text-white">{staff ? staff.full_name : '...'}</div>
-              <div className="text-[11px] leading-tight text-slate-300/70">{staff ? t.roleNames[staff.role] : ''}</div>
+              <div className="text-xs font-medium leading-tight">{staff ? staff.full_name : '...'}</div>
+              <div className={`text-[11px] leading-tight ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{staff ? t.roleNames[staff.role] : ''}</div>
             </div>
-            <div className="relative h-11 w-11 rounded-full ring-2 ring-white/20">
+            <div className="relative h-9 w-9 rounded-full">
               {staff && staff.avatar_url ? (
-                <img src={staff.avatar_url} alt="" className="h-11 w-11 rounded-full object-cover" />
+                <img src={staff.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
               ) : (
-                <div className="h-11 w-11 rounded-full bg-gradient-to-br from-gold to-gold-light flex items-center justify-center text-navy text-sm font-bold">
+                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold">
                   {staff ? initials(staff.full_name) : '--'}
                 </div>
               )}
@@ -102,7 +102,7 @@ export default function Header() {
             {profileOpen && (
               <motion.div
                 initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                className={`absolute end-0 mt-2 w-52 rounded-xl border shadow-xl py-1.5 z-30 ${dark ? 'bg-navy-soft border-slate-700 text-slate-200' : 'bg-white border-slate-100 text-slate-700'}`}
+                className={`absolute end-0 mt-2 w-52 rounded-xl border shadow-xl py-1.5 z-30 ${dark ? 'bg-navy-soft border-slate-700' : 'bg-white border-slate-100'}`}
               >
                 <button
                   onClick={() => { navigate('/profile'); setProfileOpen(false); }}
@@ -138,20 +138,18 @@ export default function Header() {
         <div className="relative">
           <button
             onClick={() => { setNotifOpen((v) => !v); setProfileOpen(false); }}
-            className="relative h-11 w-11 rounded-full flex items-center justify-center bg-white/10 text-white transition-colors hover:bg-white/20"
+            className={`relative h-9 w-9 rounded-full flex items-center justify-center transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-100'}`}
           >
-            <Bell size={20} />
+            <Bell size={16} />
             {isAdmin && requests.length > 0 && (
-              <span className="absolute -top-0.5 -end-0.5 inline-flex items-center justify-center h-5 w-5 rounded-full bg-gold text-navy text-[10px] font-extrabold ring-2 ring-royal">
-                {requests.length}
-              </span>
+              <span className="absolute top-2 end-2 h-1.5 w-1.5 rounded-full bg-gold" />
             )}
           </button>
           <AnimatePresence>
             {notifOpen && (
               <motion.div
                 initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                className={`absolute end-0 mt-2 w-72 rounded-xl border shadow-xl py-2 z-30 ${dark ? 'bg-navy-soft border-slate-700 text-slate-200' : 'bg-white border-slate-100 text-slate-700'}`}
+                className={`absolute end-0 mt-2 w-72 rounded-xl border shadow-xl py-2 z-30 ${dark ? 'bg-navy-soft border-slate-700' : 'bg-white border-slate-100'}`}
               >
                 <div className="px-3.5 py-1.5 text-xs font-semibold">{t.notifications}</div>
                 {isAdmin && requests.length > 0 ? (
@@ -172,13 +170,13 @@ export default function Header() {
         {/* Language */}
         <button
           onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-          className="hidden sm:flex items-center justify-center rounded-full px-3.5 py-2 text-xs font-extrabold tracking-wide bg-gold text-navy transition-colors hover:bg-gold-light"
+          className={`hidden sm:block text-xs font-semibold tracking-wide px-1 ${dark ? 'text-slate-300' : 'text-slate-500'}`}
         >
           AR/EN
         </button>
 
         {/* Live date/time */}
-        <div className="hidden lg:flex items-center gap-1 rounded-full px-3.5 py-2 text-xs font-semibold whitespace-nowrap bg-white/10 text-slate-200">
+        <div className={`hidden lg:block text-[11px] font-medium whitespace-nowrap ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
           {dateTimeStr}
         </div>
 
@@ -186,30 +184,15 @@ export default function Header() {
         <button
           onClick={signOut}
           title={t.signOut}
-          className="h-11 w-11 rounded-full flex items-center justify-center shrink-0 bg-rose-500/20 text-rose-300 transition-colors hover:bg-rose-500/30"
+          className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${dark ? 'text-rose-400 hover:bg-rose-500/10' : 'text-rose-500 hover:bg-rose-50'}`}
         >
-          <LogOut size={20} />
+          <LogOut size={16} />
         </button>
 
         {/* Search */}
-        <div className="flex-1 flex items-center gap-2.5 rounded-full px-5 py-3 text-sm max-w-xs border border-white/10 bg-white/10 text-slate-200 transition-colors focus-within:bg-white/15 focus-within:border-white/30">
-          <Search size={18} className="text-gold-light" />
-          <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-slate-300/70 w-full text-sm text-white" />
-        </div>
-
-        {/* School branding — logo + name, anchored at the visual start (left) */}
-        <div className="hidden sm:flex items-center gap-3 ps-5 border-s border-white/15">
-          <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-white/15 ring-1 ring-white/20">
-            {staff && staff.school_logo_url ? (
-              <img src={staff.school_logo_url} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <GraduationCap size={24} className="text-gold-light" />
-            )}
-          </div>
-          <div className="hidden md:block leading-tight">
-            <div className="text-base font-extrabold text-white">{t.school}</div>
-            <div className="text-[11px] text-slate-300/70">{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
-          </div>
+        <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2 text-sm max-w-xs ${dark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
+          <Search size={15} />
+          <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
         </div>
 
       </div>

@@ -76,8 +76,8 @@ function Router() {
         <Route path="/single-attendance" element={<Gate><Layout><SingleAttendance /></Layout></Gate>} />
         <Route path="/students" element={<Gate><NotRecorder><Layout><Students /></Layout></NotRecorder></Gate>} />
         <Route path="/lookup" element={<Gate><Layout><StudentLookup /></Layout></Gate>} />
-        <Route path="/daily-report" element={<Gate><NotRecorder><Layout><DailyReport /></Layout></NotRecorder></Gate>} />
-        <Route path="/period-report" element={<Gate><NotRecorder><Layout><PeriodReport /></Layout></NotRecorder></Gate>} />
+        <Route path="/daily-report" element={<Gate><Layout><DailyReport /></Layout></Gate>} />
+        <Route path="/period-report" element={<Gate><Layout><PeriodReport /></Layout></Gate>} />
         <Route path="/profile" element={<Gate><Layout><Profile /></Layout></Gate>} />
         <Route path="/staff-assignments" element={<Gate><AdminOnly><Layout><StaffAssignments /></Layout></AdminOnly></Gate>} />
         <Route path="*" element={<Navigate to="/" replace />} />

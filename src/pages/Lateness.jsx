@@ -9,7 +9,6 @@ import { fetchAllRows } from '../lib/fetchAll';
 import { sectionLabel as fmtSectionLabel } from '../lib/sections';
 
 const REPEAT_THRESHOLD = 3;
-const RANGE_OPTIONS = [7, 30, 90];
 
 function daysAgoStr(n) {
   const d = new Date();
@@ -49,17 +48,21 @@ export default function Lateness() {
   const [studentLateness, setStudentLateness] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  const [rangeDays, setRangeDays] = useState(30);
+  const [fromDate, setFromDate] = useState(daysAgoStr(30));
+  const [toDate, setToDate] = useState(todayStr());
   const [aggLoading, setAggLoading] = useState(true);
   const [aggRows, setAggRows] = useState([]);
 
-  const loadAggregate = useCallback(async (days) => {
+  const loadAggregate = useCallback(async (from, to) => {
     setAggLoading(true);
-    const from = daysAgoStr(days);
-    const { data } = await fetchAllRows(() => supabase
-      .from('morning_lateness')
-      .select('id, student_id, date, students(name_ar, name_en, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order))')
-      .gte('date', from));
+    const { data } = await fetchAllRows(() => {
+      let q = supabase
+        .from('morning_lateness')
+        .select('id, student_id, date, students(name_ar, name_en, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order))');
+      if (from) q = q.gte('date', from);
+      if (to) q = q.lte('date', to);
+      return q;
+    });
 
     const byStudent = new Map();
     (data || []).forEach((r) => {
@@ -78,7 +81,7 @@ export default function Lateness() {
     setAggLoading(false);
   }, []);
 
-  useEffect(() => { if (!selected) loadAggregate(rangeDays); }, [rangeDays, selected, loadAggregate]);
+  useEffect(() => { if (!selected) loadAggregate(fromDate, toDate); }, [fromDate, toDate, selected, loadAggregate]);
 
   const loadStudentLateness = useCallback(async (studentId) => {
     const { data } = await supabase
@@ -153,7 +156,7 @@ export default function Lateness() {
     setDeletingId(null);
     if (!error) {
       if (selected) loadStudentLateness(selected.id);
-      loadAggregate(rangeDays);
+      loadAggregate(fromDate, toDate);
     }
   };
 
@@ -194,26 +197,29 @@ export default function Lateness() {
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
       <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-3xl mx-auto px-5 py-7">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 flex items-center justify-between flex-wrap gap-3">
-            <div>
-              <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.latenessTitle}</h1>
-              <p className={`text-sm mt-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.latenessSub}</p>
-            </div>
-            {!selected && (
-              <select
-                value={rangeDays}
-                onChange={(e) => setRangeDays(Number(e.target.value))}
-                className={`text-sm rounded-lg px-3 py-2 border outline-none ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}
-              >
-                {RANGE_OPTIONS.map((n) => (
-                  <option key={n} value={n}>{t.latenessRangeLabel.replace('{n}', n)}</option>
-                ))}
-              </select>
-            )}
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
+            <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.latenessTitle}</h1>
+            <p className={`text-sm mt-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.latenessSub}</p>
           </motion.div>
 
           {!selected ? (
             <>
+              <div className={cardFloating(dark, 'p-4 mb-5 flex flex-col sm:flex-row gap-3 sm:items-end')}>
+                <div className="flex-1">
+                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.fromDate}</label>
+                  <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={inputCls + ' font-en'} />
+                </div>
+                <div className="flex-1">
+                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.toDate}</label>
+                  <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputCls + ' font-en'} />
+                </div>
+                {(fromDate || toDate) && (
+                  <button onClick={() => { setFromDate(''); setToDate(''); }} className={`text-xs font-medium px-4 py-2.5 rounded-lg border whitespace-nowrap ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                    {t.showAll}
+                  </button>
+                )}
+              </div>
+
               <div className={cardFloating(dark, 'p-4 mb-5 flex gap-2')}>
                 <div className={`flex-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm border ${dark ? 'bg-navy border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
                   <Search size={15} />

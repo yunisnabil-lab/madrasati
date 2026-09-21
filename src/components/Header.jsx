@@ -72,7 +72,7 @@ export default function Header() {
   }
 
   return (
-    <header className="no-print sticky top-0 z-20 shadow-lg border-b border-royal-glow/30 bg-gradient-to-l from-royal via-royal to-royal-light">
+    <header className="no-print sticky top-0 z-20 shadow-lg border-b border-slate-400/30 bg-gradient-to-l from-slate-700 via-slate-600 to-slate-500">
       {(profileOpen || notifOpen) && (
         <div
           className="fixed inset-0 z-10"
@@ -142,7 +142,7 @@ export default function Header() {
           >
             <Bell size={20} />
             {isAdmin && requests.length > 0 && (
-              <span className="absolute -top-0.5 -end-0.5 inline-flex items-center justify-center h-5 w-5 rounded-full bg-gold text-navy text-[10px] font-extrabold ring-2 ring-royal">
+              <span className="absolute -top-0.5 -end-0.5 inline-flex items-center justify-center h-5 w-5 rounded-full bg-gold text-navy text-[10px] font-extrabold ring-2 ring-slate-600">
                 {requests.length}
               </span>
             )}

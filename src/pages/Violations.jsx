@@ -6,8 +6,9 @@ import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { matchesStudentSearch } from '../lib/search';
 import { fetchAllRows } from '../lib/fetchAll';
-import { sectionLabel as fmtSectionLabel } from '../lib/sections';
+import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
 import { VIOLATION_TYPE_KEYS } from '../lib/i18n';
+import SectionPicker from '../components/SectionPicker';
 
 function initials(name) {
   const parts = (name || '').trim().split(/\s+/);
@@ -23,6 +24,12 @@ function todayStr() {
 export default function Violations() {
   const { t, lang, dark, staff } = useApp();
   const canManage = staff && (staff.role === 'admin' || staff.role === 'supervisor');
+
+  const [sections, setSections] = useState([]);
+  const [grade, setGrade] = useState('');
+  const [stream, setStream] = useState('');
+  const [sectionSel, setSectionSel] = useState('');
+  const [sectionRoster, setSectionRoster] = useState(null);
 
   const [query, setQuery] = useState('');
   const [searching, setSearching] = useState(false);
@@ -50,6 +57,50 @@ export default function Violations() {
 
   useEffect(() => { loadRecent(); }, [loadRecent]);
 
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
+      setSections(data || []);
+    })();
+  }, []);
+
+  const activeSectionIds = useMemo(() => {
+    if (!grade) return null;
+    if (sectionSel && sectionSel !== '__ALL__') return [sectionSel];
+    return sectionsFor(sections, grade, stream).map((s) => s.id);
+  }, [sections, grade, stream, sectionSel]);
+
+  const sectionFilterKey = activeSectionIds ? activeSectionIds.join(',') : null;
+
+  useEffect(() => {
+    if (!sectionFilterKey) { setSectionRoster(null); return; }
+    (async () => {
+      setSearching(true);
+      const { data } = await supabase
+        .from('students')
+        .select('id, sis_no, name_ar, name_en, section_id, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)')
+        .in('section_id', sectionFilterKey.split(','))
+        .eq('is_active', true)
+        .order('name_ar', { ascending: true });
+      setSectionRoster(data || []);
+      setSearching(false);
+    })();
+  }, [sectionFilterKey]);
+
+  const results = useMemo(() => {
+    const q = query.trim();
+    if (sectionRoster !== null) {
+      return q ? sectionRoster.filter((s) => matchesStudentSearch(s, q)) : sectionRoster;
+    }
+    return matches;
+  }, [sectionRoster, matches, query]);
+
+  const clearSectionFilter = () => {
+    setGrade('');
+    setStream('');
+    setSectionSel('');
+  };
+
   const loadStudentViolations = useCallback(async (studentId) => {
     const { data } = await supabase
       .from('behavior_violations')
@@ -66,6 +117,7 @@ export default function Violations() {
 
   const runSearch = async () => {
     const q = query.trim();
+    if (sectionRoster !== null) return;
     if (!q) { setMatches(null); return; }
     setSearching(true);
     const { data } = await fetchAllRows(() => supabase
@@ -144,12 +196,29 @@ export default function Violations() {
 
           {!selected ? (
             <>
+              <div className={cardFloating(dark, 'p-4 mb-5 space-y-3')}>
+                <SectionPicker
+                  sections={sections} lang={lang} dark={dark}
+                  grade={grade} stream={stream} sectionId={sectionSel}
+                  allowAll
+                  onGradeChange={(g) => { setGrade(g); setStream(''); setSectionSel(''); }}
+                  onStreamChange={(s) => { setStream(s); setSectionSel(''); }}
+                  onSectionChange={setSectionSel}
+                  inputCls={inputCls}
+                />
+                {sectionRoster !== null && (
+                  <button onClick={clearSectionFilter} className={`text-xs font-medium px-4 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                    {t.clearClassFilter}
+                  </button>
+                )}
+              </div>
+
               <div className={cardFloating(dark, 'p-4 mb-5 flex gap-2')}>
                 <div className={`flex-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm border ${dark ? 'bg-navy border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
                   <Search size={15} />
                   <input
                     value={query}
-                    onChange={(e) => { setQuery(e.target.value); if (!e.target.value.trim()) setMatches(null); }}
+                    onChange={(e) => { setQuery(e.target.value); if (!e.target.value.trim() && sectionRoster === null) setMatches(null); }}
                     onKeyDown={(e) => { if (e.key === 'Enter') runSearch(); }}
                     placeholder={t.lookupPlaceholder}
                     className="bg-transparent outline-none w-full text-sm placeholder:text-inherit"
@@ -161,13 +230,13 @@ export default function Violations() {
                 </button>
               </div>
 
-              {matches !== null && (
+              {results !== null && (
                 <div className={cardFloating(dark, 'overflow-hidden mb-5')}>
-                  {matches.length === 0 ? (
+                  {results.length === 0 ? (
                     <div className="p-8 text-center"><p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.lookupNoResults}</p></div>
                   ) : (
                     <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                      {matches.map((s) => {
+                      {results.map((s) => {
                         const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
                         return (
                           <li key={s.id}>

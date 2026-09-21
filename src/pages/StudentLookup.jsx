@@ -28,7 +28,8 @@ function dayName(dateStr, lang) {
 }
 
 // group raw period-level attendance rows into one derived status per day.
-// Rule: 3+ periods marked absent on a date => the whole day counts as absent.
+// Rule: 3+ periods marked excused on a date => the whole day counts as
+// excused; else 3+ periods marked absent => the whole day counts as absent.
 // Lateness never affects the day-level status. Legacy rows (period is null,
 // from before per-period recording existed) are used as-is.
 function deriveDayRecords(rawRecords) {
@@ -47,8 +48,9 @@ function deriveDayRecords(rawRecords) {
     }
     const absentCount = rows.filter((r) => r.status === 'absent').length;
     const lateCount = rows.filter((r) => r.status === 'late').length;
-    const status = absentCount >= 3 ? 'absent' : 'present';
-    days.push({ date, status, absentCount, lateCount, periods: rows });
+    const excusedCount = rows.filter((r) => r.status === 'excused').length;
+    const status = excusedCount >= 3 ? 'excused' : absentCount >= 3 ? 'absent' : 'present';
+    days.push({ date, status, absentCount, lateCount, excusedCount, periods: rows });
   });
 
   return days.sort((a, b) => b.date.localeCompare(a.date));

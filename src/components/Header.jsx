@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, Sun, Moon, LogOut, Camera, UserCircle2 } from 'lucide-react';
+import { Search, Bell, Sun, Moon, LogOut, Camera, UserCircle2, GraduationCap } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 
@@ -72,14 +72,14 @@ export default function Header() {
   }
 
   return (
-    <header className={`no-print sticky top-0 z-20 backdrop-blur-md border-b shadow-lg transition-colors duration-300 ${dark ? 'bg-navy/70 border-slate-800' : 'bg-white/80 border-slate-200/60'}`}>
+    <header className={`no-print sticky top-0 z-20 backdrop-blur-md border-b shadow-lg transition-colors duration-300 ${dark ? 'bg-gradient-to-b from-navy-soft to-navy/80 border-royal/20' : 'bg-gradient-to-b from-white to-pearl-soft/70 border-royal/10'}`}>
       {(profileOpen || notifOpen) && (
         <div
           className="fixed inset-0 z-10"
           onClick={() => { setProfileOpen(false); setNotifOpen(false); }}
         />
       )}
-      <div className="max-w-7xl mx-auto px-5 py-3.5 flex items-center gap-4">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-5">
 
         {/* Profile — first in DOM so it renders at the visual end (right in RTL) */}
         <div className="relative">
@@ -88,11 +88,11 @@ export default function Header() {
               <div className="text-xs font-medium leading-tight">{staff ? staff.full_name : '...'}</div>
               <div className={`text-[11px] leading-tight ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{staff ? t.roleNames[staff.role] : ''}</div>
             </div>
-            <div className="relative h-9 w-9 rounded-full">
+            <div className="relative h-10 w-10 rounded-full">
               {staff && staff.avatar_url ? (
-                <img src={staff.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover" />
+                <img src={staff.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
               ) : (
-                <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold">
+                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold">
                   {staff ? initials(staff.full_name) : '--'}
                 </div>
               )}
@@ -138,11 +138,13 @@ export default function Header() {
         <div className="relative">
           <button
             onClick={() => { setNotifOpen((v) => !v); setProfileOpen(false); }}
-            className={`relative h-9 w-9 rounded-full flex items-center justify-center transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-100'}`}
+            className={`relative h-10 w-10 rounded-full flex items-center justify-center transition-colors ${dark ? 'bg-royal/15 text-royal-light hover:bg-royal/25' : 'bg-royal/10 text-royal hover:bg-royal/20'}`}
           >
-            <Bell size={16} />
+            <Bell size={18} />
             {isAdmin && requests.length > 0 && (
-              <span className="absolute top-2 end-2 h-1.5 w-1.5 rounded-full bg-gold" />
+              <span className={`absolute -top-0.5 -end-0.5 inline-flex items-center justify-center h-4 w-4 rounded-full bg-gold text-white text-[9px] font-bold ring-2 ${dark ? 'ring-navy' : 'ring-white'}`}>
+                {requests.length}
+              </span>
             )}
           </button>
           <AnimatePresence>
@@ -170,13 +172,13 @@ export default function Header() {
         {/* Language */}
         <button
           onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-          className={`hidden sm:block text-xs font-semibold tracking-wide px-1 ${dark ? 'text-slate-300' : 'text-slate-500'}`}
+          className={`hidden sm:flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-bold tracking-wide transition-colors ${dark ? 'bg-gold/15 text-gold-light hover:bg-gold/25' : 'bg-gold/10 text-gold hover:bg-gold/20'}`}
         >
           AR/EN
         </button>
 
         {/* Live date/time */}
-        <div className={`hidden lg:block text-[11px] font-medium whitespace-nowrap ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+        <div className={`hidden lg:flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap ${dark ? 'bg-white/5 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
           {dateTimeStr}
         </div>
 
@@ -184,15 +186,30 @@ export default function Header() {
         <button
           onClick={signOut}
           title={t.signOut}
-          className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${dark ? 'text-rose-400 hover:bg-rose-500/10' : 'text-rose-500 hover:bg-rose-50'}`}
+          className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${dark ? 'bg-rose-500/15 text-rose-400 hover:bg-rose-500/25' : 'bg-rose-50 text-rose-500 hover:bg-rose-100'}`}
         >
-          <LogOut size={16} />
+          <LogOut size={18} />
         </button>
 
         {/* Search */}
-        <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2 text-sm max-w-xs ${dark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
-          <Search size={15} />
+        <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm max-w-xs border transition-colors focus-within:border-royal ${dark ? 'bg-white/5 border-transparent text-slate-400 focus-within:bg-white/10' : 'bg-slate-100 border-transparent text-slate-500 focus-within:bg-white focus-within:shadow-sm'}`}>
+          <Search size={17} className={dark ? 'text-royal-light' : 'text-royal'} />
           <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
+        </div>
+
+        {/* School branding — logo + name, anchored at the visual start (left) */}
+        <div className={`hidden sm:flex items-center gap-2.5 ps-4 border-s ${dark ? 'border-slate-800' : 'border-slate-200'}`}>
+          <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${dark ? 'bg-royal/15' : 'bg-royal/10'}`}>
+            {staff && staff.school_logo_url ? (
+              <img src={staff.school_logo_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <GraduationCap size={20} className={dark ? 'text-royal-light' : 'text-royal'} />
+            )}
+          </div>
+          <div className="hidden md:block leading-tight">
+            <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.school}</div>
+            <div className={`text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
+          </div>
         </div>
 
       </div>

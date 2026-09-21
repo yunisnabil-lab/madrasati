@@ -53,11 +53,21 @@ export default function Header() {
     const ext = file.name.split('.').pop();
     const path = `${staff.id}/avatar.${ext}`;
     const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-    if (!upErr) {
-      const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
-      await supabase.from('staff').update({ avatar_url: pub.publicUrl + '?t=' + Date.now() }).eq('id', staff.id);
-      await refreshStaff();
+    if (upErr) {
+      console.error('Avatar upload error:', upErr);
+      window.alert(lang === 'ar' ? 'تعذّر رفع الصورة، حاول مرة أخرى.' : 'Could not upload photo. Please try again.');
+      setUploading(false);
+      return;
     }
+    const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
+    const { error: updErr } = await supabase.from('staff').update({ avatar_url: pub.publicUrl + '?t=' + Date.now() }).eq('id', staff.id);
+    if (updErr) {
+      console.error('Avatar save error:', updErr);
+      window.alert(lang === 'ar' ? 'تعذّر حفظ الصورة، حاول مرة أخرى.' : 'Could not save photo. Please try again.');
+      setUploading(false);
+      return;
+    }
+    await refreshStaff();
     setUploading(false);
   }
 

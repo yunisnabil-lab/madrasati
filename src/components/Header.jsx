@@ -72,27 +72,27 @@ export default function Header() {
   }
 
   return (
-    <header className={`no-print sticky top-0 z-20 backdrop-blur-md border-b transition-colors duration-300 ${dark ? 'bg-gradient-to-b from-navy-soft to-navy/80 border-royal/20' : 'bg-gradient-to-b from-white to-pearl-soft/70 border-royal/10 shadow-sm'}`}>
+    <header className="no-print sticky top-0 z-20 shadow-lg border-b border-black/20 bg-gradient-to-l from-[#0A1122] via-navy to-royal">
       {(profileOpen || notifOpen) && (
         <div
           className="fixed inset-0 z-10"
           onClick={() => { setProfileOpen(false); setNotifOpen(false); }}
         />
       )}
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-5">
+      <div className="max-w-7xl mx-auto px-7 py-5 flex items-center gap-6 text-white">
 
         {/* Profile — first in DOM so it renders at the visual end (right in RTL) */}
         <div className="relative">
-          <button onClick={() => { setProfileOpen((v) => !v); setNotifOpen(false); }} className="flex items-center gap-2.5">
+          <button onClick={() => { setProfileOpen((v) => !v); setNotifOpen(false); }} className="flex items-center gap-3">
             <div className="text-end hidden md:block">
-              <div className="text-xs font-medium leading-tight">{staff ? staff.full_name : '...'}</div>
-              <div className={`text-[11px] leading-tight ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{staff ? t.roleNames[staff.role] : ''}</div>
+              <div className="text-sm font-semibold leading-tight text-white">{staff ? staff.full_name : '...'}</div>
+              <div className="text-[11px] leading-tight text-slate-300/70">{staff ? t.roleNames[staff.role] : ''}</div>
             </div>
-            <div className="relative h-10 w-10 rounded-full">
+            <div className="relative h-11 w-11 rounded-full ring-2 ring-white/20">
               {staff && staff.avatar_url ? (
-                <img src={staff.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+                <img src={staff.avatar_url} alt="" className="h-11 w-11 rounded-full object-cover" />
               ) : (
-                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold">
+                <div className="h-11 w-11 rounded-full bg-gradient-to-br from-gold to-gold-light flex items-center justify-center text-navy text-sm font-bold">
                   {staff ? initials(staff.full_name) : '--'}
                 </div>
               )}
@@ -102,7 +102,7 @@ export default function Header() {
             {profileOpen && (
               <motion.div
                 initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                className={`absolute end-0 mt-2 w-52 rounded-xl border shadow-xl py-1.5 z-30 ${dark ? 'bg-navy-soft border-slate-700' : 'bg-white border-slate-100'}`}
+                className={`absolute end-0 mt-2 w-52 rounded-xl border shadow-xl py-1.5 z-30 ${dark ? 'bg-navy-soft border-slate-700 text-slate-200' : 'bg-white border-slate-100 text-slate-700'}`}
               >
                 <button
                   onClick={() => { navigate('/profile'); setProfileOpen(false); }}
@@ -138,11 +138,11 @@ export default function Header() {
         <div className="relative">
           <button
             onClick={() => { setNotifOpen((v) => !v); setProfileOpen(false); }}
-            className={`relative h-10 w-10 rounded-full flex items-center justify-center transition-colors ${dark ? 'bg-royal/15 text-royal-light hover:bg-royal/25' : 'bg-royal/10 text-royal hover:bg-royal/20'}`}
+            className="relative h-11 w-11 rounded-full flex items-center justify-center bg-white/10 text-white transition-colors hover:bg-white/20"
           >
-            <Bell size={18} />
+            <Bell size={20} />
             {isAdmin && requests.length > 0 && (
-              <span className={`absolute -top-0.5 -end-0.5 inline-flex items-center justify-center h-4 w-4 rounded-full bg-gold text-white text-[9px] font-bold ring-2 ${dark ? 'ring-navy' : 'ring-white'}`}>
+              <span className="absolute -top-0.5 -end-0.5 inline-flex items-center justify-center h-5 w-5 rounded-full bg-gold text-navy text-[10px] font-extrabold ring-2 ring-navy">
                 {requests.length}
               </span>
             )}
@@ -151,7 +151,7 @@ export default function Header() {
             {notifOpen && (
               <motion.div
                 initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}
-                className={`absolute end-0 mt-2 w-72 rounded-xl border shadow-xl py-2 z-30 ${dark ? 'bg-navy-soft border-slate-700' : 'bg-white border-slate-100'}`}
+                className={`absolute end-0 mt-2 w-72 rounded-xl border shadow-xl py-2 z-30 ${dark ? 'bg-navy-soft border-slate-700 text-slate-200' : 'bg-white border-slate-100 text-slate-700'}`}
               >
                 <div className="px-3.5 py-1.5 text-xs font-semibold">{t.notifications}</div>
                 {isAdmin && requests.length > 0 ? (
@@ -172,13 +172,13 @@ export default function Header() {
         {/* Language */}
         <button
           onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-          className={`hidden sm:flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-bold tracking-wide transition-colors ${dark ? 'bg-gold/15 text-gold-light hover:bg-gold/25' : 'bg-gold/10 text-gold hover:bg-gold/20'}`}
+          className="hidden sm:flex items-center justify-center rounded-full px-3.5 py-2 text-xs font-extrabold tracking-wide bg-gold text-navy transition-colors hover:bg-gold-light"
         >
           AR/EN
         </button>
 
         {/* Live date/time */}
-        <div className={`hidden lg:flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap ${dark ? 'bg-white/5 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+        <div className="hidden lg:flex items-center gap-1 rounded-full px-3.5 py-2 text-xs font-semibold whitespace-nowrap bg-white/10 text-slate-200">
           {dateTimeStr}
         </div>
 
@@ -186,29 +186,29 @@ export default function Header() {
         <button
           onClick={signOut}
           title={t.signOut}
-          className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${dark ? 'bg-rose-500/15 text-rose-400 hover:bg-rose-500/25' : 'bg-rose-50 text-rose-500 hover:bg-rose-100'}`}
+          className="h-11 w-11 rounded-full flex items-center justify-center shrink-0 bg-rose-500/20 text-rose-300 transition-colors hover:bg-rose-500/30"
         >
-          <LogOut size={18} />
+          <LogOut size={20} />
         </button>
 
         {/* Search */}
-        <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm max-w-xs border transition-colors focus-within:border-royal ${dark ? 'bg-white/5 border-transparent text-slate-400 focus-within:bg-white/10' : 'bg-slate-100 border-transparent text-slate-500 focus-within:bg-white focus-within:shadow-sm'}`}>
-          <Search size={17} className={dark ? 'text-royal-light' : 'text-royal'} />
-          <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
+        <div className="flex-1 flex items-center gap-2.5 rounded-full px-5 py-3 text-sm max-w-xs border border-white/10 bg-white/10 text-slate-200 transition-colors focus-within:bg-white/15 focus-within:border-white/30">
+          <Search size={18} className="text-gold-light" />
+          <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-slate-300/70 w-full text-sm text-white" />
         </div>
 
         {/* School branding — logo + name, anchored at the visual start (left) */}
-        <div className={`hidden sm:flex items-center gap-2.5 ps-4 border-s ${dark ? 'border-slate-800' : 'border-slate-200'}`}>
-          <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${dark ? 'bg-royal/15' : 'bg-royal/10'}`}>
+        <div className="hidden sm:flex items-center gap-3 ps-5 border-s border-white/15">
+          <div className="h-12 w-12 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-white/15 ring-1 ring-white/20">
             {staff && staff.school_logo_url ? (
               <img src={staff.school_logo_url} alt="" className="h-full w-full object-cover" />
             ) : (
-              <GraduationCap size={20} className={dark ? 'text-royal-light' : 'text-royal'} />
+              <GraduationCap size={24} className="text-gold-light" />
             )}
           </div>
           <div className="hidden md:block leading-tight">
-            <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.school}</div>
-            <div className={`text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
+            <div className="text-base font-extrabold text-white">{t.school}</div>
+            <div className="text-[11px] text-slate-300/70">{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
           </div>
         </div>
 

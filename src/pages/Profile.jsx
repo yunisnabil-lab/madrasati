@@ -44,9 +44,11 @@ export default function Profile() {
   const fileRef = useRef(null);
 
   const [uploading, setUploading] = useState(false);
+  const [avatarMsg, setAvatarMsg] = useState(null);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(staff?.full_name || '');
   const [savingName, setSavingName] = useState(false);
+  const [nameMsg, setNameMsg] = useState(null);
 
   const [stats, setStats] = useState({ total: null, thisMonth: null, lastActivity: null });
 
@@ -76,23 +78,40 @@ export default function Profile() {
     const file = e.target.files[0];
     if (!file || !staff) return;
     setUploading(true);
+    setAvatarMsg(null);
     const ext = file.name.split('.').pop();
     const path = `${staff.id}/avatar.${ext}`;
     const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
-    if (!upErr) {
-      const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
-      await supabase.from('staff').update({ avatar_url: pub.publicUrl + '?t=' + Date.now() }).eq('id', staff.id);
-      await refreshStaff();
+    if (upErr) {
+      console.error('Avatar upload error:', upErr);
+      setAvatarMsg({ type: 'err', text: t.saveError });
+      setUploading(false);
+      return;
     }
+    const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
+    const { error: updErr } = await supabase.from('staff').update({ avatar_url: pub.publicUrl + '?t=' + Date.now() }).eq('id', staff.id);
+    if (updErr) {
+      console.error('Avatar save error:', updErr);
+      setAvatarMsg({ type: 'err', text: t.saveError });
+      setUploading(false);
+      return;
+    }
+    await refreshStaff();
     setUploading(false);
   }
 
   async function saveName() {
     if (!nameDraft.trim()) return;
     setSavingName(true);
-    await supabase.from('staff').update({ full_name: nameDraft.trim() }).eq('id', staff.id);
-    await refreshStaff();
+    setNameMsg(null);
+    const { error } = await supabase.from('staff').update({ full_name: nameDraft.trim() }).eq('id', staff.id);
     setSavingName(false);
+    if (error) {
+      console.error('Name save error:', error);
+      setNameMsg({ type: 'err', text: t.saveError });
+      return;
+    }
+    await refreshStaff();
     setEditingName(false);
   }
 
@@ -139,23 +158,29 @@ export default function Profile() {
                     {uploading ? <Loader2 size={13} className="animate-spin" /> : <Camera size={13} />}
                   </button>
                   <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
+                  {avatarMsg && (
+                    <p className="absolute top-full mt-1 text-[11px] whitespace-nowrap text-rose-500">{avatarMsg.text}</p>
+                  )}
                 </div>
 
                 <div className="flex-1 min-w-0 pb-1">
                   {editingName ? (
-                    <div className="flex items-center gap-1.5">
-                      <input
-                        value={nameDraft}
-                        onChange={(e) => setNameDraft(e.target.value)}
-                        autoFocus
-                        className={`text-lg font-bold rounded-lg px-2 py-1 outline-none border ${dark ? 'bg-navy border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-navy'}`}
-                      />
-                      <button onClick={saveName} disabled={savingName} className="h-7 w-7 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shrink-0">
-                        {savingName ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
-                      </button>
-                      <button onClick={() => { setEditingName(false); setNameDraft(staff.full_name); }} className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${dark ? 'bg-white/10' : 'bg-slate-200'}`}>
-                        <X size={13} />
-                      </button>
+                    <div>
+                      <div className="flex items-center gap-1.5">
+                        <input
+                          value={nameDraft}
+                          onChange={(e) => setNameDraft(e.target.value)}
+                          autoFocus
+                          className={`text-lg font-bold rounded-lg px-2 py-1 outline-none border ${dark ? 'bg-navy border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-navy'}`}
+                        />
+                        <button onClick={saveName} disabled={savingName} className="h-7 w-7 rounded-full bg-emerald-500 hover:bg-emerald-600 text-white flex items-center justify-center shrink-0">
+                          {savingName ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />}
+                        </button>
+                        <button onClick={() => { setEditingName(false); setNameDraft(staff.full_name); setNameMsg(null); }} className={`h-7 w-7 rounded-full flex items-center justify-center shrink-0 ${dark ? 'bg-white/10' : 'bg-slate-200'}`}>
+                          <X size={13} />
+                        </button>
+                      </div>
+                      {nameMsg && <p className="text-[11px] mt-1 text-rose-500">{nameMsg.text}</p>}
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5">

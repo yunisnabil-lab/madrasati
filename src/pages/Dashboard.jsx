@@ -547,39 +547,46 @@ function StaffManagement({ t, lang, dark, currentStaffId }) {
 
   useEffect(() => { load(); }, [load]);
 
+  const staffSaveError = () => window.alert(lang === 'ar' ? 'تعذّر الحفظ، حاول مرة أخرى.' : 'Could not save. Please try again.');
+
   const changeRole = async (id, role) => {
     setSavingId(id);
-    await supabase.from('staff').update({ role }).eq('id', id);
+    const { error } = await supabase.from('staff').update({ role }).eq('id', id);
     setSavingId(null);
+    if (error) { console.error('changeRole error:', error); staffSaveError(); return; }
     load();
   };
 
   const changeCycle = async (id, cycle) => {
     setSavingId(id);
-    await supabase.from('staff').update({ cycle: cycle || null }).eq('id', id);
+    const { error } = await supabase.from('staff').update({ cycle: cycle || null }).eq('id', id);
     setSavingId(null);
+    if (error) { console.error('changeCycle error:', error); staffSaveError(); return; }
     load();
   };
 
   const changeSubject = async (id, subject) => {
     setSavingId(id);
-    await supabase.from('staff').update({ subject: subject || null }).eq('id', id);
+    const { error } = await supabase.from('staff').update({ subject: subject || null }).eq('id', id);
     setSavingId(null);
+    if (error) { console.error('changeSubject error:', error); staffSaveError(); return; }
     load();
   };
 
   const revoke = async (id) => {
     setSavingId(id);
-    await supabase.from('staff').update({ status: 'revoked' }).eq('id', id);
+    const { error } = await supabase.from('staff').update({ status: 'revoked' }).eq('id', id);
     setSavingId(null);
     setConfirmRevokeId(null);
+    if (error) { console.error('revoke error:', error); staffSaveError(); return; }
     load();
   };
 
   const restore = async (id) => {
     setSavingId(id);
-    await supabase.from('staff').update({ status: 'approved' }).eq('id', id);
+    const { error } = await supabase.from('staff').update({ status: 'approved' }).eq('id', id);
     setSavingId(null);
+    if (error) { console.error('restore error:', error); staffSaveError(); return; }
     load();
   };
 

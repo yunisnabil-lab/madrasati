@@ -56,16 +56,25 @@ export default function StaffAssignments() {
     const toAdd = [...checked].filter((id) => !before.has(id));
     const toRemove = [...before].filter((id) => !checked.has(id));
 
+    let failed = false;
+
     if (toAdd.length) {
-      await supabase.from('staff_sections').insert(
+      const { error } = await supabase.from('staff_sections').insert(
         toAdd.map((section_id) => ({ school_id: staff.school_id, staff_id: editing.id, section_id }))
       );
+      if (error) { console.error('Assign sections (insert) error:', error); failed = true; }
     }
     for (const section_id of toRemove) {
-      await supabase.from('staff_sections').delete().eq('staff_id', editing.id).eq('section_id', section_id);
+      const { error } = await supabase.from('staff_sections').delete().eq('staff_id', editing.id).eq('section_id', section_id);
+      if (error) { console.error('Assign sections (remove) error:', error); failed = true; }
     }
 
     setSaving(false);
+    if (failed) {
+      window.alert(lang === 'ar' ? 'تعذّر حفظ بعض التعديلات، حاول مرة أخرى.' : 'Could not save some changes. Please try again.');
+      loadAll();
+      return;
+    }
     setEditing(null);
     loadAll();
   };

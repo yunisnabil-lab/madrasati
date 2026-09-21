@@ -359,15 +359,23 @@ export default function Students() {
     setDeleting(true);
     const { error } = await supabase.from('students').update({ is_active: false }).eq('id', deleteTarget.id);
     setDeleting(false);
-    if (!error) {
-      setDeleteTarget(null);
-      loadAll();
+    if (error) {
+      console.error('Deactivate student error:', error);
+      window.alert(lang === 'ar' ? 'تعذّر الحذف، حاول مرة أخرى.' : 'Could not delete. Please try again.');
+      return;
     }
+    setDeleteTarget(null);
+    loadAll();
   };
 
   const handleRestore = async (student) => {
     if (!isAdmin) return;
-    await supabase.from('students').update({ is_active: true }).eq('id', student.id);
+    const { error } = await supabase.from('students').update({ is_active: true }).eq('id', student.id);
+    if (error) {
+      console.error('Restore student error:', error);
+      window.alert(lang === 'ar' ? 'تعذّر الاسترجاع، حاول مرة أخرى.' : 'Could not restore. Please try again.');
+      return;
+    }
     loadAll();
   };
 

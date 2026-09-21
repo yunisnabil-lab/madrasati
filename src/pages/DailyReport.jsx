@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, Fragment } from 'react';
 import { motion } from 'framer-motion';
-import { Printer, Download, PieChart as PieIcon } from 'lucide-react';
+import { Printer, Download, PieChart as PieIcon, ChevronDown } from 'lucide-react';
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
@@ -10,6 +10,7 @@ import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { STATUS_META, STATUS_LIST } from '../lib/status';
 import { exportXlsx } from '../lib/exportXlsx';
 import SectionPicker from '../components/SectionPicker';
+import PeriodBreakdown from '../components/PeriodBreakdown';
 
 function todayStr() {
   const d = new Date();
@@ -31,6 +32,15 @@ export default function DailyReport() {
   const [rows, setRows] = useState(null); // null = not run yet
   const [loading, setLoading] = useState(false);
   const [printSelection, setPrintSelection] = useState(new Set());
+  const [expanded, setExpanded] = useState(new Set()); // row ids showing their period breakdown
+
+  const toggleExpand = (id) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  };
 
   // a recorder (teacher) only sees the sections they've been assigned
   const loadSectionsIfNeeded = async () => {
@@ -89,11 +99,13 @@ export default function DailyReport() {
         section_id: s.section_id,
         section_label: fmtSectionLabel(s.sections, lang),
         status: day ? day.status : 'not_recorded',
+        periods: day ? day.periods : {},
       };
     });
 
     setRows(result);
     setPrintSelection(new Set());
+    setExpanded(new Set());
     setLoading(false);
   };
 
@@ -294,6 +306,7 @@ export default function DailyReport() {
                         <th className="text-start font-medium px-4 py-3">{t.colStudentName}</th>
                         <th className="text-start font-medium px-4 py-3 hidden sm:table-cell">{t.colGrade}</th>
                         <th className="text-start font-medium px-4 py-3">{t.colStatus}</th>
+                        <th className="text-start font-medium px-4 py-3 no-print">{t.periodsCol}</th>
                       </tr>
                     </thead>
                     <tbody className={`divide-y ${dark ? 'divide-slate-800/60' : 'divide-slate-100'}`}>
@@ -301,21 +314,40 @@ export default function DailyReport() {
                         const meta = STATUS_META[r.status];
                         const Icon = meta.icon;
                         const excludedFromPrint = printSelection.size > 0 && !printSelection.has(r.id);
+                        const isExpanded = expanded.has(r.id);
                         return (
-                          <tr key={r.id} className={excludedFromPrint ? 'no-print' : ''}>
-                            <td className="px-4 py-2.5 no-print">
-                              <input type="checkbox" checked={printSelection.has(r.id)} onChange={() => togglePrintSelect(r.id)} className="accent-royal" />
-                            </td>
-                            <td className="px-4 py-2.5">{i + 1}</td>
-                            <td className="px-4 py-2.5 font-en">{r.sis_no}</td>
-                            <td className="px-4 py-2.5 font-medium">{r.name}</td>
-                            <td className="px-4 py-2.5 hidden sm:table-cell">{r.grade}</td>
-                            <td className="px-4 py-2.5">
-                              <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: meta.color }}>
-                                <Icon size={13} /> {t[meta.key]}
-                              </span>
-                            </td>
-                          </tr>
+                          <Fragment key={r.id}>
+                            <tr className={excludedFromPrint ? 'no-print' : ''}>
+                              <td className="px-4 py-2.5 no-print">
+                                <input type="checkbox" checked={printSelection.has(r.id)} onChange={() => togglePrintSelect(r.id)} className="accent-royal" />
+                              </td>
+                              <td className="px-4 py-2.5">{i + 1}</td>
+                              <td className="px-4 py-2.5 font-en">{r.sis_no}</td>
+                              <td className="px-4 py-2.5 font-medium">{r.name}</td>
+                              <td className="px-4 py-2.5 hidden sm:table-cell">{r.grade}</td>
+                              <td className="px-4 py-2.5">
+                                <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: meta.color }}>
+                                  <Icon size={13} /> {t[meta.key]}
+                                </span>
+                              </td>
+                              <td className="px-4 py-2.5 no-print">
+                                <button
+                                  onClick={() => toggleExpand(r.id)}
+                                  className={`flex items-center gap-1 text-xs font-medium ${dark ? 'text-royal-light' : 'text-royal'}`}
+                                >
+                                  {isExpanded ? t.hidePeriods : t.showPeriods}
+                                  <ChevronDown size={13} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                                </button>
+                              </td>
+                            </tr>
+                            {isExpanded && (
+                              <tr className="no-print">
+                                <td colSpan={7} className={`px-4 pb-3 pt-0 ${dark ? 'bg-black/10' : 'bg-slate-50/60'}`}>
+                                  <PeriodBreakdown periods={r.periods} lang={lang} dark={dark} />
+                                </td>
+                              </tr>
+                            )}
+                          </Fragment>
                         );
                       })}
                     </tbody>

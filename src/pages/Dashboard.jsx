@@ -78,10 +78,11 @@ export default function Dashboard() {
       .gte('date', days[0])
       .lte('date', days[days.length - 1]);
 
-    // derive one status per student per day (3+ absent periods = day
-    // absent) instead of counting raw per-period rows, which previously
-    // over/under-counted whenever a student had more than one record for
-    // the same day (per-period rows plus an override, or several periods)
+    // derive one status per student per day (present in 5+ of the 8 daily
+    // periods = day present, otherwise absent) instead of counting raw
+    // per-period rows, which previously over/under-counted whenever a
+    // student had more than one record for the same day (per-period rows
+    // plus an override, or several periods)
     const derived = deriveByStudentAndDate(recs || []);
     const byDay = {};
     days.forEach((d) => { byDay[d] = { total: 0, absent: 0 }; });

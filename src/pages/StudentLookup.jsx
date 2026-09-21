@@ -1,6 +1,6 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, Fragment } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ArrowRight, Flag, Printer, Check, X, Clock3, FileWarning, ShieldCheck, MessageCircle, Trash2, Loader2, Mail, RefreshCw } from 'lucide-react';
+import { Search, ArrowRight, Flag, Printer, ShieldCheck, MessageCircle, Trash2, Loader2, Mail, RefreshCw, ChevronDown } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -8,14 +8,10 @@ import { matchesStudentSearch } from '../lib/search';
 import { fetchAllRows } from '../lib/fetchAll';
 import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
 import { buildWhatsAppLink } from '../lib/whatsapp';
+import { deriveByStudentAndDate } from '../lib/attendanceDerive';
+import { STATUS_META } from '../lib/status';
 import SectionPicker from '../components/SectionPicker';
-
-const STATUS_META = {
-  present: { key: 'statusPresent', icon: Check, color: '#05cd99' },
-  absent: { key: 'statusAbsent', icon: X, color: '#ee5d50' },
-  late: { key: 'statusLate', icon: Clock3, color: '#ffb800' },
-  excused: { key: 'statusExcused', icon: FileWarning, color: '#8b5cf6' },
-};
+import PeriodBreakdown from '../components/PeriodBreakdown';
 
 function initials(name) {
   const parts = (name || '').trim().split(/\s+/);
@@ -27,32 +23,11 @@ function dayName(dateStr, lang) {
   return new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', { weekday: 'long' }).format(d);
 }
 
-// group raw period-level attendance rows into one derived status per day.
-// Rule: 3+ periods marked excused on a date => the whole day counts as
-// excused; else 3+ periods marked absent => the whole day counts as absent.
-// Lateness never affects the day-level status. Legacy rows (period is null,
-// from before per-period recording existed) are used as-is.
+// group raw period-level attendance rows into one derived status per day,
+// using the same rule as everywhere else in the app (see lib/attendanceDerive).
 function deriveDayRecords(rawRecords) {
-  const byDate = new Map();
-  rawRecords.forEach((r) => {
-    if (!byDate.has(r.date)) byDate.set(r.date, []);
-    byDate.get(r.date).push(r);
-  });
-
-  const days = [];
-  byDate.forEach((rows, date) => {
-    const legacy = rows.find((r) => r.period == null);
-    if (legacy) {
-      days.push({ date, status: legacy.status, periods: rows });
-      return;
-    }
-    const absentCount = rows.filter((r) => r.status === 'absent').length;
-    const lateCount = rows.filter((r) => r.status === 'late').length;
-    const excusedCount = rows.filter((r) => r.status === 'excused').length;
-    const status = excusedCount >= 3 ? 'excused' : absentCount >= 3 ? 'absent' : 'present';
-    days.push({ date, status, absentCount, lateCount, excusedCount, periods: rows });
-  });
-
+  const byDate = deriveByStudentAndDate(rawRecords.map((r) => ({ ...r, student_id: '_' }))).get('_') || new Map();
+  const days = [...byDate.entries()].map(([date, day]) => ({ date, ...day }));
   return days.sort((a, b) => b.date.localeCompare(a.date));
 }
 
@@ -332,6 +307,15 @@ function StudentProfileCard({
   const canOverride = staff && (staff.role === 'admin' || staff.role === 'viewer');
   const isAdmin = staff && staff.role === 'admin';
 
+  const [expandedDates, setExpandedDates] = useState(new Set());
+  const toggleExpandDate = (date) => {
+    setExpandedDates((prev) => {
+      const next = new Set(prev);
+      if (next.has(date)) next.delete(date); else next.add(date);
+      return next;
+    });
+  };
+
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
       <button onClick={onBack} className={`flex items-center gap-1.5 text-xs font-medium mb-4 no-print ${dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'}`}>
@@ -443,6 +427,7 @@ function StudentProfileCard({
                 <th className="text-start font-medium px-4 py-3">{t.recordDate}</th>
                 <th className="text-start font-medium px-4 py-3">{t.recordDay}</th>
                 <th className="text-start font-medium px-4 py-3">{t.recordStatus}</th>
+                <th className="text-start font-medium px-4 py-3 no-print">{t.periodsCol}</th>
               </tr>
             </thead>
             <tbody className={`divide-y ${dark ? 'divide-slate-800/60' : 'divide-slate-100'}`}>
@@ -450,23 +435,42 @@ function StudentProfileCard({
                 const meta = STATUS_META[r.status] || STATUS_META.present;
                 const Icon = meta.icon;
                 const hasNote = (r.absentCount > 0 || r.lateCount > 0) && r.status === 'present';
+                const isExpanded = expandedDates.has(r.date);
                 return (
-                  <tr key={r.date}>
-                    <td className="px-4 py-2.5 font-en">{r.date}</td>
-                    <td className="px-4 py-2.5">{dayName(r.date, lang)}</td>
-                    <td className="px-4 py-2.5">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: meta.color }}>
-                        <Icon size={13} /> {t[meta.key]}
-                      </span>
-                      {hasNote && (
-                        <span className={`ms-2 text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
-                          {t.periodNote
-                            .replace('{absent}', r.absentCount || 0)
-                            .replace('{late}', r.lateCount || 0)}
+                  <Fragment key={r.date}>
+                    <tr>
+                      <td className="px-4 py-2.5 font-en">{r.date}</td>
+                      <td className="px-4 py-2.5">{dayName(r.date, lang)}</td>
+                      <td className="px-4 py-2.5">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-medium" style={{ color: meta.color }}>
+                          <Icon size={13} /> {t[meta.key]}
                         </span>
-                      )}
-                    </td>
-                  </tr>
+                        {hasNote && (
+                          <span className={`ms-2 text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                            {t.periodNote
+                              .replace('{absent}', r.absentCount || 0)
+                              .replace('{late}', r.lateCount || 0)}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-4 py-2.5 no-print">
+                        <button
+                          onClick={() => toggleExpandDate(r.date)}
+                          className={`flex items-center gap-1 text-xs font-medium ${dark ? 'text-royal-light' : 'text-royal'}`}
+                        >
+                          {isExpanded ? t.hidePeriods : t.showPeriods}
+                          <ChevronDown size={13} className={`transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                        </button>
+                      </td>
+                    </tr>
+                    {isExpanded && (
+                      <tr className="no-print">
+                        <td colSpan={4} className={`px-4 pb-3 pt-0 ${dark ? 'bg-black/10' : 'bg-slate-50/60'}`}>
+                          <PeriodBreakdown periods={r.periods} lang={lang} dark={dark} />
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>

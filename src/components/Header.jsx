@@ -138,11 +138,16 @@ export default function Header() {
         <div className="relative">
           <button
             onClick={() => { setNotifOpen((v) => !v); setProfileOpen(false); }}
-            className={`relative h-9 w-9 rounded-full flex items-center justify-center transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-100'}`}
+            className={`relative h-9 w-9 rounded-full flex items-center justify-center transition-colors ${dark ? 'bg-royal/15 text-royal-light hover:bg-royal/25' : 'bg-royal/10 text-royal hover:bg-royal/20'}`}
           >
             <Bell size={16} />
             {isAdmin && requests.length > 0 && (
-              <span className="absolute top-2 end-2 h-1.5 w-1.5 rounded-full bg-gold" />
+              <span className="absolute -top-0.5 -end-0.5 flex h-3.5 w-3.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75" />
+                <span className={`relative inline-flex items-center justify-center h-3.5 w-3.5 rounded-full bg-gold text-white text-[9px] font-bold ring-2 ${dark ? 'ring-navy' : 'ring-white'}`}>
+                  {requests.length}
+                </span>
+              </span>
             )}
           </button>
           <AnimatePresence>
@@ -170,13 +175,13 @@ export default function Header() {
         {/* Language */}
         <button
           onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-          className={`hidden sm:block text-xs font-semibold tracking-wide px-1 ${dark ? 'text-slate-300' : 'text-slate-500'}`}
+          className={`hidden sm:flex items-center justify-center rounded-full px-2.5 py-1 text-[11px] font-bold tracking-wide transition-colors ${dark ? 'bg-gold/15 text-gold-light hover:bg-gold/25' : 'bg-gold/10 text-gold hover:bg-gold/20'}`}
         >
           AR/EN
         </button>
 
         {/* Live date/time */}
-        <div className={`hidden lg:block text-[11px] font-medium whitespace-nowrap ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+        <div className={`hidden lg:flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-semibold whitespace-nowrap ${dark ? 'bg-white/5 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
           {dateTimeStr}
         </div>
 
@@ -184,14 +189,14 @@ export default function Header() {
         <button
           onClick={signOut}
           title={t.signOut}
-          className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${dark ? 'text-rose-400 hover:bg-rose-500/10' : 'text-rose-500 hover:bg-rose-50'}`}
+          className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 transition-colors ${dark ? 'bg-rose-500/15 text-rose-400 hover:bg-rose-500/25' : 'bg-rose-50 text-rose-500 hover:bg-rose-100'}`}
         >
           <LogOut size={16} />
         </button>
 
         {/* Search */}
-        <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2 text-sm max-w-xs ${dark ? 'bg-white/5 text-slate-400' : 'bg-slate-100 text-slate-400'}`}>
-          <Search size={15} />
+        <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2 text-sm max-w-xs border transition-colors focus-within:border-royal ${dark ? 'bg-white/5 border-transparent text-slate-400 focus-within:bg-white/10' : 'bg-slate-100 border-transparent text-slate-500 focus-within:bg-white focus-within:shadow-sm'}`}>
+          <Search size={15} className={dark ? 'text-royal-light' : 'text-royal'} />
           <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
         </div>
 

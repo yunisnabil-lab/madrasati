@@ -253,35 +253,19 @@ export default function Dashboard() {
                   className="overflow-hidden"
                 >
                   <div className={`px-5 pb-5 pt-1 border-t ${dark ? 'border-slate-800' : 'border-slate-100'}`}>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4 mt-3">
-                      <div className={`rounded-xl px-4 py-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
-                        <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.totalStudents}</div>
-                        <div className={`text-lg font-bold font-en mt-1 ${dark ? 'text-white' : 'text-navy'}`}>
-                          {kpi.students != null ? kpi.students.toLocaleString('en-US') : '—'}
-                        </div>
-                      </div>
-                      <div className={`rounded-xl px-4 py-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
-                        <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.staffMembers}</div>
-                        <div className={`text-lg font-bold font-en mt-1 ${dark ? 'text-white' : 'text-navy'}`}>
-                          {kpi.staffCount != null ? kpi.staffCount.toLocaleString('en-US') : '—'}
-                        </div>
-                      </div>
-                      <div className={`rounded-xl px-4 py-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
-                        <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.sections}</div>
-                        <div className={`text-lg font-bold font-en mt-1 ${dark ? 'text-white' : 'text-navy'}`}>
-                          {kpi.sections != null ? kpi.sections.toLocaleString('en-US') : '—'}
-                        </div>
-                      </div>
-                      <div className={`rounded-xl px-4 py-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
-                        <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
-                          {lang === 'ar' ? 'متوسط الفصل' : 'Avg. per section'}
-                        </div>
-                        <div className={`text-lg font-bold font-en mt-1 ${dark ? 'text-white' : 'text-navy'}`}>
-                          {kpi.students != null && kpi.sections
-                            ? Math.round(kpi.students / kpi.sections).toLocaleString('en-US')
-                            : '—'}
-                        </div>
-                      </div>
+                    {/* the totals (students/staff/sections) already appear in the KPI
+                        cards above — this panel only adds the section-by-section
+                        breakdown, so we don't repeat them here, only the one number
+                        that's genuinely new: the average class size. */}
+                    <div className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 mb-4 mt-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
+                      <span className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                        {lang === 'ar' ? 'متوسط عدد الطلاب لكل فصل' : 'Avg. students per section'}
+                      </span>
+                      <span className={`text-lg font-bold font-en ${dark ? 'text-white' : 'text-navy'}`}>
+                        {kpi.students != null && kpi.sections
+                          ? Math.round(kpi.students / kpi.sections).toLocaleString('en-US')
+                          : '—'}
+                      </span>
                     </div>
 
                     <h3 className={`text-xs font-semibold mb-2 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>

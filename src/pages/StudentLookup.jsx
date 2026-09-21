@@ -12,6 +12,7 @@ import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { STATUS_META } from '../lib/status';
 import SectionPicker from '../components/SectionPicker';
 import PeriodBreakdown from '../components/PeriodBreakdown';
+import ContactParentPanel from '../components/ContactParentPanel';
 
 function initials(name) {
   const parts = (name || '').trim().split(/\s+/);
@@ -400,7 +401,20 @@ function StudentProfileCard({
         </button>
       </div>
 
-      {staff?.role !== 'recorder' && (
+      {staff?.role === 'recorder' ? (
+        <div className="no-print">
+          <ContactParentPanel
+            student={student}
+            name={name}
+            sectionLabel={fmtSectionLabel(student.sections, lang)}
+            defaultNote={lang === 'ar'
+              ? `نسبة حضور الطالب حاليًا ${stats.rate}% (${stats.absent} يوم غياب). نحب نلفت انتباه حضرتك لمتابعة الموضوع معاه.`
+              : `The student's current attendance rate is ${stats.rate}% (${stats.absent} day(s) absent). We'd like to bring this to your attention.`}
+            mode="request"
+            staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls}
+          />
+        </div>
+      ) : (
         <div className="no-print">
           <WhatsAppShare student={student} name={name} stats={stats} history={history} sectionLabel={fmtSectionLabel(student.sections, lang)} fromDate={fromDate} toDate={toDate} t={t} lang={lang} dark={dark} inputCls={inputCls} />
         </div>

@@ -9,6 +9,7 @@ import { fetchAllRows } from '../lib/fetchAll';
 import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
 import { VIOLATION_TYPE_KEYS } from '../lib/i18n';
 import SectionPicker from '../components/SectionPicker';
+import ContactParentPanel from '../components/ContactParentPanel';
 
 function initials(name) {
   const parts = (name || '').trim().split(/\s+/);
@@ -330,6 +331,19 @@ export default function Violations() {
                   </div>
                 )}
               </motion.div>
+
+              {canManage && (
+                <ContactParentPanel
+                  student={selected}
+                  name={lang === 'ar' ? (selected.name_ar || selected.name_en) : (selected.name_en || selected.name_ar)}
+                  sectionLabel={fmtSectionLabel(selected.sections, lang)}
+                  defaultNote={lang === 'ar'
+                    ? 'تم رصد مخالفة سلوكية لهذا الطالب، ونحب نلفت انتباه حضرتك لمتابعة الموضوع معاه.'
+                    : "A behavioral violation was recorded for this student — we'd like to bring this to your attention."}
+                  mode="direct"
+                  staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls}
+                />
+              )}
 
               <div className={cardFloating(dark, 'p-5')}>
                 <h2 className={`text-sm font-semibold mb-3 ${dark ? 'text-white' : 'text-slate-900'}`}>{t.violationsListTitle}</h2>

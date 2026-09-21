@@ -1,19 +1,21 @@
 // Shared logic for turning raw per-period attendance_records rows into a
 // single derived status per student per day. Mirrors the rule used on the
-// student profile page: 3+ periods marked absent => the day counts as
-// absent; lateness never affects the day-level status; a legacy row
-// (period is null — includes admin/management "final" overrides) is used
-// as-is for that day.
+// student profile page: 3+ periods marked excused => the day counts as
+// excused; else 3+ periods marked absent => the day counts as absent;
+// lateness never affects the day-level status; a legacy row (period is
+// null — includes admin/management "final" overrides) is used as-is for
+// that day.
 
 function deriveDayFromRows(rows) {
   const legacy = rows.find((r) => r.period == null);
   if (legacy) {
-    return { status: legacy.status, absentCount: 0, lateCount: 0 };
+    return { status: legacy.status, absentCount: 0, lateCount: 0, excusedCount: 0 };
   }
   const absentCount = rows.filter((r) => r.status === 'absent').length;
   const lateCount = rows.filter((r) => r.status === 'late').length;
-  const status = absentCount >= 3 ? 'absent' : 'present';
-  return { status, absentCount, lateCount };
+  const excusedCount = rows.filter((r) => r.status === 'excused').length;
+  const status = excusedCount >= 3 ? 'excused' : absentCount >= 3 ? 'absent' : 'present';
+  return { status, absentCount, lateCount, excusedCount };
 }
 
 // records: [{ student_id, date, status, period }]

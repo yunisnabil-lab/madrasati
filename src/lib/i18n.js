@@ -73,7 +73,7 @@ export const TEXT = {
     chooseCycle: '— اختر الحلقة —',
     chooseSubject: '— اختر المادة —',
     cycleSubjectLockedNote: 'الحلقة والمادة يتم تحديدهما مرة واحدة عند التسجيل، ولا يمكن للمعلم تعديلهما لاحقاً — الأدمن فقط يقدر يغيّرهما.',
-    cycleNames: { primary: 'الحلقة الابتدائية', preparatory: 'الحلقة الإعدادية', secondary: 'الحلقة الثانوية' },
+    cycleNames: { cycle1: 'الحلقة الأولى', cycle2: 'الحلقة الثانية', cycle3: 'الحلقة الثالثة' },
     subjectNames: {
       arabic: 'اللغة العربية', english: 'اللغة الإنجليزية', math: 'الرياضيات', science: 'العلوم',
       social_studies: 'الدراسات الاجتماعية', islamic_education: 'التربية الإسلامية',
@@ -390,7 +390,7 @@ export const TEXT = {
     chooseCycle: '— Choose a cycle —',
     chooseSubject: '— Choose a subject —',
     cycleSubjectLockedNote: 'Cycle and subject are set once at registration and cannot be changed by the teacher afterward — only an admin can change them.',
-    cycleNames: { primary: 'Primary Cycle', preparatory: 'Preparatory Cycle', secondary: 'Secondary Cycle' },
+    cycleNames: { cycle1: 'First Cycle', cycle2: 'Second Cycle', cycle3: 'Third Cycle' },
     subjectNames: {
       arabic: 'Arabic', english: 'English', math: 'Math', science: 'Science',
       social_studies: 'Social Studies', islamic_education: 'Islamic Education',
@@ -642,7 +642,7 @@ export const TEXT = {
 
 // Fixed option lists (stored as stable keys in the DB; localized for
 // display via TEXT[lang].cycleNames / subjectNames / violationTypeNames).
-export const CYCLE_KEYS = ['primary', 'preparatory', 'secondary'];
+export const CYCLE_KEYS = ['cycle1', 'cycle2', 'cycle3'];
 export const SUBJECT_KEYS = [
   'arabic', 'english', 'math', 'science', 'social_studies',
   'islamic_education', 'computer', 'art', 'music', 'pe', 'quran', 'other',

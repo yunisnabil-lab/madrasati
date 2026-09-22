@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { distinctGrades, distinctStreams, sectionsFor, streamLabel } from '../lib/sections';
 
 // Controlled cascading picker: grade -> stream (only if the grade has one) -> section number.
@@ -14,6 +15,17 @@ export default function SectionPicker({
   const grades = distinctGrades(sections);
   const streams = grade ? distinctStreams(sections, grade) : [];
   const options = grade ? sectionsFor(sections, grade, streams.length ? stream : null) : [];
+
+  // Grades that don't have an "Advanced" track only ever have a single
+  // stream value (e.g. "General" or "General - 3rd Language"). Don't make
+  // the user open and pick from a dropdown that has exactly one option —
+  // select it automatically as soon as the grade (and its one stream) are known.
+  useEffect(() => {
+    if (streams.length === 1 && stream !== streams[0]) {
+      onStreamChange(streams[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [grade, streams.length === 1 ? streams[0] : null]);
 
   const t = {
     chooseGrade: lang === 'ar' ? '— اختر الصف —' : '— Choose grade —',

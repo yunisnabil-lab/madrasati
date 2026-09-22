@@ -169,12 +169,12 @@ export default function Header() {
           </AnimatePresence>
         </div>
 
-        {/* Language */}
+        {/* Language — shows the language you'll SWITCH TO, not a static "AR/EN" */}
         <button
           onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
           className={`hidden sm:flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-bold tracking-wide transition-colors ${dark ? 'bg-gold/15 text-gold-light hover:bg-gold/25' : 'bg-gold/10 text-gold hover:bg-gold/20'}`}
         >
-          AR/EN
+          {lang === 'ar' ? 'English' : 'عربي'}
         </button>
 
         {/* Live date/time */}

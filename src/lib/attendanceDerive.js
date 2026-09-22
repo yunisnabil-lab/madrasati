@@ -1,18 +1,23 @@
 // Shared logic for turning raw per-period attendance_records rows into a
 // single derived status per student per day.
 //
-// A school day has up to PERIODS_PER_DAY periods. The day counts as
-// "present" when the student was marked present in at least
-// PRESENT_THRESHOLD of those periods; otherwise the day counts as absent.
-// A day with EXCUSED_THRESHOLD or more periods marked excused counts as
-// excused instead (an authorized absence beats the present/absent count).
-// Lateness is tracked separately (lateCount) and never changes the
-// day-level status. A legacy row (period is null — includes
-// admin/management "final" overrides) is used as-is for that day,
-// bypassing the period count entirely.
+// A school day has up to PERIODS_PER_DAY periods, but not every period is
+// necessarily recorded on a given day (a recorder may only get through one
+// or two periods, or a class may not meet every period). The day-level
+// status is decided ONLY from the periods that were actually recorded —
+// an unrecorded period is simply absent from the data, never assumed to be
+// an absence. Among the recorded periods: "late" counts as attended (the
+// student was present, just tardy) alongside "present"; the day is
+// "excused" if at least EXCUSED_THRESHOLD recorded periods were excused;
+// otherwise it's "present" when attended periods are >= absent periods
+// among what was recorded, and "absent" only when actually-recorded
+// absences outnumber attended periods. A day with zero recorded periods
+// has no status at all (status: null) rather than defaulting to absent.
+// A legacy row (period is null — includes admin/management "final"
+// overrides) is used as-is for that day, bypassing the period count
+// entirely.
 
 export const PERIODS_PER_DAY = 8;
-export const PRESENT_THRESHOLD = 5;
 const EXCUSED_THRESHOLD = 3;
 
 function deriveDayFromRows(rows) {
@@ -26,9 +31,13 @@ function deriveDayFromRows(rows) {
   const absentCount = rows.filter((r) => r.status === 'absent').length;
   const lateCount = rows.filter((r) => r.status === 'late').length;
   const excusedCount = rows.filter((r) => r.status === 'excused').length;
-  const status = excusedCount >= EXCUSED_THRESHOLD
-    ? 'excused'
-    : (presentCount >= PRESENT_THRESHOLD ? 'present' : 'absent');
+  const recordedCount = presentCount + absentCount + lateCount + excusedCount;
+  const attendedCount = presentCount + lateCount;
+  const status = recordedCount === 0
+    ? null
+    : excusedCount >= EXCUSED_THRESHOLD
+      ? 'excused'
+      : (attendedCount >= absentCount ? 'present' : 'absent');
   return { status, presentCount, absentCount, lateCount, excusedCount, periods };
 }
 

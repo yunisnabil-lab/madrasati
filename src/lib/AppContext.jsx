@@ -20,6 +20,15 @@ export function AppProvider({ children }) {
 
   useEffect(() => {
     localStorage.setItem('madrasati-theme', dark ? 'dark' : 'light');
+    // Tell the browser itself (not just our own Tailwind classes) which
+    // theme is active. Two things depend on this:
+    // 1) native controls (date pickers, <select> popups, scrollbars) are
+    //    drawn by the OS/browser using its own light/dark chrome, entirely
+    //    outside our CSS — without this they stay light even on a dark
+    //    page, e.g. a near-black calendar icon on a navy input.
+    // 2) tailwind.config.js uses `darkMode: 'class'`, so any `dark:` utility
+    //    class in the app only ever activates while this class is present.
+    document.documentElement.classList.toggle('dark', dark);
   }, [dark]);
 
   useEffect(() => {

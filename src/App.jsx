@@ -7,6 +7,7 @@ import Register from './pages/Register';
 import RegisterComplete from './pages/RegisterComplete';
 import Pending from './pages/Pending';
 import Dashboard from './pages/Dashboard';
+import RecorderDashboard from './pages/RecorderDashboard';
 import Attendance from './pages/Attendance';
 import SingleAttendance from './pages/SingleAttendance';
 import Students from './pages/Students';
@@ -64,6 +65,17 @@ function AdminOnly({ children, fallback = '/attendance' }) {
   return children;
 }
 
+// "/" shows a role-appropriate home page: the full admin dashboard for
+// admins, a personal home (their own classes/students) for recorders, and
+// everyone else falls through to /attendance (which itself redirects a
+// supervisor on to /violations, same as before this route existed).
+function HomeRoute() {
+  const { staff } = useApp();
+  if (staff?.role === 'admin') return <Dashboard />;
+  if (staff?.role === 'recorder') return <RecorderDashboard />;
+  return <Navigate to="/attendance" replace />;
+}
+
 // the "supervisor" role is scoped to behavioral violations + lateness
 // monitoring only — it doesn't take attendance, manage students, or see
 // the other reports, so every other protected page redirects it away.
@@ -99,7 +111,7 @@ function Router() {
         <Route path="/register" element={<GuestOnly><Register /></GuestOnly>} />
         <Route path="/register-complete" element={<RegisterComplete />} />
         <Route path="/pending" element={<PendingGuard><Pending /></PendingGuard>} />
-        <Route path="/" element={<Gate><AdminOnly><Layout><Dashboard /></Layout></AdminOnly></Gate>} />
+        <Route path="/" element={<Gate><Layout><HomeRoute /></Layout></Gate>} />
         <Route path="/attendance" element={<Gate><NotSupervisor><Layout><Attendance /></Layout></NotSupervisor></Gate>} />
         <Route path="/single-attendance" element={<Gate><NotSupervisor><Layout><SingleAttendance /></Layout></NotSupervisor></Gate>} />
         <Route path="/students" element={<Gate><NotRecorder><NotSupervisor><Layout><Students /></Layout></NotSupervisor></NotRecorder></Gate>} />

@@ -5,7 +5,7 @@ import { TEXT } from './i18n';
 const AppCtx = createContext(null);
 
 export function AppProvider({ children }) {
-  const [lang, setLang] = useState('ar');
+  const [lang, setLang] = useState(() => localStorage.getItem('madrasati-lang') || 'ar');
   const [dark, setDark] = useState(() => localStorage.getItem('madrasati-theme') === 'dark');
   const [session, setSession] = useState(undefined); // undefined = not checked yet
   const [staff, setStaff] = useState(null);
@@ -21,6 +21,10 @@ export function AppProvider({ children }) {
   useEffect(() => {
     localStorage.setItem('madrasati-theme', dark ? 'dark' : 'light');
   }, [dark]);
+
+  useEffect(() => {
+    localStorage.setItem('madrasati-lang', lang);
+  }, [lang]);
 
   const fetchStaff = useCallback(async (userId) => {
     if (!userId) { setStaff(null); setStaffLoading(false); return; }

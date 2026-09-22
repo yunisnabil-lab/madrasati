@@ -18,6 +18,7 @@ import StaffAssignments from './pages/StaffAssignments';
 import Profile from './pages/Profile';
 import Violations from './pages/Violations';
 import Lateness from './pages/Lateness';
+import SupervisorReport from './pages/SupervisorReport';
 import ContactRequests from './pages/ContactRequests';
 import Layout from './components/Layout';
 
@@ -121,6 +122,7 @@ function Router() {
         <Route path="/profile" element={<Gate><Layout><Profile /></Layout></Gate>} />
         <Route path="/violations" element={<Gate><ViolationsAccess><Layout><Violations /></Layout></ViolationsAccess></Gate>} />
         <Route path="/lateness" element={<Gate><ViolationsAccess><Layout><Lateness /></Layout></ViolationsAccess></Gate>} />
+        <Route path="/supervisor-report" element={<Gate><ViolationsAccess><Layout><SupervisorReport /></Layout></ViolationsAccess></Gate>} />
         <Route path="/contact-requests" element={<Gate><ContactRequestsAccess><Layout><ContactRequests /></Layout></ContactRequestsAccess></Gate>} />
         <Route path="/staff-assignments" element={<Gate><AdminOnly><Layout><StaffAssignments /></Layout></AdminOnly></Gate>} />
         <Route path="*" element={<Navigate to="/" replace />} />

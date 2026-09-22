@@ -3,7 +3,7 @@ import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, Use
 import { useApp } from '../lib/AppContext';
 
 const ITEMS = [
-  { to: '/', icon: LayoutDashboard, key: 'navDashboard', end: true, hideFor: ['recorder', 'viewer', 'supervisor'] },
+  { to: '/', icon: LayoutDashboard, key: 'navDashboard', end: true, hideFor: ['viewer', 'supervisor'] },
   { to: '/attendance', icon: ClipboardCheck, key: 'navAttendance', end: false, hideFor: ['supervisor'] },
   { to: '/single-attendance', icon: UserCheck, key: 'navSingleAttendance', end: false, hideFor: ['supervisor'] },
   { to: '/lookup', icon: Search, key: 'navLookup', end: false, hideFor: ['supervisor'] },

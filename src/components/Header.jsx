@@ -44,7 +44,7 @@ export default function Header() {
           onClick={() => setNotifOpen(false)}
         />
       )}
-      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-5">
+      <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-6">
 
         {/* School branding — rightmost now that the account block lives only in the sidebar */}
         <div className="hidden sm:flex items-center gap-2.5">
@@ -67,8 +67,9 @@ export default function Header() {
           <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
         </div>
 
-        {/* Everything else — sits right after search, no leftover gap */}
-        <div className="flex items-center gap-5">
+        {/* Everything else — sits right after search, no leftover gap.
+            Sign-out is last in DOM, so under RTL it renders furthest left. */}
+        <div className="flex items-center gap-6">
           {/* Live date/time */}
           <div className={`hidden lg:flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap ${dark ? 'bg-white/5 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
             {dateTimeStr}

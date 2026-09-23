@@ -174,7 +174,6 @@ export default function PeriodReport() {
         <main className="max-w-5xl mx-auto px-5 py-7 print-area">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 no-print">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.periodReportTitle}</h1>
-            <p className={`text-sm mt-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.periodReportSub}</p>
           </motion.div>
 
           <div className="print-only mb-4 text-black">

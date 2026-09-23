@@ -391,7 +391,6 @@ export default function Students() {
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 flex flex-wrap items-start justify-between gap-3">
             <div>
               <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.studentsTitle}</h1>
-              <p className={`text-sm mt-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.studentsSub}</p>
             </div>
             <div className="flex gap-2">
               {isAdmin && (

@@ -258,7 +258,6 @@ export default function Violations() {
         <main className="max-w-3xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.violationsTitle}</h1>
-            <p className={`text-sm mt-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.violationsSub}</p>
           </motion.div>
 
           {!selected ? (
@@ -417,7 +416,7 @@ export default function Violations() {
                   name={lang === 'ar' ? (selected.name_ar || selected.name_en) : (selected.name_en || selected.name_ar)}
                   sectionLabel={fmtSectionLabel(selected.sections, lang)}
                   defaultNote={lang === 'ar'
-                    ? 'تم رصد مخالفة سلوكية لهذا الطالب، ونحب نلفت انتباه حضرتك لمتابعة الموضوع معاه.'
+                    ? 'تم رصد مخالفة سلوكية لهذا الطالب، ونرجو منكم متابعة الأمر معه.'
                     : "A behavioral violation was recorded for this student — we'd like to bring this to your attention."}
                   mode="direct"
                   staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls}

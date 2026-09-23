@@ -62,5 +62,11 @@ html.dark { color-scheme: dark; }
   .print-area { box-shadow: none !important; }
   .print-only { display: block !important; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  /* Repeat the table header on every printed page instead of just the
+     first, and never let a student's row get cut in half across a page
+     break — without these, a report that would otherwise fit on one page
+     can spill an orphaned row (or two) onto a second page. */
+  table thead { display: table-header-group; }
+  table tr { page-break-inside: avoid; break-inside: avoid; }
 }
 .print-only { display: none; }

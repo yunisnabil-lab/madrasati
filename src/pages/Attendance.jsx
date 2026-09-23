@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Check, X, Clock3, FileWarning, Users, Loader2 } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
@@ -34,6 +35,13 @@ function initials(name) {
 
 export default function Attendance() {
   const { t, lang, dark, staff } = useApp();
+  const location = useLocation();
+  // Coming from the recorder dashboard's "my sections" card (a specific
+  // section's "Record attendance" button) hands us that section directly, so
+  // the picker below can be pre-filled instead of making the teacher pick
+  // the grade/stream/section all over again — they just choose the period.
+  const incomingSectionId = location.state?.sectionId;
+  const appliedIncomingRef = useRef(false);
 
   const [sections, setSections] = useState([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
@@ -71,6 +79,19 @@ export default function Attendance() {
       setSectionsLoading(false);
     })();
   }, [staff]);
+
+  // Apply the section handed to us from the recorder dashboard, once —
+  // after that the picker is fully under the teacher's own control again.
+  useEffect(() => {
+    if (appliedIncomingRef.current || sectionsLoading || !incomingSectionId) return;
+    const target = sections.find((s) => s.id === incomingSectionId);
+    if (target) {
+      setGrade(target.grade_name);
+      setStream(target.stream || '');
+      setSectionSel(target.id);
+    }
+    appliedIncomingRef.current = true;
+  }, [sectionsLoading, incomingSectionId, sections]);
 
   // resolved list of section ids to load students/attendance for
   const activeSectionIds = useMemo(() => {
@@ -276,7 +297,7 @@ export default function Attendance() {
               </div>
 
               {students.length > 0 && (
-                <div className="flex gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => markAllAs('present')}
                     className="text-xs font-medium px-4 py-2.5 rounded-lg border border-transparent bg-emerald-500 hover:bg-emerald-600 text-white transition-colors whitespace-nowrap"
@@ -289,6 +310,22 @@ export default function Attendance() {
                   >
                     {t.markAllAbsent}
                   </button>
+                  <button
+                    onClick={handleSave}
+                    disabled={saving}
+                    className="flex items-center gap-2 rounded-lg bg-royal hover:bg-royal-light text-white text-xs font-medium px-4 py-2.5 transition-colors disabled:opacity-60 whitespace-nowrap"
+                  >
+                    {saving && <Loader2 size={14} className="animate-spin" />}
+                    {saving ? t.saving : t.saveAttendance}
+                  </button>
+                  {saveMsg && (
+                    <span className={`text-xs ${saveMsg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>
+                      {saveMsg.text}
+                    </span>
+                  )}
+                  {!saveMsg && isDirty && (
+                    <span className={`text-xs ${dark ? 'text-amber-400' : 'text-amber-600'}`}>{t.unsavedChanges}</span>
+                  )}
                 </div>
               )}
             </div>
@@ -315,7 +352,14 @@ export default function Attendance() {
           ) : (
             <div className={cardFloating(dark, 'overflow-hidden')}>
               <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                {students.map((s) => {
+                {/* Students already marked absent/late/excused float to the top, so a
+                    late arrival can be found and corrected without scrolling through
+                    everyone who's simply present. */}
+                {[...students].sort((a, b) => {
+                  const aFlagged = (statusMap[a.id] || 'present') !== 'present';
+                  const bFlagged = (statusMap[b.id] || 'present') !== 'present';
+                  return aFlagged === bFlagged ? 0 : aFlagged ? -1 : 1;
+                }).map((s) => {
                   const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
                   const current = statusMap[s.id] || 'present';
                   return (

@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Loader2, Users2 } from 'lucide-react';
+import { X, Loader2, Users2, Search } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
-import { sortSections } from '../lib/sections';
+import { sortSections, sectionLabel as fmtSectionLabel } from '../lib/sections';
+import { normalizeArabic } from '../lib/search';
 
 export default function StaffAssignments() {
   const { t, lang, dark, staff } = useApp();
@@ -18,10 +19,17 @@ export default function StaffAssignments() {
   const [checked, setChecked] = useState(new Set());
   const [saving, setSaving] = useState(false);
 
+  // Search + filters — needed once a school has many teachers, so finding
+  // "who teaches this section/subject/cycle" doesn't mean scrolling a flat list.
+  const [query, setQuery] = useState('');
+  const [subjectFilter, setSubjectFilter] = useState('');
+  const [cycleFilter, setCycleFilter] = useState('');
+  const [sectionFilter, setSectionFilter] = useState('');
+
   const loadAll = useCallback(async () => {
     setLoading(true);
     const [teachRes, secRes, asgRes] = await Promise.all([
-      supabase.from('staff').select('id, full_name, email').eq('role', 'recorder').eq('status', 'approved').order('full_name'),
+      supabase.from('staff').select('id, full_name, email, cycle, subject').eq('role', 'recorder').eq('status', 'approved').order('full_name'),
       supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number'),
       supabase.from('staff_sections').select('staff_id, section_id'),
     ]);
@@ -34,6 +42,26 @@ export default function StaffAssignments() {
   useEffect(() => { loadAll(); }, [loadAll]);
 
   const sectionCountFor = (teacherId) => assignments.filter((a) => a.staff_id === teacherId).length;
+
+  const subjectsInUse = useMemo(() => [...new Set(teachers.map((tc) => tc.subject).filter(Boolean))], [teachers]);
+  const cyclesInUse = useMemo(() => [...new Set(teachers.map((tc) => tc.cycle).filter(Boolean))], [teachers]);
+
+  const filteredTeachers = useMemo(() => {
+    const q = normalizeArabic(query.trim().toLowerCase());
+    return teachers.filter((tc) => {
+      if (q) {
+        const hay = normalizeArabic(`${tc.full_name || ''} ${tc.email || ''}`.toLowerCase());
+        if (!hay.includes(q)) return false;
+      }
+      if (subjectFilter && tc.subject !== subjectFilter) return false;
+      if (cycleFilter && tc.cycle !== cycleFilter) return false;
+      if (sectionFilter) {
+        const has = assignments.some((a) => a.staff_id === tc.id && a.section_id === sectionFilter);
+        if (!has) return false;
+      }
+      return true;
+    });
+  }, [teachers, query, subjectFilter, cycleFilter, sectionFilter, assignments]);
 
   const openEdit = (teacher) => {
     setEditing(teacher);
@@ -96,6 +124,35 @@ export default function StaffAssignments() {
             <p className={`text-sm mt-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.assignmentsSub}</p>
           </motion.div>
 
+          {!loading && teachers.length > 0 && (
+            <div className={cardFloating(dark, 'p-4 mb-5 space-y-3')}>
+              <div className={`flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm border ${dark ? 'bg-navy border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+                <Search size={15} />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder={t.teacherSearchPlaceholder}
+                  className="bg-transparent outline-none w-full text-sm placeholder:text-inherit"
+                  style={{ color: dark ? '#e2e8f0' : '#334155' }}
+                />
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <select value={subjectFilter} onChange={(e) => setSubjectFilter(e.target.value)} className={`w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+                  <option value="">{t.allSubjects}</option>
+                  {subjectsInUse.map((sub) => <option key={sub} value={sub}>{t.subjectNames[sub] || sub}</option>)}
+                </select>
+                <select value={cycleFilter} onChange={(e) => setCycleFilter(e.target.value)} className={`w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+                  <option value="">{t.allCycles}</option>
+                  {cyclesInUse.map((cyc) => <option key={cyc} value={cyc}>{t.cycleNames[cyc] || cyc}</option>)}
+                </select>
+                <select value={sectionFilter} onChange={(e) => setSectionFilter(e.target.value)} className={`w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+                  <option value="">{t.allSections}</option>
+                  {sections.map((s) => <option key={s.id} value={s.id}>{fmtSectionLabel(s, lang)}</option>)}
+                </select>
+              </div>
+            </div>
+          )}
+
           <div className={cardFloating(dark, 'overflow-hidden')}>
             {loading ? (
               <div className="p-5 space-y-3">{[...Array(4)].map((_, i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
@@ -104,9 +161,14 @@ export default function StaffAssignments() {
                 <Users2 size={26} className={`mx-auto mb-3 ${dark ? 'text-slate-600' : 'text-slate-300'}`} />
                 <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noTeachersYet}</p>
               </div>
+            ) : filteredTeachers.length === 0 ? (
+              <div className="p-10 text-center">
+                <Search size={26} className={`mx-auto mb-3 ${dark ? 'text-slate-600' : 'text-slate-300'}`} />
+                <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noTeachersMatch}</p>
+              </div>
             ) : (
               <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                {teachers.map((tch) => (
+                {filteredTeachers.map((tch) => (
                   <li key={tch.id} className="flex items-center justify-between gap-3 px-4 py-3.5">
                     <div className="min-w-0">
                       <div className="text-sm font-semibold truncate">{tch.full_name}</div>

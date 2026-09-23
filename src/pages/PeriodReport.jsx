@@ -101,7 +101,8 @@ export default function PeriodReport() {
       const lateDays = days.filter((d) => d.status === 'late' || d.lateCount > 0).length;
       // excused days don't count against the attendance rate or the red-flag ratio
       const ratable = total - excused;
-      const rate = ratable > 0 ? Math.round((present / ratable) * 100) : 100;
+      // null (not 100%) when there's no attendance data at all yet for this student in range
+      const rate = ratable > 0 ? Math.round((present / ratable) * 100) : null;
 
       const sortedDates = dayMap ? [...dayMap.entries()].sort((a, b) => a[0].localeCompare(b[0])) : [];
       let streak = 0; let flagged = false;
@@ -159,7 +160,7 @@ export default function PeriodReport() {
 
   const exportCsv = () => {
     const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGrade, t.colPresentDays, t.colAbsentDays, t.colLateDays, t.colExcusedDays, t.colRate, t.colFlag];
-    const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.grade, r.present, r.absent, r.lateDays, r.excused, `${r.rate}%`, r.flagged ? t.frequentAbsence : '']);
+    const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.grade, r.present, r.absent, r.lateDays, r.excused, r.rate == null ? '—' : `${r.rate}%`, r.flagged ? t.frequentAbsence : '']);
     exportXlsx(`period-report-${fromDate}-to-${toDate}.xlsx`, [header, ...body], { lang });
   };
 
@@ -239,7 +240,12 @@ export default function PeriodReport() {
                         label={({ name, value }) => `${name}: ${value}`}
                         labelLine={false}
                       >
-                        {['#05cd99', '#ee5d50', '#ffb800', '#8b5cf6'].map((c) => <Cell key={c} fill={c} />)}
+                        {[
+                          { name: t.statusPresent, value: rows.reduce((s, r) => s + r.present, 0), color: '#05cd99' },
+                          { name: t.statusAbsent, value: rows.reduce((s, r) => s + r.absent, 0), color: '#ee5d50' },
+                          { name: t.statusLate, value: rows.reduce((s, r) => s + r.lateDays, 0), color: '#ffb800' },
+                          { name: t.statusExcused, value: rows.reduce((s, r) => s + r.excused, 0), color: '#8b5cf6' },
+                        ].filter((d) => d.value > 0).map((d) => <Cell key={d.name} fill={d.color} />)}
                       </Pie>
                       <Tooltip />
                       <Legend wrapperStyle={{ fontSize: 12 }} />
@@ -325,7 +331,7 @@ export default function PeriodReport() {
                             <td className="px-4 py-2.5 text-center text-rose-500 font-semibold">{r.absent}</td>
                             <td className="px-4 py-2.5 text-center hidden sm:table-cell text-amber-500 font-semibold">{r.lateDays}</td>
                             <td className="px-4 py-2.5 text-center hidden sm:table-cell text-violet-500 font-semibold">{r.excused}</td>
-                            <td className="px-4 py-2.5 text-center font-semibold">{r.rate}%</td>
+                            <td className="px-4 py-2.5 text-center font-semibold">{r.rate == null ? '—' : `${r.rate}%`}</td>
                             <td className="px-4 py-2.5 text-center">
                               {r.flagged && (
                                 <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500">

@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, Layers, CheckCircle2, Flag, ClipboardCheck, UserCheck, Search } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
@@ -32,6 +32,7 @@ function initials(name) {
 
 export default function RecorderDashboard() {
   const { t, lang, dark, staff } = useApp();
+  const navigate = useNavigate();
 
   const [loading, setLoading] = useState(true);
   const [sections, setSections] = useState([]);
@@ -223,9 +224,12 @@ export default function RecorderDashboard() {
                           {complete ? t.recordedTodayBadge : t.notRecordedTodayBadge.replace('{n}', st.recorded).replace('{total}', st.total)}
                         </div>
                       </div>
-                      <Link to="/attendance" className={`shrink-0 text-xs font-medium px-3 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-white'}`}>
+                      <button
+                        onClick={() => navigate('/attendance', { state: { sectionId: sec.id, grade: sec.grade_name, stream: sec.stream } })}
+                        className={`shrink-0 text-xs font-medium px-3 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-white'}`}
+                      >
                         {t.recordAttendanceBtn}
-                      </Link>
+                      </button>
                     </div>
                   );
                 })}

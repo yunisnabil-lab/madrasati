@@ -176,7 +176,7 @@ export default function Dashboard() {
   const kpiCards = [
     { label: t.totalStudents, value: kpi.students, icon: GraduationCap, hint: lang === 'ar' ? 'مسجّلون في النظام' : 'enrolled in the system', accent: dark ? 'bg-royal/20 text-royal-light' : 'bg-royal/10 text-royal' },
     { label: t.staffMembers, value: kpi.staffCount, icon: Users, hint: lang === 'ar' ? 'حسابات معتمدة' : 'approved accounts', accent: dark ? 'bg-gold/20 text-gold-light' : 'bg-gold/10 text-gold' },
-    { label: t.sections, value: kpi.sections, icon: SchoolIcon, hint: lang === 'ar' ? 'فصل دراسي نشط' : 'active sections', accent: dark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-500/10 text-emerald-600' },
+    { label: t.sections, value: kpi.sections, icon: SchoolIcon, hint: lang === 'ar' ? 'صف دراسي نشط' : 'active sections', accent: dark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-500/10 text-emerald-600' },
     ...(isAdmin ? [{ label: t.pendingReq, value: requests.length, icon: Clock, hint: lang === 'ar' ? 'بانتظار المراجعة' : 'awaiting review', accent: dark ? 'bg-rose-500/20 text-rose-400' : 'bg-rose-500/10 text-rose-600' }] : []),
   ];
 
@@ -233,7 +233,7 @@ export default function Dashboard() {
                     {lang === 'ar' ? 'نظرة عامة' : 'Overview'}
                   </h2>
                   <p className={`text-xs mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-500'}`}>
-                    {lang === 'ar' ? 'الإجمالي وأعداد الطلاب في كل فصل' : 'Totals and student counts per section'}
+                    {lang === 'ar' ? 'الإجمالي وأعداد الطلاب في كل صف' : 'Totals and student counts per section'}
                   </p>
                 </div>
               </div>
@@ -259,7 +259,7 @@ export default function Dashboard() {
                         that's genuinely new: the average class size. */}
                     <div className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 mb-4 mt-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
                       <span className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
-                        {lang === 'ar' ? 'متوسط عدد الطلاب لكل فصل' : 'Avg. students per section'}
+                        {lang === 'ar' ? 'متوسط عدد الطلاب لكل صف' : 'Avg. students per section'}
                       </span>
                       <span className={`text-lg font-bold font-en ${dark ? 'text-white' : 'text-navy'}`}>
                         {kpi.students != null && kpi.sections
@@ -577,8 +577,7 @@ function StaffManagement({ t, lang, dark, currentStaffId }) {
 
   return (
     <div className={cardFloating(dark, 'p-5 mt-6')}>
-      <h3 className="text-sm font-semibold mb-1">{t.staffManagementTitle}</h3>
-      <p className={`text-xs mb-4 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.staffManagementSub}</p>
+      <h3 className="text-sm font-semibold mb-4">{t.staffManagementTitle}</h3>
 
       {staffList === null ? (
         <div className="space-y-2">{[...Array(3)].map((_, i) => <div key={i} className={skeleton(dark, 'h-11 w-full')} />)}</div>

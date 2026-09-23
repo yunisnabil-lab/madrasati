@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { MessageCircle, Mail, Check, X, Loader2, Inbox, History } from 'lucide-react';
+import { MessageCircle, Mail, Check, X, Loader2, Inbox, History, ChevronDown } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -60,12 +60,44 @@ export default function ContactRequests() {
 
   const fmtDateTime = (d) => (d ? new Date(d).toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '—');
 
-  function Row({ r, reviewedView }) {
+  // Handled requests pile up fast and don't need the pending card's full
+  // real estate — one compact line by default, with the same detail
+  // (message, requester, recipient) a tap away instead of gone.
+  function CompactReviewedRow({ r }) {
+    const [open, setOpen] = useState(false);
     const s = r.students || {};
     const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
     const ChannelIcon = r.channel === 'whatsapp' ? MessageCircle : Mail;
-    const statusColor = r.status === 'approved' ? 'text-emerald-500' : r.status === 'rejected' ? 'text-rose-500' : 'text-amber-500';
-    const statusLabel = r.status === 'approved' ? t.statusApproved : r.status === 'rejected' ? t.statusRejected : t.statusPending;
+    const statusColor = r.status === 'approved' ? 'text-emerald-500' : 'text-rose-500';
+    const statusLabel = r.status === 'approved' ? t.statusApproved : t.statusRejected;
+    return (
+      <li>
+        <button onClick={() => setOpen((v) => !v)} className={`w-full flex items-center gap-2.5 py-2 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+          <ChannelIcon size={13} className={dark ? 'text-slate-500' : 'text-slate-400'} />
+          <span className="text-xs font-medium truncate flex-1 min-w-0">{name}</span>
+          <span className={`text-[11px] font-medium shrink-0 ${statusColor}`}>{statusLabel}</span>
+          <span className={`text-[11px] shrink-0 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{fmtDateTime(r.reviewed_at)}</span>
+          <ChevronDown size={13} className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''} ${dark ? 'text-slate-500' : 'text-slate-400'}`} />
+        </button>
+        {open && (
+          <div className="pb-3 ps-5">
+            <div className={`text-xs mb-1.5 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+              {s.sections ? fmtSectionLabel(s.sections, lang) + ' · ' : ''}{t.requestedBy} {r.requester?.full_name || '—'} · {r.recipient}
+              {r.reviewer?.full_name ? ` · ${t.recordedBy} ${r.reviewer.full_name}` : ''}
+            </div>
+            <pre className={`text-xs p-2.5 rounded-lg whitespace-pre-wrap font-sans max-h-28 overflow-y-auto ${dark ? 'bg-black/20 text-slate-300' : 'bg-slate-50 text-slate-600'}`}>
+              {r.message}
+            </pre>
+          </div>
+        )}
+      </li>
+    );
+  }
+
+  function Row({ r }) {
+    const s = r.students || {};
+    const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
+    const ChannelIcon = r.channel === 'whatsapp' ? MessageCircle : Mail;
     return (
       <li className="py-4">
         <div className="flex items-start gap-3">
@@ -87,12 +119,7 @@ export default function ContactRequests() {
             <pre className={`text-xs mt-2 p-2.5 rounded-lg whitespace-pre-wrap font-sans max-h-28 overflow-y-auto ${dark ? 'bg-black/20 text-slate-300' : 'bg-slate-50 text-slate-600'}`}>
               {r.message}
             </pre>
-            {reviewedView ? (
-              <div className={`text-xs mt-2 font-medium ${statusColor}`}>
-                {statusLabel}{r.reviewer?.full_name ? ` · ${t.recordedBy} ${r.reviewer.full_name}` : ''}{r.reviewed_at ? ` · ${fmtDateTime(r.reviewed_at)}` : ''}
-              </div>
-            ) : (
-              <div className="flex gap-2 mt-3">
+            <div className="flex gap-2 mt-3">
                 <button
                   onClick={() => approve(r)}
                   disabled={actingId === r.id}
@@ -108,7 +135,6 @@ export default function ContactRequests() {
                   <X size={13} /> {t.rejectRequest}
                 </button>
               </div>
-            )}
           </div>
         </div>
       </li>
@@ -151,7 +177,7 @@ export default function ContactRequests() {
               <p className={`text-sm mt-3 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>—</p>
             ) : (
               <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                {reviewed.map((r) => <Row key={r.id} r={r} reviewedView />)}
+                {reviewed.map((r) => <CompactReviewedRow key={r.id} r={r} />)}
               </ul>
             )}
           </div>

@@ -46,7 +46,6 @@ export const TEXT = {
     pendingReq: 'طلبات معلّقة',
     gradeTitle: 'نسبة الغياب اليومي',
     gradeSub: 'نسبة الطلاب الغائبين من إجمالي الحضور المسجّل، آخر 7 أيام',
-    recentAttendanceSub: 'أحدث حالات رصد الحضور والغياب',
     requestsTitle: 'طلبات تسجيل جديدة',
     recentStudentsTitle: 'أحدث نشاط الحضور',
     requestsSub: 'بانتظار المراجعة',
@@ -59,7 +58,6 @@ export const TEXT = {
     typeToConfirm: 'اكتب "{word}" في الخانة تحت للتأكيد:',
     resetDone: 'تم حذف كل سجلات الحضور بنجاح.',
     staffManagementTitle: 'إدارة الموظفين',
-    staffManagementSub: 'غيّر دور أي موظف، أو ألغِ صلاحية دخوله لو ترك المدرسة.',
     noStaffYet: 'لا يوجد موظفون معتمدون بعد.',
     thatsYou: 'أنت',
     revokedBadge: 'ملغى الوصول',
@@ -72,7 +70,7 @@ export const TEXT = {
     subject: 'المادة',
     chooseCycle: '— اختر الحلقة —',
     chooseSubject: '— اختر المادة —',
-    cycleSubjectLockedNote: 'الحلقة والمادة يتم تحديدهما مرة واحدة عند التسجيل، ولا يمكن للمعلم تعديلهما لاحقاً — الأدمن فقط يقدر يغيّرهما.',
+    cycleSubjectLockedNote: 'يتم تحديد الحلقة والمادة مرة واحدة عند التسجيل، ولا يمكن للمعلم تعديلهما لاحقاً — ولا يستطيع تغييرهما إلا الأدمن.',
     cycleNames: { cycle1: 'الحلقة الأولى', cycle2: 'الحلقة الثانية', cycle3: 'الحلقة الثالثة' },
     subjectNames: {
       arabic: 'اللغة العربية', english: 'اللغة الإنجليزية', math: 'الرياضيات', science: 'العلوم',
@@ -88,7 +86,6 @@ export const TEXT = {
     newRequestNotif: 'طلب تسجيل جديد من',
     // recorder (teacher) personal dashboard
     recorderWelcome: 'أهلاً بك، {name}',
-    recorderDashSub: 'نظرة سريعة على صفوفك وطلابك اليوم',
     myStudentsKpi: 'طلابي',
     mySectionsKpi: 'صفوفي',
     todayAttendanceRateKpi: 'نسبة الحضور اليوم',
@@ -98,9 +95,9 @@ export const TEXT = {
     notRecordedTodayBadge: 'تم تسجيل {n} من {total} فقط',
     recordAttendanceBtn: 'تسجيل الحضور',
     noSectionsAssignedTitle: 'لم يتم تعيين أي صف لك بعد',
-    noSectionsAssignedBody: 'تواصل مع إدارة المدرسة عشان يحددولك الصفوف اللي هتدرّسها.',
+    noSectionsAssignedBody: 'تواصل مع إدارة المدرسة لتحديد الصفوف التي ستقوم بتدريسها.',
     myRecentEntriesTitle: 'أحدث ما سجلته',
-    noRecentEntries: 'لسه ما سجلتش أي حضور.',
+    noRecentEntries: 'لم تسجّل أي حضور بعد.',
     needsAttentionTitle: 'طلاب بحاجة لمتابعة',
     needsAttentionSub: '٣ أيام غياب أو أكثر خلال آخر 14 يوم',
     noNeedsAttention: 'لا يوجد طلاب بغياب متكرر حاليًا. 👏',
@@ -113,7 +110,6 @@ export const TEXT = {
     navAttendance: 'تسجيل الحضور',
     // attendance
     attendanceTitle: 'تسجيل الحضور والغياب',
-    attendanceSub: 'اختر الصف والتاريخ لتسجيل حضور الطلاب',
     chooseSection: 'اختر الصف الدراسي',
     chooseSectionPlaceholder: '— اختر صفاً —',
     dateLabel: 'التاريخ',
@@ -139,7 +135,6 @@ export const TEXT = {
     // students management
     navStudents: 'إدارة الطلاب',
     studentsTitle: 'إدارة الطلاب',
-    studentsSub: 'إضافة وتعديل وحذف الطلاب والصفوف الدراسية',
     addStudent: 'إضافة طالب',
     editStudent: 'تعديل طالب',
     addSection: 'إضافة صف/شعبة',
@@ -175,7 +170,7 @@ export const TEXT = {
     sectionAdded: 'تمت إضافة الصف بنجاح',
     studentSaved: 'تم حفظ بيانات الطالب بنجاح',
     studentDeleted: 'تم حذف الطالب بنجاح',
-    duplicateSisNo: 'رقم الطالب ده مسجل بالفعل لطالب آخر.',
+    duplicateSisNo: 'رقم الطالب هذا مسجل بالفعل لطالب آخر.',
     invalidEmail: 'صيغة البريد الإلكتروني للطالب غير صحيحة.',
     invalidParentEmail: 'صيغة بريد ولي الأمر غير صحيحة.',
     duplicateSection: 'هذا الصف/الشعبة موجود بالفعل بنفس المسار ورقم الشعبة.',
@@ -213,7 +208,6 @@ export const TEXT = {
     // student lookup / profile
     navLookup: 'استعلام عن طالب',
     lookupTitle: 'استعلام عن طالب',
-    lookupSub: 'ابحث بالاسم أو رقم الطالب لعرض بطاقة الحضور الكاملة',
     lookupPlaceholder: 'ابحث بالاسم، رقم الطالب، البريد...',
     lookupNoResults: 'لم يتم العثور على أي طالب مطابق',
     lookupResultsCount: 'تم العثور على {n} طالب مطابق',
@@ -271,14 +265,14 @@ export const TEXT = {
     // staff-section assignments
     navAssignments: 'ربط المعلمين بالصفوف',
     assignmentsTitle: 'ربط المعلمين بالصفوف',
-    assignmentsSub: 'حدد الصفوف اللي كل معلم مسؤول عنها — المعلم هيقدر يسجل الحضور ويشوف التقارير للصفوف دي بس.',
+    assignmentsSub: 'حدد الصفوف التي يكون كل معلم مسؤولاً عنها — يستطيع المعلم تسجيل الحضور وعرض التقارير لهذه الصفوف فقط.',
     noTeachersYet: 'لا يوجد معلمون معتمدون بعد.',
     teacherSearchPlaceholder: 'ابحث بالاسم أو البريد الإلكتروني...',
     allSubjects: 'كل المواد',
     allCycles: 'كل الحلقات',
     noTeachersMatch: 'لا يوجد معلمون مطابقون لهذا البحث.',
     assignedSectionsCount: '{n} صف مرتبط',
-    assignSectionsHint: 'دوس على الصفوف اللي المفروض المعلم ده يقدر يسجل حضورها.',
+    assignSectionsHint: 'اضغط على الصفوف التي يُفترض أن يسجّل هذا المعلم حضورها.',
     // single-student attendance
     navSingleAttendance: 'حضور طالب منفرد',
     singleAttTitle: 'تسجيل حضور طالب منفرد',
@@ -289,7 +283,6 @@ export const TEXT = {
     // daily report
     navDailyReport: 'تقرير الغياب اليومي',
     dailyReportTitle: 'تقرير الغياب اليومي',
-    dailyReportSub: 'عرض حالة الحضور لكل طلاب الصف في يوم معيّن',
     showReport: 'عرض التقرير',
     filterAll: 'الكل',
     exportCsv: 'تصدير Excel',
@@ -311,7 +304,6 @@ export const TEXT = {
     // period report
     navPeriodReport: 'تقرير فترة',
     periodReportTitle: 'تقرير فترة',
-    periodReportSub: 'إجمالي أيام الحضور والغياب والتأخير لكل طالب خلال مدى زمني',
     colPresentDays: 'أيام الحضور',
     colAbsentDays: 'أيام الغياب',
     colLateDays: 'أيام فيها تأخير',
@@ -326,7 +318,6 @@ export const TEXT = {
     // behavioral violations
     navViolations: 'المخالفات السلوكية',
     violationsTitle: 'المخالفات السلوكية',
-    violationsSub: 'تسجيل ومتابعة المخالفات السلوكية للطلاب',
     addViolation: 'تسجيل مخالفة',
     violationType: 'نوع المخالفة',
     chooseViolationType: '— اختر نوع المخالفة —',
@@ -368,7 +359,6 @@ export const TEXT = {
     // supervisor report
     navSupervisorReport: 'تقرير المشرف',
     supervisorReportTitle: 'تقرير المشرف',
-    supervisorReportSub: 'نظرة شاملة على المخالفات السلوكية والتأخير الصباحي خلال مدى زمني، مع إحصائيات وتقرير قابل للطباعة والتصدير',
     kpiTotalIncidents: 'إجمالي الحالات',
     kpiTotalViolations: 'المخالفات السلوكية',
     kpiTotalLateness: 'حالات التأخير',
@@ -391,10 +381,10 @@ export const TEXT = {
     contactParentTitle: 'التواصل مع ولي الأمر',
     contactParentSub: 'أرسل رسالة لولي أمر هذا الطالب عبر واتساب أو الإيميل.',
     requestContactTitle: 'طلب التواصل مع ولي الأمر',
-    requestContactSub: 'المعلم لا يقدر يتواصل مع ولي الأمر مباشرة — الرسالة هترسل لمراجعة المشرف أو الأدمن، ومش هتوصل لولي الأمر إلا بعد الموافقة.',
+    requestContactSub: 'لا يستطيع المعلم التواصل مع ولي الأمر مباشرة — تُرسل الرسالة لمراجعة المشرف أو الأدمن، ولن تصل إلى ولي الأمر إلا بعد الموافقة.',
     requestViaWhatsApp: 'طلب إرسال عبر واتساب',
     requestViaEmail: 'طلب إرسال بالإيميل',
-    contactRequestSent: 'تم إرسال طلبك للمراجعة — هيوصل لولي الأمر بعد موافقة المشرف أو الأدمن.',
+    contactRequestSent: 'تم إرسال طلبك للمراجعة — سيصل إلى ولي الأمر بعد موافقة المشرف أو الأدمن.',
     contactRequestError: 'حدث خطأ أثناء إرسال الطلب، حاول مرة أخرى.',
     pendingRequestsTitle: 'طلبات بانتظار المراجعة',
     noPendingRequests: 'لا توجد طلبات بانتظار المراجعة حاليًا.',
@@ -448,7 +438,6 @@ export const TEXT = {
     pendingReq: 'Pending requests',
     gradeTitle: 'Daily absence rate',
     gradeSub: 'Share of recorded attendance marked absent, last 7 days',
-    recentAttendanceSub: 'Latest attendance records',
     requestsTitle: 'New registration requests',
     recentStudentsTitle: 'Recent attendance activity',
     requestsSub: 'Awaiting review',
@@ -461,7 +450,6 @@ export const TEXT = {
     typeToConfirm: 'Type "{word}" below to confirm:',
     resetDone: 'All attendance records deleted successfully.',
     staffManagementTitle: 'Staff Management',
-    staffManagementSub: "Change any staff member's role, or revoke their access if they've left the school.",
     noStaffYet: 'No approved staff yet.',
     thatsYou: 'You',
     revokedBadge: 'Access revoked',
@@ -490,7 +478,6 @@ export const TEXT = {
     newRequestNotif: 'New registration request from',
     // recorder (teacher) personal dashboard
     recorderWelcome: 'Welcome, {name}',
-    recorderDashSub: "A quick look at your classes and students today",
     myStudentsKpi: 'My students',
     mySectionsKpi: 'My sections',
     todayAttendanceRateKpi: "Today's attendance rate",
@@ -515,7 +502,6 @@ export const TEXT = {
     navAttendance: 'Attendance',
     // attendance
     attendanceTitle: 'Attendance',
-    attendanceSub: 'Choose a section and date to record student attendance',
     chooseSection: 'Section',
     chooseSectionPlaceholder: '— Choose a section —',
     dateLabel: 'Date',
@@ -541,7 +527,6 @@ export const TEXT = {
     // students management
     navStudents: 'Students Management',
     studentsTitle: 'Student Management',
-    studentsSub: 'Add, edit, and remove students and sections',
     addStudent: 'Add student',
     editStudent: 'Edit student',
     addSection: 'Add grade/section',
@@ -615,7 +600,6 @@ export const TEXT = {
     // student lookup / profile
     navLookup: 'Search Students',
     lookupTitle: 'Student Lookup',
-    lookupSub: 'Search by name or student ID to view the full attendance profile',
     lookupPlaceholder: 'Search by name, ID, email...',
     lookupNoResults: 'No matching student found',
     lookupResultsCount: '{n} matching student(s) found',
@@ -691,7 +675,6 @@ export const TEXT = {
     // daily report
     navDailyReport: 'Daily Absence Report',
     dailyReportTitle: 'Daily Absence Report',
-    dailyReportSub: "View the whole class's attendance status for a specific day",
     showReport: 'Show report',
     filterAll: 'All',
     exportCsv: 'Export Excel',
@@ -713,7 +696,6 @@ export const TEXT = {
     // period report
     navPeriodReport: 'Time Report',
     periodReportTitle: 'Period Report',
-    periodReportSub: 'Total present/absent/late days per student over a date range',
     colPresentDays: 'Present days',
     colAbsentDays: 'Absent days',
     colLateDays: 'Days with lateness',
@@ -728,7 +710,6 @@ export const TEXT = {
     // behavioral violations
     navViolations: 'Behavioral Violations',
     violationsTitle: 'Behavioral Violations',
-    violationsSub: 'Record and track student behavioral violations',
     addViolation: 'Record violation',
     violationType: 'Violation type',
     chooseViolationType: '— Choose a violation type —',
@@ -770,7 +751,6 @@ export const TEXT = {
     // supervisor report
     navSupervisorReport: 'Supervisor Report',
     supervisorReportTitle: 'Supervisor Report',
-    supervisorReportSub: 'A combined overview of behavioral violations and morning lateness over a date range, with KPIs and a printable/exportable report',
     kpiTotalIncidents: 'Total incidents',
     kpiTotalViolations: 'Behavioral violations',
     kpiTotalLateness: 'Lateness cases',

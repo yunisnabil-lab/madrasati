@@ -8,7 +8,17 @@ import * as XLSX from 'xlsx';
 // styling (bold, colors, borders) into the .xlsx — that's a paid-tier
 // feature of the library. If a bold/colored header row is needed, it has
 // to be applied by hand in Excel after opening the file.
+// Section names are stored with raw punctuation such as "01/01" or
+// "02[General]/1" — used as-is, a "/" in that string is read as a path
+// separator by the browser's download mechanism, so a report scoped to
+// that section can silently fail to save or land somewhere unexpected.
+// Strip anything invalid in a filename on any OS.
+function sanitizeFilename(name) {
+  return String(name).replace(/[\\/:*?"<>|]/g, '-');
+}
+
 export function exportXlsx(filename, rows, { lang = 'ar', sheetName = 'Report' } = {}) {
+  const safeFilename = sanitizeFilename(filename);
   const ws = XLSX.utils.aoa_to_sheet(rows);
 
   // column widths: size to the longest cell in each column (capped)
@@ -21,5 +31,5 @@ export function exportXlsx(filename, rows, { lang = 'ar', sheetName = 'Report' }
   const wb = XLSX.utils.book_new();
   wb.Workbook = { Views: [{ RTL: lang === 'ar' }] };
   XLSX.utils.book_append_sheet(wb, ws, sheetName);
-  XLSX.writeFile(wb, filename);
+  XLSX.writeFile(wb, safeFilename);
 }

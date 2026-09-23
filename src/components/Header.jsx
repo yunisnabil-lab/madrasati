@@ -61,14 +61,14 @@ export default function Header() {
           </div>
         </div>
 
-        {/* Search — widened */}
-        <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm max-w-md border transition-colors focus-within:border-royal ${dark ? 'bg-white/5 border-transparent text-slate-400 focus-within:bg-white/10' : 'bg-slate-100 border-transparent text-slate-500 focus-within:bg-white focus-within:shadow-sm'}`}>
+        {/* Search — widened further */}
+        <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm max-w-xl border transition-colors focus-within:border-royal ${dark ? 'bg-white/5 border-transparent text-slate-400 focus-within:bg-white/10' : 'bg-slate-100 border-transparent text-slate-500 focus-within:bg-white focus-within:shadow-sm'}`}>
           <Search size={17} className={dark ? 'text-royal-light' : 'text-royal'} />
           <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
         </div>
 
-        {/* Everything else — grouped all the way to the visual start (left in RTL, right in LTR) */}
-        <div className="flex items-center gap-3 ms-auto">
+        {/* Everything else — grouped all the way to the visual start (left in RTL, right in LTR), with more breathing room between them */}
+        <div className="flex items-center gap-5 ms-auto">
           {/* Live date/time */}
           <div className={`hidden lg:flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap ${dark ? 'bg-white/5 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
             {dateTimeStr}

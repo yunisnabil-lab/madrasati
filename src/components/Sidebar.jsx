@@ -72,32 +72,7 @@ export default function Sidebar() {
         dark ? 'bg-navy border-slate-800' : 'bg-white border-slate-200/60'
       }`}
     >
-      {/* Account — the only place the name shows now (removed from the header to avoid duplicating it).
-          dir="ltr" is intentional: the photo stays to the left of the name in both Arabic and English. */}
-      <Link
-        to="/profile"
-        dir="ltr"
-        className={`px-5 py-5 flex items-center gap-2.5 border-b transition-colors ${dark ? 'border-slate-800 hover:bg-white/5' : 'border-slate-200/60 hover:bg-slate-50'}`}
-      >
-        <div className="relative h-10 w-10 rounded-full shrink-0">
-          {staff && staff.avatar_url ? (
-            <img src={staff.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
-          ) : (
-            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold">
-              {staff ? initials(staff.full_name) : '--'}
-            </div>
-          )}
-        </div>
-        <div className="leading-tight overflow-hidden">
-          <div className={`text-sm font-bold truncate ${dark ? 'text-white' : 'text-navy'}`}>
-            {staff ? staff.full_name : '...'}
-          </div>
-          <div className={`text-[11px] mt-0.5 truncate ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
-            {staff ? t.roleNames[staff.role] : ''}
-          </div>
-        </div>
-      </Link>
-      <nav className="flex-1 px-3 space-y-1">
+      <nav className="px-3 pt-5 space-y-1">
         {items.map((item) => {
           const Icon = item.icon;
           return (
@@ -123,6 +98,35 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Account — the only place the name shows now (removed from the header to avoid duplicating it).
+          Centered in the leftover space below the nav so it isn't just stranded at the top.
+          dir="ltr" is intentional: the photo stays to the left of the name in both Arabic and English. */}
+      <div className="flex-1 flex items-center justify-center px-3">
+        <Link
+          to="/profile"
+          dir="ltr"
+          className={`w-full px-3 py-3 rounded-xl flex items-center gap-2.5 border transition-colors ${dark ? 'border-slate-800 hover:bg-white/5' : 'border-slate-200/60 hover:bg-slate-50'}`}
+        >
+          <div className="relative h-10 w-10 rounded-full shrink-0">
+            {staff && staff.avatar_url ? (
+              <img src={staff.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+            ) : (
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold">
+                {staff ? initials(staff.full_name) : '--'}
+              </div>
+            )}
+          </div>
+          <div className="leading-tight overflow-hidden">
+            <div className={`text-sm font-bold truncate ${dark ? 'text-white' : 'text-navy'}`}>
+              {staff ? staff.full_name : '...'}
+            </div>
+            <div className={`text-[11px] mt-0.5 truncate ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+              {staff ? t.roleNames[staff.role] : ''}
+            </div>
+          </div>
+        </Link>
+      </div>
     </aside>
   );
 }

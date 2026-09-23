@@ -72,9 +72,11 @@ export default function Sidebar() {
         dark ? 'bg-navy border-slate-800' : 'bg-white border-slate-200/60'
       }`}
     >
-      {/* Account — replaces the school name that used to repeat here (it's already shown in the header) */}
+      {/* Account — the only place the name shows now (removed from the header to avoid duplicating it).
+          dir="ltr" is intentional: the photo stays to the left of the name in both Arabic and English. */}
       <Link
         to="/profile"
+        dir="ltr"
         className={`px-5 py-5 flex items-center gap-2.5 border-b transition-colors ${dark ? 'border-slate-800 hover:bg-white/5' : 'border-slate-200/60 hover:bg-slate-50'}`}
       >
         <div className="relative h-10 w-10 rounded-full shrink-0">

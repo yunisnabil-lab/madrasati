@@ -17,7 +17,7 @@ import {
 const KPI_AR = [
   { label: 'إجمالي الطلاب', value: '2,231', progress: 82, icon: GraduationCap },
   { label: 'أعضاء الهيئة', value: '184', progress: 64, icon: Users },
-  { label: 'الفصول الدراسية', value: '42', progress: 90, icon: SchoolIcon },
+  { label: 'الصفوف الدراسية', value: '42', progress: 90, icon: SchoolIcon },
   { label: 'طلبات معلّقة', value: '5', progress: 30, icon: Clock },
 ];
 
@@ -54,7 +54,7 @@ const TEXT = {
   ar: {
     dir: 'rtl', font: 'font-ar',
     school: 'مجمع زايد التعليمي', schoolSub: 'الخوانيج',
-    search: 'بحث عن طالب، فصل...',
+    search: 'بحث عن طالب، صف...',
     dashboard: 'لوحة التحكم', overview: 'نظرة عامة على أداء المدرسة اليوم',
     trendTitle: 'اتجاه الحضور', trendSub: 'آخر 6 أيام',
     gradeTitle: 'توزيع الطلاب حسب الصف', gradeSub: 'عدد الطلاب في كل صف',

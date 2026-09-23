@@ -134,6 +134,41 @@ export default function Header() {
           <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
         </div>
 
+        {/* School branding — right next to the profile now, replacing the slot the date/notif/language cluster used to occupy */}
+        <div className={`hidden sm:flex items-center gap-2.5 ps-4 border-s ${dark ? 'border-slate-800' : 'border-slate-200'}`}>
+          <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${dark ? 'bg-royal/15' : 'bg-royal/10'}`}>
+            {staff && staff.school_logo_url ? (
+              <img src={staff.school_logo_url} alt="" className="h-full w-full object-cover" />
+            ) : (
+              <GraduationCap size={20} className={dark ? 'text-royal-light' : 'text-royal'} />
+            )}
+          </div>
+          <div className="hidden md:block leading-tight">
+            <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.school}</div>
+            <div className={`text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
+          </div>
+        </div>
+
+        {/* Search */}
+        <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm max-w-xs border transition-colors focus-within:border-royal ${dark ? 'bg-white/5 border-transparent text-slate-400 focus-within:bg-white/10' : 'bg-slate-100 border-transparent text-slate-500 focus-within:bg-white focus-within:shadow-sm'}`}>
+          <Search size={17} className={dark ? 'text-royal-light' : 'text-royal'} />
+          <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
+        </div>
+
+        {/* Live date/time */}
+        <div className={`hidden lg:flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap ${dark ? 'bg-white/5 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
+          {dateTimeStr}
+        </div>
+
+        {/* Language — compact circular EN/AR badge; shows the language you'll SWITCH TO */}
+        <button
+          onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
+          title={lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
+          className={`hidden sm:flex items-center justify-center h-10 w-10 rounded-full text-[11px] font-extrabold tracking-wide transition-colors ${dark ? 'bg-gold/15 text-gold-light hover:bg-gold/25' : 'bg-gold/10 text-gold hover:bg-gold/20'}`}
+        >
+          {lang === 'ar' ? 'EN' : 'AR'}
+        </button>
+
         {/* Notifications */}
         <div className="relative">
           <button
@@ -169,20 +204,7 @@ export default function Header() {
           </AnimatePresence>
         </div>
 
-        {/* Language — shows the language you'll SWITCH TO, not a static "AR/EN" */}
-        <button
-          onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
-          className={`hidden sm:flex items-center justify-center rounded-full px-3 py-1.5 text-xs font-bold tracking-wide transition-colors ${dark ? 'bg-gold/15 text-gold-light hover:bg-gold/25' : 'bg-gold/10 text-gold hover:bg-gold/20'}`}
-        >
-          {lang === 'ar' ? 'English' : 'عربي'}
-        </button>
-
-        {/* Live date/time */}
-        <div className={`hidden lg:flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap ${dark ? 'bg-white/5 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
-          {dateTimeStr}
-        </div>
-
-        {/* Prominent sign-out */}
+        {/* Prominent sign-out — leftmost now, per the requested order */}
         <button
           onClick={signOut}
           title={t.signOut}
@@ -190,27 +212,6 @@ export default function Header() {
         >
           <LogOut size={18} />
         </button>
-
-        {/* Search */}
-        <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm max-w-xs border transition-colors focus-within:border-royal ${dark ? 'bg-white/5 border-transparent text-slate-400 focus-within:bg-white/10' : 'bg-slate-100 border-transparent text-slate-500 focus-within:bg-white focus-within:shadow-sm'}`}>
-          <Search size={17} className={dark ? 'text-royal-light' : 'text-royal'} />
-          <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
-        </div>
-
-        {/* School branding — logo + name, anchored at the visual start (left) */}
-        <div className={`hidden sm:flex items-center gap-2.5 ps-4 border-s ${dark ? 'border-slate-800' : 'border-slate-200'}`}>
-          <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${dark ? 'bg-royal/15' : 'bg-royal/10'}`}>
-            {staff && staff.school_logo_url ? (
-              <img src={staff.school_logo_url} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <GraduationCap size={20} className={dark ? 'text-royal-light' : 'text-royal'} />
-            )}
-          </div>
-          <div className="hidden md:block leading-tight">
-            <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.school}</div>
-            <div className={`text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
-          </div>
-        </div>
 
       </div>
     </header>

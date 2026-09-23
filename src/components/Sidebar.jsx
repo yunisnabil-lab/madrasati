@@ -1,6 +1,11 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, UserCheck, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3 } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
+
+function initials(name) {
+  const parts = (name || '').trim().split(/\s+/);
+  return ((parts[0] ? parts[0][0] : '') + (parts[1] ? parts[1][0] : '')).toUpperCase();
+}
 
 const ITEMS = [
   { to: '/', icon: LayoutDashboard, key: 'navDashboard', end: true, hideFor: ['viewer', 'supervisor'] },
@@ -58,7 +63,7 @@ export function MobileNav() {
 }
 
 export default function Sidebar() {
-  const { t, lang, dark, staff } = useApp();
+  const { t, dark, staff } = useApp();
   const items = visibleItems(staff?.role);
 
   return (
@@ -67,14 +72,29 @@ export default function Sidebar() {
         dark ? 'bg-navy border-slate-800' : 'bg-white border-slate-200/60'
       }`}
     >
-      <div className="px-5 py-5">
-        <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>
-          {lang === 'ar' ? 'مدرستي' : 'Madrasati'}
+      {/* Account — replaces the school name that used to repeat here (it's already shown in the header) */}
+      <Link
+        to="/profile"
+        className={`px-5 py-5 flex items-center gap-2.5 border-b transition-colors ${dark ? 'border-slate-800 hover:bg-white/5' : 'border-slate-200/60 hover:bg-slate-50'}`}
+      >
+        <div className="relative h-10 w-10 rounded-full shrink-0">
+          {staff && staff.avatar_url ? (
+            <img src={staff.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+          ) : (
+            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold">
+              {staff ? initials(staff.full_name) : '--'}
+            </div>
+          )}
         </div>
-        <div className={`text-[11px] mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
-          {t.school}
+        <div className="leading-tight overflow-hidden">
+          <div className={`text-sm font-bold truncate ${dark ? 'text-white' : 'text-navy'}`}>
+            {staff ? staff.full_name : '...'}
+          </div>
+          <div className={`text-[11px] mt-0.5 truncate ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+            {staff ? t.roleNames[staff.role] : ''}
+          </div>
         </div>
-      </div>
+      </Link>
       <nav className="flex-1 px-3 space-y-1">
         {items.map((item) => {
           const Icon = item.icon;

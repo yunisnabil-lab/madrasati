@@ -67,8 +67,8 @@ export default function Header() {
           <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
         </div>
 
-        {/* Everything else — grouped all the way to the visual start (left in RTL, right in LTR), with more breathing room between them */}
-        <div className="flex items-center gap-5 ms-auto">
+        {/* Everything else — sits right after search, no leftover gap */}
+        <div className="flex items-center gap-5">
           {/* Live date/time */}
           <div className={`hidden lg:flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap ${dark ? 'bg-white/5 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
             {dateTimeStr}

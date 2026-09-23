@@ -407,7 +407,7 @@ export default function Lateness() {
                   name={lang === 'ar' ? (selected.name_ar || selected.name_en) : (selected.name_en || selected.name_ar)}
                   sectionLabel={fmtSectionLabel(selected.sections, lang)}
                   defaultNote={lang === 'ar'
-                    ? 'لاحظنا تكرار تأخير هذا الطالب في الحضور الصباحي، ونحب نلفت انتباه حضرتك لمتابعة الموضوع معاه.'
+                    ? 'لاحظنا تكرار تأخر هذا الطالب في الحضور الصباحي، ونرجو منكم متابعة الأمر معه.'
                     : "We've noticed repeated morning lateness for this student — we'd like to bring this to your attention."}
                   mode="direct"
                   staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls}

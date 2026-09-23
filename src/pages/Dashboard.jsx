@@ -367,7 +367,6 @@ export default function Dashboard() {
               className={`lg:col-span-2 ${cardFloating(dark)} p-5`}>
               <div className="mb-4">
                 <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>{t.recentStudentsTitle}</h2>
-                <p className={`text-xs mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-500'}`}>{t.recentAttendanceSub}</p>
               </div>
               <div className="space-y-1">
                 {recentLoading ? (

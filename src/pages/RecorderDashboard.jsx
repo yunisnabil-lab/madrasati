@@ -157,7 +157,6 @@ export default function RecorderDashboard() {
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>
               {t.recorderWelcome.replace('{name}', staff?.full_name || '')}
             </h1>
-            <p className={`text-sm mt-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.recorderDashSub}</p>
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">

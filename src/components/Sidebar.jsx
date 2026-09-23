@@ -1,5 +1,5 @@
 import { NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, UserCheck, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3 } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 
 function initials(name) {
@@ -10,7 +10,6 @@ function initials(name) {
 const ITEMS = [
   { to: '/', icon: LayoutDashboard, key: 'navDashboard', end: true, hideFor: ['viewer', 'supervisor'] },
   { to: '/attendance', icon: ClipboardCheck, key: 'navAttendance', end: false, hideFor: ['supervisor'] },
-  { to: '/single-attendance', icon: UserCheck, key: 'navSingleAttendance', end: false, hideFor: ['supervisor'] },
   { to: '/lookup', icon: Search, key: 'navLookup', end: false, hideFor: ['supervisor'] },
   { to: '/daily-report', icon: FileText, key: 'navDailyReport', end: false, hideFor: ['supervisor'] },
   { to: '/period-report', icon: FileBarChart, key: 'navPeriodReport', end: false, hideFor: ['supervisor'] },

@@ -9,7 +9,6 @@ import Pending from './pages/Pending';
 import Dashboard from './pages/Dashboard';
 import RecorderDashboard from './pages/RecorderDashboard';
 import Attendance from './pages/Attendance';
-import SingleAttendance from './pages/SingleAttendance';
 import Students from './pages/Students';
 import StudentLookup from './pages/StudentLookup';
 import DailyReport from './pages/DailyReport';
@@ -114,7 +113,6 @@ function Router() {
         <Route path="/pending" element={<PendingGuard><Pending /></PendingGuard>} />
         <Route path="/" element={<Gate><Layout><HomeRoute /></Layout></Gate>} />
         <Route path="/attendance" element={<Gate><NotSupervisor><Layout><Attendance /></Layout></NotSupervisor></Gate>} />
-        <Route path="/single-attendance" element={<Gate><NotSupervisor><Layout><SingleAttendance /></Layout></NotSupervisor></Gate>} />
         <Route path="/students" element={<Gate><NotRecorder><NotSupervisor><Layout><Students /></Layout></NotSupervisor></NotRecorder></Gate>} />
         <Route path="/lookup" element={<Gate><NotSupervisor><Layout><StudentLookup /></Layout></NotSupervisor></Gate>} />
         <Route path="/daily-report" element={<Gate><NotSupervisor><Layout><DailyReport /></Layout></NotSupervisor></Gate>} />

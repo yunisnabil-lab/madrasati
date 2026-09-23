@@ -117,29 +117,39 @@ export default function Attendance() {
     setStudentsLoading(true);
     setSaveMsg(null);
 
-    const { data: studs } = await supabase
-      .from('students')
-      .select('id, name_ar, name_en, section_id')
-      .in('section_id', activeSectionIds)
-      .eq('is_active', true)
-      .order('name_ar', { ascending: true });
+    // Fetch the roster and that day/period's existing records in parallel
+    // instead of one after the other — the records query doesn't actually
+    // need the roster's student ids first, since it's already scoped by
+    // date + period + school, so there's no reason to wait on the roster
+    // query before starting it. This was the main cause of "opening a saved
+    // section to edit it takes a while": two sequential round trips where
+    // one is enough.
+    const [{ data: studs }, { data: existing }] = await Promise.all([
+      supabase
+        .from('students')
+        .select('id, name_ar, name_en, section_id')
+        .in('section_id', activeSectionIds)
+        .eq('is_active', true)
+        .order('name_ar', { ascending: true }),
+      supabase
+        .from('attendance_records')
+        .select('id, student_id, status')
+        .eq('date', date)
+        .eq('period', period)
+        .eq('school_id', staff.school_id),
+    ]);
 
     const list = studs || [];
     setStudents(list);
 
     if (list.length > 0) {
-      const ids = list.map((s) => s.id);
-      const { data: existing } = await supabase
-        .from('attendance_records')
-        .select('id, student_id, status')
-        .eq('date', date)
-        .eq('period', period)
-        .in('student_id', ids);
-
+      const idSet = new Set(list.map((s) => s.id));
       const sMap = {};
       const rMap = {};
       list.forEach((s) => { sMap[s.id] = 'present'; });
-      (existing || []).forEach((rec) => {
+      // existing records are for the whole school on this date/period, so
+      // keep only the ones that belong to a student actually in this roster
+      (existing || []).filter((rec) => idSet.has(rec.student_id)).forEach((rec) => {
         sMap[rec.student_id] = rec.status;
         rMap[rec.student_id] = rec.id;
       });
@@ -152,7 +162,7 @@ export default function Attendance() {
       setRecordMap({});
     }
     setStudentsLoading(false);
-  }, [activeSectionIds, date, period]);
+  }, [activeSectionIds, date, period, staff]);
 
   useEffect(() => { loadRoster(); }, [loadRoster]);
 

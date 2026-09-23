@@ -103,7 +103,6 @@ export const TEXT = {
     noNeedsAttention: 'لا يوجد طلاب بغياب متكرر حاليًا. 👏',
     absenceCountLabel: '{n} غياب',
     qaRecordAttendance: 'تسجيل حضور صف',
-    qaSingleAttendance: 'حضور طالب واحد',
     qaLookup: 'استعلام عن طالب',
     // sidebar
     navDashboard: 'لوحة التحكم',
@@ -273,13 +272,6 @@ export const TEXT = {
     noTeachersMatch: 'لا يوجد معلمون مطابقون لهذا البحث.',
     assignedSectionsCount: '{n} صف مرتبط',
     assignSectionsHint: 'اضغط على الصفوف التي يُفترض أن يسجّل هذا المعلم حضورها.',
-    // single-student attendance
-    navSingleAttendance: 'حضور طالب منفرد',
-    singleAttTitle: 'تسجيل حضور طالب منفرد',
-    singleAttSub: 'ابحث عن طالب وسجّل حضوره في حصة معينة من غير فتح الصف كامل',
-    savedForToday: 'تم تسجيله',
-    addAnother: 'إضافة طالب آخر',
-    recordedSoFar: 'تم تسجيلهم في هذه الجلسة',
     // daily report
     navDailyReport: 'تقرير الغياب اليومي',
     dailyReportTitle: 'تقرير الغياب اليومي',
@@ -495,7 +487,6 @@ export const TEXT = {
     noNeedsAttention: 'No students with repeated absences right now. 👏',
     absenceCountLabel: '{n} absences',
     qaRecordAttendance: 'Record class attendance',
-    qaSingleAttendance: 'Single-student attendance',
     qaLookup: 'Look up a student',
     // sidebar
     navDashboard: 'Dashboard',
@@ -665,13 +656,6 @@ export const TEXT = {
     noTeachersMatch: 'No teachers match this search.',
     assignedSectionsCount: '{n} section(s) assigned',
     assignSectionsHint: 'Tap the sections this teacher should be able to record attendance for.',
-    // single-student attendance
-    navSingleAttendance: 'Single Student Attendance',
-    singleAttTitle: 'Single Student Attendance',
-    singleAttSub: 'Search for a student and record their attendance for one period, without opening the whole class',
-    savedForToday: 'Saved',
-    addAnother: 'Add another student',
-    recordedSoFar: 'Recorded in this session',
     // daily report
     navDailyReport: 'Daily Absence Report',
     dailyReportTitle: 'Daily Absence Report',

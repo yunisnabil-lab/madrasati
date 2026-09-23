@@ -11,11 +11,17 @@
 // The day is "excused" if at least EXCUSED_THRESHOLD recorded periods were
 // excused; otherwise it's "absent" if at least ABSENT_THRESHOLD recorded
 // periods were absent; otherwise "present" (late still counts as attended,
-// it just doesn't move the day total either way). A day with zero recorded
-// periods has no status at all (status: null) rather than defaulting to
-// absent. A legacy row (period is null — includes admin/management "final"
-// overrides) is used as-is for that day, bypassing the period count
-// entirely.
+// it just doesn't move the day total either way) — UNLESS nothing recorded
+// so far actually shows the student attending (no present/late period yet):
+// in that case the day is never called "present", even with just one or
+// two periods in, because that would hide a real recorded absence behind a
+// false "present" simply because the 3-period threshold hasn't been
+// reached yet (e.g. period 1 recorded absent, periods 2-8 not recorded
+// yet — the day should read "absent", not "present", until an actual
+// present/late period comes in). A day with zero recorded periods has no
+// status at all (status: null) rather than defaulting to absent. A legacy
+// row (period is null — includes admin/management "final" overrides) is
+// used as-is for that day, bypassing the period count entirely.
 
 export const PERIODS_PER_DAY = 8;
 const EXCUSED_THRESHOLD = 3;
@@ -33,13 +39,18 @@ function deriveDayFromRows(rows) {
   const lateCount = rows.filter((r) => r.status === 'late').length;
   const excusedCount = rows.filter((r) => r.status === 'excused').length;
   const recordedCount = presentCount + absentCount + lateCount + excusedCount;
+  const attendedCount = presentCount + lateCount;
   const status = recordedCount === 0
     ? null
     : excusedCount >= EXCUSED_THRESHOLD
       ? 'excused'
       : absentCount >= ABSENT_THRESHOLD
         ? 'absent'
-        : 'present';
+        : attendedCount === 0
+          // nothing recorded yet shows actual attendance — don't default
+          // to "present" just because the threshold isn't met yet.
+          ? (excusedCount > absentCount ? 'excused' : 'absent')
+          : 'present';
   return { status, presentCount, absentCount, lateCount, excusedCount, periods };
 }
 

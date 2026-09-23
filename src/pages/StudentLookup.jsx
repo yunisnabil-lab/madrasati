@@ -155,12 +155,13 @@ export default function StudentLookup() {
     const late = filteredHistory.filter((r) => r.status === 'late' || r.lateCount > 0).length;
     // excused days don't count against the attendance rate, same as most school policies
     const ratable = total - excused;
-    const rate = ratable > 0 ? Math.round((present / ratable) * 100) : 100;
+    // null (not 100%) when there's no attendance data at all yet for this student in range
+    const rate = ratable > 0 ? Math.round((present / ratable) * 100) : null;
     return { total, present, absent, excused, late, rate };
   }, [filteredHistory]);
 
   const flagged = isFrequentAbsence(filteredHistory);
-  const rateColor = stats.rate >= 90 ? '#05cd99' : stats.rate >= 75 ? '#ffb800' : '#ee5d50';
+  const rateColor = stats.rate == null ? (dark ? '#64748b' : '#94a3b8') : stats.rate >= 90 ? '#05cd99' : stats.rate >= 75 ? '#ffb800' : '#ee5d50';
 
   const inputCls = `w-full rounded-lg px-3 py-2.5 text-sm outline-none border font-en ${
     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
@@ -354,7 +355,7 @@ function StudentProfileCard({
               className="h-16 w-16 rounded-full flex items-center justify-center text-sm font-bold border-4"
               style={{ borderColor: rateColor, color: rateColor }}
             >
-              {stats.rate}%
+              {stats.rate == null ? '—' : `${stats.rate}%`}
             </div>
             <div className={`text-[11px] mt-1 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.attendanceRate}</div>
           </div>
@@ -408,8 +409,8 @@ function StudentProfileCard({
             name={name}
             sectionLabel={fmtSectionLabel(student.sections, lang)}
             defaultNote={lang === 'ar'
-              ? `نسبة حضور الطالب حاليًا ${stats.rate}% (${stats.absent} يوم غياب). نحب نلفت انتباه حضرتك لمتابعة الموضوع معاه.`
-              : `The student's current attendance rate is ${stats.rate}% (${stats.absent} day(s) absent). We'd like to bring this to your attention.`}
+              ? `نسبة حضور الطالب حاليًا ${stats.rate == null ? '—' : `${stats.rate}%`} (${stats.absent} يوم غياب). نحب نلفت انتباه حضرتك لمتابعة الموضوع معاه.`
+              : `The student's current attendance rate is ${stats.rate == null ? '—' : `${stats.rate}%`} (${stats.absent} day(s) absent). We'd like to bring this to your attention.`}
             mode="request"
             staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls}
           />
@@ -631,9 +632,10 @@ function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, d
     .map((r) => `${rowIcon(r.status)} ${r.date} (${dayName(r.date)}) — ${t[STATUS_META[r.status]?.key] || r.status}`)
     .join('\n') + (truncated ? `\n${lang === 'ar' ? `... و${sorted.length - MAX_RECORD_LINES} سجل أقدم` : `... and ${sorted.length - MAX_RECORD_LINES} older record(s)`}` : '');
 
+  const rateText = stats.rate == null ? '—' : `${stats.rate}%`;
   const message = lang === 'ar'
-    ? `📋 تقرير حضور الطالب - ${t.school} - ${t.schoolSub}\n━━━━━━━━━━━━━━━━━━\n👤 الاسم: ${name}\n🔢 رقم الطالب: ${student.sis_no}\n🏫 الصف - الشعبة: ${sectionLabel}\n━━━━━━━━━━━━━━━━━━\n📊 نسبة الحضور: ${stats.rate}%\n✅ أيام الحضور: ${stats.present}   ❌ أيام الغياب: ${stats.absent}   ⏰ أيام التأخير: ${stats.late}\n━━━━━━━━━━━━━━━━━━\n📅 السجل الكامل:\n${recordLines || '—'}\n━━━━━━━━━━━━━━━━━━\nيرجى مراجعة سجل الحضور والغياب الخاص بالطالب مع إدارة المدرسة.`
-    : `📋 Attendance Report - ${t.school} - ${t.schoolSub}\n━━━━━━━━━━━━━━━━━━\n👤 Name: ${name}\n🔢 Student ID: ${student.sis_no}\n🏫 Grade - Section: ${sectionLabel}\n━━━━━━━━━━━━━━━━━━\n📊 Attendance rate: ${stats.rate}%\n✅ Days present: ${stats.present}   ❌ Days absent: ${stats.absent}   ⏰ Days late: ${stats.late}\n━━━━━━━━━━━━━━━━━━\n📅 Full record:\n${recordLines || '—'}\n━━━━━━━━━━━━━━━━━━\nPlease reach out to the school administration for more details.`;
+    ? `📋 تقرير حضور الطالب - ${t.school} - ${t.schoolSub}\n━━━━━━━━━━━━━━━━━━\n👤 الاسم: ${name}\n🔢 رقم الطالب: ${student.sis_no}\n🏫 الصف - الشعبة: ${sectionLabel}\n━━━━━━━━━━━━━━━━━━\n📊 نسبة الحضور: ${rateText}\n✅ أيام الحضور: ${stats.present}   ❌ أيام الغياب: ${stats.absent}   ⏰ أيام التأخير: ${stats.late}\n━━━━━━━━━━━━━━━━━━\n📅 السجل الكامل:\n${recordLines || '—'}\n━━━━━━━━━━━━━━━━━━\nيرجى مراجعة سجل الحضور والغياب الخاص بالطالب مع إدارة المدرسة.`
+    : `📋 Attendance Report - ${t.school} - ${t.schoolSub}\n━━━━━━━━━━━━━━━━━━\n👤 Name: ${name}\n🔢 Student ID: ${student.sis_no}\n🏫 Grade - Section: ${sectionLabel}\n━━━━━━━━━━━━━━━━━━\n📊 Attendance rate: ${rateText}\n✅ Days present: ${stats.present}   ❌ Days absent: ${stats.absent}   ⏰ Days late: ${stats.late}\n━━━━━━━━━━━━━━━━━━\n📅 Full record:\n${recordLines || '—'}\n━━━━━━━━━━━━━━━━━━\nPlease reach out to the school administration for more details.`;
 
   const link = buildWhatsAppLink(phone, message);
 

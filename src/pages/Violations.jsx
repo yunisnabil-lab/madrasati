@@ -11,6 +11,8 @@ import { VIOLATION_TYPE_KEYS } from '../lib/i18n';
 import SectionPicker from '../components/SectionPicker';
 import ContactParentPanel from '../components/ContactParentPanel';
 
+const REPEAT_THRESHOLD = 3;
+
 function initials(name) {
   const parts = (name || '').trim().split(/\s+/);
   return ((parts[0] ? parts[0][0] : '') + (parts[1] ? parts[1][0] : '')).toUpperCase();
@@ -19,6 +21,13 @@ function initials(name) {
 function todayStr() {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function daysAgoStr(n) {
+  const d = new Date();
+  d.setDate(d.getDate() - n);
+  const pad = (x) => String(x).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
@@ -44,19 +53,45 @@ export default function Violations() {
   const [saveMsg, setSaveMsg] = useState(null);
 
   const [studentViolations, setStudentViolations] = useState(null);
-  const [recentViolations, setRecentViolations] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  const loadRecent = useCallback(async () => {
-    const { data } = await supabase
-      .from('behavior_violations')
-      .select('id, violation_type, description, date, created_at, students(name_ar, name_en, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)), staff(full_name)')
-      .order('created_at', { ascending: false })
-      .limit(30);
-    setRecentViolations(data || []);
+  // Filterable-by-day list with a per-student repeat count, so repeat
+  // offenders surface at the top instead of being buried in a flat feed —
+  // mirrors the same pattern already used on the Lateness page.
+  const [fromDate, setFromDate] = useState(daysAgoStr(30));
+  const [toDate, setToDate] = useState(todayStr());
+  const [aggLoading, setAggLoading] = useState(true);
+  const [aggRows, setAggRows] = useState([]);
+
+  const loadAggregate = useCallback(async (from, to) => {
+    setAggLoading(true);
+    const { data } = await fetchAllRows(() => {
+      let q = supabase
+        .from('behavior_violations')
+        .select('id, student_id, violation_type, date, students(name_ar, name_en, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order))');
+      if (from) q = q.gte('date', from);
+      if (to) q = q.lte('date', to);
+      return q;
+    });
+
+    const byStudent = new Map();
+    (data || []).forEach((r) => {
+      if (!r.students) return;
+      const existing = byStudent.get(r.student_id);
+      if (existing) {
+        existing.count += 1;
+        if (r.date >= existing.lastDate) { existing.lastDate = r.date; existing.lastType = r.violation_type; }
+      } else {
+        byStudent.set(r.student_id, { id: r.student_id, student: r.students, count: 1, lastDate: r.date, lastType: r.violation_type });
+      }
+    });
+
+    const list = Array.from(byStudent.values()).sort((a, b) => b.count - a.count);
+    setAggRows(list);
+    setAggLoading(false);
   }, []);
 
-  useEffect(() => { loadRecent(); }, [loadRecent]);
+  useEffect(() => { if (!selected) loadAggregate(fromDate, toDate); }, [fromDate, toDate, selected, loadAggregate]);
 
   useEffect(() => {
     (async () => {
@@ -139,6 +174,10 @@ export default function Violations() {
     setDate(todayStr());
   };
 
+  const selectFromAgg = (r) => {
+    selectStudent({ id: r.id, ...r.student });
+  };
+
   const reset = () => {
     setSelected(null);
     setQuery('');
@@ -167,7 +206,7 @@ export default function Violations() {
     setViolationType('');
     setDescription('');
     loadStudentViolations(selected.id);
-    loadRecent();
+    loadAggregate(fromDate, toDate);
   };
 
   const removeViolation = async (id) => {
@@ -176,7 +215,7 @@ export default function Violations() {
     setDeletingId(null);
     if (!error) {
       if (selected) loadStudentViolations(selected.id);
-      loadRecent();
+      loadAggregate(fromDate, toDate);
     }
   };
 
@@ -185,6 +224,33 @@ export default function Violations() {
   }`;
 
   const fmtDate = (d) => (d ? new Date(d + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US') : '—');
+
+  const repeated = aggRows.filter((r) => r.count >= REPEAT_THRESHOLD);
+  const rest = aggRows.filter((r) => r.count < REPEAT_THRESHOLD);
+
+  function AggRow({ r }) {
+    const s = r.student;
+    const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
+    return (
+      <li>
+        <button onClick={() => selectFromAgg(r)} className={`w-full flex items-center gap-3 py-3 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+          <div className="h-9 w-9 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0 text-xs font-semibold">
+            {initials(name)}
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-sm font-medium truncate">{name}</div>
+            <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+              {s.sections ? fmtSectionLabel(s.sections, lang) : '—'}{r.lastType ? ' · ' + (t.violationTypeNames[r.lastType] || r.lastType) : ''}
+            </div>
+          </div>
+          <div className="text-end shrink-0">
+            <div className="text-sm font-bold font-en" style={{ color: r.count >= REPEAT_THRESHOLD ? '#ee5d50' : undefined }}>{r.count}</div>
+            <div className={`text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.lastLateDate}: {fmtDate(r.lastDate)}</div>
+          </div>
+        </button>
+      </li>
+    );
+  }
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
@@ -197,6 +263,22 @@ export default function Violations() {
 
           {!selected ? (
             <>
+              <div className={cardFloating(dark, 'p-4 mb-5 flex flex-col sm:flex-row gap-3 sm:items-end')}>
+                <div className="flex-1">
+                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.fromDate}</label>
+                  <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={inputCls + ' font-en'} />
+                </div>
+                <div className="flex-1">
+                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.toDate}</label>
+                  <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputCls + ' font-en'} />
+                </div>
+                {(fromDate || toDate) && (
+                  <button onClick={() => { setFromDate(''); setToDate(''); }} className={`text-xs font-medium px-4 py-2.5 rounded-lg border whitespace-nowrap ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                    {t.showAll}
+                  </button>
+                )}
+              </div>
+
               <div className={cardFloating(dark, 'p-4 mb-5 space-y-3')}>
                 <SectionPicker
                   sections={sections} lang={lang} dark={dark}
@@ -257,36 +339,33 @@ export default function Violations() {
                 </div>
               )}
 
-              <div className={cardFloating(dark, 'p-5')}>
-                <h2 className={`text-sm font-semibold mb-3 ${dark ? 'text-white' : 'text-slate-900'}`}>{t.violationsListTitle}</h2>
-                {recentViolations === null ? (
-                  <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
-                ) : recentViolations.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noViolationsAtAll}</p>
+              <div className={cardFloating(dark, 'p-5 mb-5')}>
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertTriangle size={16} className="text-rose-500" />
+                  <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>{t.repeatedViolationsTitle}</h2>
+                </div>
+                {aggLoading ? (
+                  <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
+                ) : repeated.length === 0 ? (
+                  <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noViolationsInPeriod}</p>
                 ) : (
                   <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                    {recentViolations.map((v) => {
-                      const s = v.students || {};
-                      const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
-                      return (
-                        <li key={v.id} className="flex items-center gap-3 py-3">
-                          <div className="h-9 w-9 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center shrink-0">
-                            <AlertTriangle size={15} />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="text-sm font-medium truncate">{name} — {t.violationTypeNames[v.violation_type] || v.violation_type}</div>
-                            <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
-                              {s.sections ? fmtSectionLabel(s.sections, lang) + ' · ' : ''}{fmtDate(v.date)}{v.staff?.full_name ? ' · ' + t.recordedBy + ' ' + v.staff.full_name : ''}
-                            </div>
-                          </div>
-                          {canManage && (
-                            <button onClick={() => removeViolation(v.id)} disabled={deletingId === v.id} className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg p-2 shrink-0">
-                              {deletingId === v.id ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
-                            </button>
-                          )}
-                        </li>
-                      );
-                    })}
+                    {repeated.map((r) => <AggRow key={r.id} r={r} />)}
+                  </ul>
+                )}
+              </div>
+
+              <div className={cardFloating(dark, 'p-5')}>
+                <h2 className={`text-sm font-semibold mb-3 ${dark ? 'text-white' : 'text-slate-900'}`}>{t.allViolationsTitle}</h2>
+                {aggLoading ? (
+                  <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
+                ) : rest.length === 0 && repeated.length === 0 ? (
+                  <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noViolationsInPeriod}</p>
+                ) : rest.length === 0 ? (
+                  <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>—</p>
+                ) : (
+                  <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+                    {rest.map((r) => <AggRow key={r.id} r={r} />)}
                   </ul>
                 )}
               </div>

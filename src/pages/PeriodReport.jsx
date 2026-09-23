@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recha
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
-import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
+import { sectionLabel as fmtSectionLabel, sectionsFor, streamLabel } from '../lib/sections';
 import { fetchAllRows } from '../lib/fetchAll';
 import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { exportXlsx } from '../lib/exportXlsx';
@@ -159,10 +159,24 @@ export default function PeriodReport() {
     });
   };
 
+  // What this report is currently scoped to (a whole grade, a grade+stream,
+  // or one specific section) — used in the print title/header and export
+  // filename so it can't be mistaken for another grade/section's report.
+  const scopeLabel = useMemo(() => {
+    if (!grade) return '';
+    if (sectionSel && sectionSel !== '__ALL__') {
+      const sec = sections.find((s) => s.id === sectionSel);
+      return sec ? fmtSectionLabel(sec, lang) : grade;
+    }
+    const gradeInfo = sections.find((s) => s.grade_name === grade);
+    const gradeDisplay = (lang === 'en' && gradeInfo?.grade_name_en) ? gradeInfo.grade_name_en : grade;
+    return stream ? `${gradeDisplay} — ${streamLabel(stream, lang)}` : gradeDisplay;
+  }, [grade, stream, sectionSel, sections, lang]);
+
   const exportCsv = () => {
     const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGrade, t.colPresentDays, t.colAbsentDays, t.colLateDays, t.colExcusedDays, t.colRate, t.colFlag];
     const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.grade, r.present, r.absent, r.lateDays, r.excused, r.rate == null ? '—' : `${r.rate}%`, r.flagged ? t.frequentAbsence : '']);
-    exportXlsx(`period-report-${fromDate}-to-${toDate}.xlsx`, [header, ...body], { lang });
+    exportXlsx(`period-report-${scopeLabel}-${fromDate}-to-${toDate}.xlsx`, [header, ...body], { lang });
   };
 
   const inputCls = `w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${
@@ -179,7 +193,7 @@ export default function PeriodReport() {
 
           <div className="print-only mb-4 text-black">
             <h1 className="text-lg font-bold">{t.school} — {t.schoolSub}</h1>
-            <h2 className="text-base font-semibold mt-0.5">{t.periodReportTitle}</h2>
+            <h2 className="text-base font-semibold mt-0.5">{t.periodReportTitle}{scopeLabel ? ` — ${scopeLabel}` : ''}</h2>
             <p className="text-sm mt-1">{t.fromDate}: {fromDate} — {t.toDate}: {toDate}{printSelection.size > 0 ? ` — ${t.selectedForPrint.replace('{n}', printSelection.size)}` : ''}</p>
           </div>
 
@@ -222,7 +236,10 @@ export default function PeriodReport() {
           ) : (
             <>
               {rows.length > 0 && (
-                <div className={cardFloating(dark, 'p-5 mb-5 print-area')}>
+                // no-print: an interactive chart that used to print above the
+                // table, pushing rows onto an unwanted second page — the
+                // printed report only needs the data table itself.
+                <div className={cardFloating(dark, 'p-5 mb-5 no-print')}>
                   <div className="flex items-center gap-2 mb-3">
                     <PieIcon size={15} className={dark ? 'text-slate-400' : 'text-slate-500'} />
                     <h3 className="text-sm font-semibold">{t.chartTitle}</h3>
@@ -290,7 +307,7 @@ export default function PeriodReport() {
                   <button onClick={exportCsv} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                     <Download size={13} /> {t.exportCsv}
                   </button>
-                  <button onClick={() => printWithTitle(`${t.periodReportTitle} - ${fromDate} - ${toDate}`)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <button onClick={() => printWithTitle(`${t.periodReportTitle} - ${scopeLabel} - ${fromDate} - ${toDate}`)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                     <Printer size={13} /> {printSelection.size > 0 ? t.printSelectedBtn.replace('{n}', printSelection.size) : t.printReport}
                   </button>
                 </div>

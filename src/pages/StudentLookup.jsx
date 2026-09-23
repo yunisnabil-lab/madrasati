@@ -323,6 +323,15 @@ function StudentProfileCard({
   const canOverride = staff && (staff.role === 'admin' || staff.role === 'viewer');
   const isAdmin = staff && staff.role === 'admin';
 
+  // The print title/filename used to always say today's date, even when a
+  // from/to filter was applied — so a report printed for, say, last month
+  // would still be named as if it were printed today. Use the actual
+  // applied range when there is one; only fall back to today's date for
+  // the unfiltered "full history as of today" case.
+  const dateRangeLabel = (fromDate || toDate)
+    ? `${fromDate || (history[history.length - 1]?.date || '')} - ${toDate || (history[0]?.date || '')}`
+    : todayStr();
+
   const [expandedDates, setExpandedDates] = useState(new Set());
   const toggleExpandDate = (date) => {
     setExpandedDates((prev) => {
@@ -340,7 +349,8 @@ function StudentProfileCard({
 
       <div className="print-only mb-4 text-black">
         <h1 className="text-lg font-bold">{t.school} — {t.schoolSub}</h1>
-        <h2 className="text-base font-semibold mt-0.5">{t.lookupTitle}</h2>
+        <h2 className="text-base font-semibold mt-0.5">{t.lookupTitle} — {name}</h2>
+        <p className="text-sm mt-1">{(fromDate || toDate) ? `${t.fromDate}: ${fromDate || '—'} — ${t.toDate}: ${toDate || '—'}` : dateRangeLabel}</p>
       </div>
 
       <div className={cardFloating(dark, 'p-6 mb-5 print-area')}>
@@ -411,7 +421,7 @@ function StudentProfileCard({
         <button onClick={() => onOverrideSaved && onOverrideSaved()} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
           <RefreshCw size={14} /> {t.refresh}
         </button>
-        <button onClick={() => printWithTitle(`${name} - ${student.sis_no} - ${todayStr()}`)} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+        <button onClick={() => printWithTitle(`${name} - ${student.sis_no} - ${dateRangeLabel}`)} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
           <Printer size={14} /> {t.printReport}
         </button>
       </div>

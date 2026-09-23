@@ -144,6 +144,11 @@ export default function SupervisorReport() {
     { label: t.kpiTopViolationType, value: topViolationType ? topViolationType.name : '—', icon: Users, accent: dark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-500/10 text-emerald-600', small: true },
   ];
 
+  // Which incident type this report is currently scoped to (all / violations
+  // only / lateness only) — shown in the print title/header and export
+  // filename so a filtered export isn't mistaken for the full report later.
+  const typeFilterLabel = typeFilter === 'violation' ? t.incidentTypeViolation : typeFilter === 'lateness' ? t.incidentTypeLateness : t.filterAll;
+
   const exportCsv = () => {
     const header = [t.colNo, t.colStudentName, t.colSection, 'Date', t.colIncidentType, t.colDetail, t.recordedBy];
     const body = filteredIncidents.map((r, i) => {
@@ -159,7 +164,7 @@ export default function SupervisorReport() {
         r.staffName || '—',
       ];
     });
-    exportXlsx(`supervisor-report-${fromDate}-to-${toDate}.xlsx`, [header, ...body], { lang });
+    exportXlsx(`supervisor-report-${typeFilterLabel}-${fromDate}-to-${toDate}.xlsx`, [header, ...body], { lang });
   };
 
   const fmtDate = (d) => (d ? new Date(d + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US') : '—');
@@ -188,7 +193,7 @@ export default function SupervisorReport() {
 
           <div className="print-only mb-4 text-black">
             <h1 className="text-lg font-bold">{t.school} — {t.schoolSub}</h1>
-            <h2 className="text-base font-semibold mt-0.5">{t.supervisorReportTitle}</h2>
+            <h2 className="text-base font-semibold mt-0.5">{t.supervisorReportTitle} — {typeFilterLabel}</h2>
             <p className="text-sm mt-1">{t.fromDate}: {fromDate} — {t.toDate}: {toDate}</p>
           </div>
 
@@ -248,7 +253,10 @@ export default function SupervisorReport() {
               </div>
 
               {pieData.length > 0 && (
-                <div className={cardFloating(dark, 'p-5 mb-5 print-area')}>
+                // no-print: same reason as the other reports' charts — it
+                // was printing above the incident list and forcing an
+                // unwanted extra page.
+                <div className={cardFloating(dark, 'p-5 mb-5 no-print')}>
                   <div className="flex items-center gap-2 mb-3">
                     <PieIcon size={15} className={dark ? 'text-slate-400' : 'text-slate-500'} />
                     <h3 className="text-sm font-semibold">{t.violationTypeBreakdownTitle}</h3>
@@ -324,7 +332,7 @@ export default function SupervisorReport() {
                   <button onClick={exportCsv} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                     <Download size={13} /> {t.exportCsv}
                   </button>
-                  <button onClick={() => printWithTitle(`${t.supervisorReportTitle} - ${fromDate} - ${toDate}`)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <button onClick={() => printWithTitle(`${t.supervisorReportTitle} - ${typeFilterLabel} - ${fromDate} - ${toDate}`)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                     <Printer size={13} /> {t.printReport}
                   </button>
                 </div>

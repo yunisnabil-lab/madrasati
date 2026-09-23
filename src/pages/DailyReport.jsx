@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Cell, LabelList, Tooltip, ResponsiveContai
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
-import { sectionsFor, sectionLabel as fmtSectionLabel } from '../lib/sections';
+import { sectionsFor, sectionLabel as fmtSectionLabel, streamLabel } from '../lib/sections';
 import { deriveByStudentAndDate, PERIODS_PER_DAY } from '../lib/attendanceDerive';
 import { STATUS_META, STATUS_LIST } from '../lib/status';
 import { exportXlsx } from '../lib/exportXlsx';
@@ -167,10 +167,30 @@ export default function DailyReport() {
     }));
   }, [dayCounts, t]);
 
+  // What this report is currently scoped to (a whole grade, a grade+stream,
+  // or one specific section), for the print title/header and export
+  // filename — so a printed or exported report can always be told apart
+  // from another grade/section's report at a glance, not just by date.
+  const scopeLabel = useMemo(() => {
+    if (!grade) return '';
+    if (sectionSel && sectionSel !== '__ALL__') {
+      const sec = sections.find((s) => s.id === sectionSel);
+      return sec ? fmtSectionLabel(sec, lang) : grade;
+    }
+    const gradeInfo = sections.find((s) => s.grade_name === grade);
+    const gradeDisplay = (lang === 'en' && gradeInfo?.grade_name_en) ? gradeInfo.grade_name_en : grade;
+    return stream ? `${gradeDisplay} — ${streamLabel(stream, lang)}` : gradeDisplay;
+  }, [grade, stream, sectionSel, sections, lang]);
+
+  // "الحصة N" or the whole-day total, matching whichever view is on screen —
+  // a print/export that doesn't say which one it is can be mistaken for
+  // the wrong period's data later.
+  const periodOrDayLabel = view === 'day' ? t.dayTotalTab : t.periodN.replace('{n}', view);
+
   const exportCsv = () => {
     const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGrade, t.colStatus];
     const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.grade, t[STATUS_META[statusFor(r, view)].key]]);
-    exportXlsx(`daily-report-${date}.xlsx`, [header, ...body], { lang });
+    exportXlsx(`daily-report-${scopeLabel}-${date}-${periodOrDayLabel}.xlsx`, [header, ...body], { lang });
   };
 
   const inputCls = `w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${
@@ -189,8 +209,8 @@ export default function DailyReport() {
               since the on-screen controls above are hidden when printing */}
           <div className="print-only mb-4 text-black">
             <h1 className="text-lg font-bold">{t.school} — {t.schoolSub}</h1>
-            <h2 className="text-base font-semibold mt-0.5">{t.dailyReportTitle}</h2>
-            <p className="text-sm mt-1">{t.dateLabel}: {date}{printSelection.size > 0 ? ` — ${t.selectedForPrint.replace('{n}', printSelection.size)}` : ''}</p>
+            <h2 className="text-base font-semibold mt-0.5">{t.dailyReportTitle}{scopeLabel ? ` — ${scopeLabel}` : ''}</h2>
+            <p className="text-sm mt-1">{t.dateLabel}: {date} — {periodOrDayLabel}{printSelection.size > 0 ? ` — ${t.selectedForPrint.replace('{n}', printSelection.size)}` : ''}</p>
           </div>
 
           {/* controls */}
@@ -321,7 +341,7 @@ export default function DailyReport() {
                       <button onClick={exportCsv} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                         <Download size={13} /> {t.exportCsv}
                       </button>
-                      <button onClick={() => printWithTitle(`${t.dailyReportTitle} - ${date}`)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                      <button onClick={() => printWithTitle(`${t.dailyReportTitle} - ${scopeLabel} - ${date} - ${periodOrDayLabel}`)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                         <Printer size={13} /> {printSelection.size > 0 ? t.printSelectedBtn.replace('{n}', printSelection.size) : t.printReport}
                       </button>
                     </div>

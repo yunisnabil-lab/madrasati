@@ -269,7 +269,7 @@ export default function Dashboard() {
                     </div>
 
                     <h3 className={`text-xs font-semibold mb-2 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
-                      {lang === 'ar' ? 'أعضاء الفصول' : 'Section membership'}
+                      {lang === 'ar' ? 'أعضاء الصفوف' : 'Section membership'}
                     </h3>
 
                     {sectionBreakdownLoading || sectionBreakdown === null ? (

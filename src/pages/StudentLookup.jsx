@@ -9,6 +9,7 @@ import { fetchAllRows } from '../lib/fetchAll';
 import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
 import { buildWhatsAppLink } from '../lib/whatsapp';
 import { deriveByStudentAndDate } from '../lib/attendanceDerive';
+import { printWithTitle } from '../lib/print';
 import { STATUS_META } from '../lib/status';
 import SectionPicker from '../components/SectionPicker';
 import PeriodBreakdown from '../components/PeriodBreakdown';
@@ -67,14 +68,23 @@ export default function StudentLookup() {
   const [fromDate, setFromDate] = useState('');
   const [toDate, setToDate] = useState('');
 
+  // load sections once — a recorder (teacher) only sees the sections
+  // they've been assigned by the admin (staff_sections), same as Attendance
   useEffect(() => {
+    if (!staff) return;
     (async () => {
       const { data } = await supabase
         .from('sections')
         .select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
-      setSections(data || []);
+      let list = data || [];
+      if (staff.role === 'recorder') {
+        const { data: assigned } = await supabase.from('staff_sections').select('section_id').eq('staff_id', staff.id);
+        const allowed = new Set((assigned || []).map((a) => a.section_id));
+        list = list.filter((s) => allowed.has(s.id));
+      }
+      setSections(list);
     })();
-  }, []);
+  }, [staff]);
 
   const activeSectionIds = useMemo(() => {
     if (!grade) return null;
@@ -117,7 +127,12 @@ export default function StudentLookup() {
     const { data } = await fetchAllRows(() => supabase
       .from('students')
       .select('id, sis_no, name_ar, name_en, section_id, email, parent_email, emirates_id, moe_username, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)'));
-    const matched = (data || []).filter((s) => matchesStudentSearch(s, q));
+    // a recorder (teacher) only searches within their own assigned sections —
+    // "sections" here is already pre-scoped to those for that role (see above)
+    const searchScope = staff?.role === 'recorder' ? new Set(sections.map((s) => s.id)) : null;
+    const matched = (data || [])
+      .filter((s) => !searchScope || searchScope.has(s.section_id))
+      .filter((s) => matchesStudentSearch(s, q));
     matched.sort((a, b) => (a.sections?.grade_order ?? 999) - (b.sections?.grade_order ?? 999));
     setGlobalMatches(matched);
     setSearching(false);
@@ -396,7 +411,7 @@ function StudentProfileCard({
         <button onClick={() => onOverrideSaved && onOverrideSaved()} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
           <RefreshCw size={14} /> {t.refresh}
         </button>
-        <button onClick={() => window.print()} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+        <button onClick={() => printWithTitle(`${name} - ${student.sis_no} - ${todayStr()}`)} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
           <Printer size={14} /> {t.printReport}
         </button>
       </div>

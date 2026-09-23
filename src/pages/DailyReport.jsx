@@ -9,6 +9,7 @@ import { sectionsFor, sectionLabel as fmtSectionLabel } from '../lib/sections';
 import { deriveByStudentAndDate, PERIODS_PER_DAY } from '../lib/attendanceDerive';
 import { STATUS_META, STATUS_LIST } from '../lib/status';
 import { exportXlsx } from '../lib/exportXlsx';
+import { printWithTitle } from '../lib/print';
 import SectionPicker from '../components/SectionPicker';
 
 function todayStr() {
@@ -320,7 +321,7 @@ export default function DailyReport() {
                       <button onClick={exportCsv} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                         <Download size={13} /> {t.exportCsv}
                       </button>
-                      <button onClick={() => window.print()} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                      <button onClick={() => printWithTitle(`${t.dailyReportTitle} - ${date}`)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                         <Printer size={13} /> {printSelection.size > 0 ? t.printSelectedBtn.replace('{n}', printSelection.size) : t.printReport}
                       </button>
                     </div>

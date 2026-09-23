@@ -8,6 +8,7 @@ import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionLabel as fmtSectionLabel } from '../lib/sections';
 import { fetchAllRows } from '../lib/fetchAll';
 import { exportXlsx } from '../lib/exportXlsx';
+import { printWithTitle } from '../lib/print';
 import { VIOLATION_TYPE_KEYS } from '../lib/i18n';
 
 const REPEAT_THRESHOLD = 3;
@@ -323,7 +324,7 @@ export default function SupervisorReport() {
                   <button onClick={exportCsv} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                     <Download size={13} /> {t.exportCsv}
                   </button>
-                  <button onClick={() => window.print()} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <button onClick={() => printWithTitle(`${t.supervisorReportTitle} - ${fromDate} - ${toDate}`)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                     <Printer size={13} /> {t.printReport}
                   </button>
                 </div>

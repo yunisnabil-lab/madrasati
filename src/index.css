@@ -46,6 +46,14 @@
 html, body, #root { height: 100%; }
 body { margin: 0; }
 
+/* Tells the browser which theme is active so native form controls (date
+   picker icon/popup, <select> dropdown, scrollbars) draw themselves in a
+   matching light/dark chrome instead of always defaulting to light — this
+   is what makes those controls' text/icons legible once our own Tailwind
+   classes have already put them on a dark background. */
+:root { color-scheme: light; }
+html.dark { color-scheme: dark; }
+
 /* ---------------- Print (shared across every page) ---------------- */
 @media print {
   .no-print { display: none !important; }

@@ -37,7 +37,10 @@ function deriveDayRecords(rawRecords) {
 function isFrequentAbsence(records) {
   if (!records.length) return false;
   const absentCount = records.filter((r) => r.status === 'absent').length;
-  if (absentCount / records.length >= 0.2) return true;
+  // Not-recorded days (status: null) have no verdict, so they shouldn't
+  // dilute the absence ratio's denominator.
+  const decisive = records.filter((r) => r.status != null).length;
+  if (decisive > 0 && absentCount / decisive >= 0.2) return true;
 
   const sorted = [...records].sort((a, b) => a.date.localeCompare(b.date));
   let streak = 0;
@@ -165,13 +168,20 @@ export default function StudentLookup() {
   }, [history, fromDate, toDate]);
 
   const stats = useMemo(() => {
-    const total = filteredHistory.length;
+    // A day with no decisive status yet (attendanceDerive.js returned
+    // status: null — nothing recorded, or too few periods recorded) has no
+    // verdict, so it must not count toward the attendance-rate denominator.
+    const total = filteredHistory.filter((r) => r.status != null).length;
     const present = filteredHistory.filter((r) => r.status === 'present').length;
     const absent = filteredHistory.filter((r) => r.status === 'absent').length;
-    const excused = filteredHistory.filter((r) => r.status === 'excused').length;
+    // Excused (like late) counts as attendance, not its own day-level
+    // verdict — this is an informational count of days that included at
+    // least one excused period, same as how "late" already works below.
+    const excused = filteredHistory.filter((r) => r.excusedCount > 0).length;
     const late = filteredHistory.filter((r) => r.status === 'late' || r.lateCount > 0).length;
-    // excused days don't count against the attendance rate, same as most school policies
-    const ratable = total - excused;
+    // excused/late periods count as attendance, so every decisively
+    // recorded day (present or absent) is ratable.
+    const ratable = total;
     // null (not 100%) when there's no attendance data at all yet for this student in range
     const rate = ratable > 0 ? Math.round((present / ratable) * 100) : null;
     return { total, present, absent, excused, late, rate };

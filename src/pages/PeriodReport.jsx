@@ -25,6 +25,26 @@ function weekAgoStr() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
+// The school week runs Monday–Friday (weekend: Saturday & Sunday) — used to
+// tell a real "not recorded" gap (a school day nobody took attendance on)
+// apart from an ordinary weekend, so a period report can't quietly read as
+// full attendance when days were simply never recorded.
+function schoolDaysInRange(fromDate, toDate) {
+  const days = [];
+  if (!fromDate || !toDate) return days;
+  const cur = new Date(`${fromDate}T00:00:00`);
+  const end = new Date(`${toDate}T00:00:00`);
+  const pad = (n) => String(n).padStart(2, '0');
+  while (cur <= end) {
+    const dow = cur.getDay(); // 0=Sunday, 6=Saturday
+    if (dow !== 0 && dow !== 6) {
+      days.push(`${cur.getFullYear()}-${pad(cur.getMonth() + 1)}-${pad(cur.getDate())}`);
+    }
+    cur.setDate(cur.getDate() + 1);
+  }
+  return days;
+}
+
 export default function PeriodReport() {
   const { t, lang, dark, staff } = useApp();
 
@@ -92,17 +112,37 @@ export default function PeriodReport() {
       .in('student_id', ids));
 
     const derived = deriveByStudentAndDate(records || []);
+    const schoolDays = schoolDaysInRange(fromDate, toDate);
 
     const result = list.map((s) => {
       const dayMap = derived.get(s.id);
       const days = dayMap ? [...dayMap.values()] : [];
-      const total = days.length;
+      // A day with no decisive status (attendanceDerive.js returned
+      // status: null — nothing recorded, or too few periods recorded to
+      // call it) has no verdict yet, so it must not count toward the
+      // attendance-rate denominator; otherwise a partially-recorded day
+      // would silently drag the rate down without ever being "present".
+      const total = days.filter((d) => d.status != null).length;
+      // A school day counts as "not recorded" both when nothing at all was
+      // logged for it and when it was only partially recorded (fewer than
+      // a full day's periods, with neither the absent nor excused
+      // threshold reached) — attendanceDerive.js returns status: null for
+      // both cases, so a day is only "recorded" once it has a decisive
+      // status.
+      const notRecorded = schoolDays.filter((d) => {
+        const day = dayMap ? dayMap.get(d) : null;
+        return !day || day.status == null;
+      }).length;
       const present = days.filter((d) => d.status === 'present').length;
       const absent = days.filter((d) => d.status === 'absent').length;
-      const excused = days.filter((d) => d.status === 'excused').length;
+      // Excused (like late) counts as attendance, not its own day-level
+      // verdict — this is an informational count of days that included at
+      // least one excused period, same as how lateDays already works.
+      const excused = days.filter((d) => d.excusedCount > 0).length;
       const lateDays = days.filter((d) => d.status === 'late' || d.lateCount > 0).length;
-      // excused days don't count against the attendance rate or the red-flag ratio
-      const ratable = total - excused;
+      // excused/late periods count as attendance, so every decisively
+      // recorded day (present or absent) is ratable.
+      const ratable = total;
       // null (not 100%) when there's no attendance data at all yet for this student in range
       const rate = ratable > 0 ? Math.round((present / ratable) * 100) : null;
 
@@ -121,7 +161,7 @@ export default function PeriodReport() {
         grade: (lang === 'en' && s.sections?.grade_name_en) ? s.sections.grade_name_en : s.sections?.grade_name,
         section_id: s.section_id,
         section_label: fmtSectionLabel(s.sections, lang),
-        present, absent, excused, lateDays, rate, flagged,
+        present, absent, excused, lateDays, notRecorded, rate, flagged,
       };
     });
 
@@ -175,8 +215,8 @@ export default function PeriodReport() {
   }, [grade, stream, sectionSel, sections, lang]);
 
   const exportCsv = () => {
-    const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGrade, t.colPresentDays, t.colAbsentDays, t.colLateDays, t.colExcusedDays, t.colRate, t.colFlag];
-    const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.grade, r.present, r.absent, r.lateDays, r.excused, r.rate == null ? '—' : `${r.rate}%`, r.flagged ? t.frequentAbsence : '']);
+    const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGrade, t.colPresentDays, t.colAbsentDays, t.colLateDays, t.colExcusedDays, t.colNotRecordedDays, t.colRate, t.colFlag];
+    const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.grade, r.present, r.absent, r.lateDays, r.excused, r.notRecorded, r.rate == null ? '—' : `${r.rate}%`, r.flagged ? t.frequentAbsence : '']);
     exportXlsx(`period-report-${scopeLabel}-${fromDate}-to-${toDate}.xlsx`, [header, ...body], { lang });
   };
 
@@ -330,6 +370,7 @@ export default function PeriodReport() {
                           <th className="text-center font-medium px-4 py-3">{t.colAbsentDays}</th>
                           <th className="text-center font-medium px-4 py-3 hidden sm:table-cell">{t.colLateDays}</th>
                           <th className="text-center font-medium px-4 py-3 hidden sm:table-cell">{t.colExcusedDays}</th>
+                          <th className="text-center font-medium px-4 py-3 hidden sm:table-cell">{t.colNotRecordedDays}</th>
                           <th className="text-center font-medium px-4 py-3">{t.colRate}</th>
                           <th className="text-center font-medium px-4 py-3">{t.colFlag}</th>
                         </tr>
@@ -349,6 +390,7 @@ export default function PeriodReport() {
                             <td className="px-4 py-2.5 text-center text-rose-500 font-semibold">{r.absent}</td>
                             <td className="px-4 py-2.5 text-center hidden sm:table-cell text-amber-500 font-semibold">{r.lateDays}</td>
                             <td className="px-4 py-2.5 text-center hidden sm:table-cell text-violet-500 font-semibold">{r.excused}</td>
+                            <td className="px-4 py-2.5 text-center hidden sm:table-cell text-slate-400 font-semibold">{r.notRecorded}</td>
                             <td className="px-4 py-2.5 text-center font-semibold">{r.rate == null ? '—' : `${r.rate}%`}</td>
                             <td className="px-4 py-2.5 text-center">
                               {r.flagged && (

@@ -99,7 +99,7 @@ export default function DailyReport() {
         section: s.sections,
         section_id: s.section_id,
         section_label: fmtSectionLabel(s.sections, lang),
-        status: day ? day.status : 'not_recorded',
+        status: (day && day.status) ? day.status : 'not_recorded',
         periods: day ? day.periods : {},
       };
     });

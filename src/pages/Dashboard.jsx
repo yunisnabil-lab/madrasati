@@ -83,17 +83,22 @@ export default function Dashboard() {
       .gte('date', days[0])
       .lte('date', days[days.length - 1]);
 
-    // derive one status per student per day (present in 5+ of the 8 daily
-    // periods = day present, otherwise absent) instead of counting raw
-    // per-period rows, which previously over/under-counted whenever a
-    // student had more than one record for the same day (per-period rows
-    // plus an override, or several periods)
+    // derive one status per student per day (see lib/attendanceDerive:
+    // absent once 3+ periods are absent, present once all 8 periods are
+    // recorded and that threshold wasn't hit, otherwise no verdict yet)
+    // instead of counting raw per-period rows, which previously
+    // over/under-counted whenever a student had more than one record for
+    // the same day (per-period rows plus an override, or several periods)
     const derived = deriveByStudentAndDate(recs || []);
     const byDay = {};
     days.forEach((d) => { byDay[d] = { total: 0, absent: 0 }; });
     derived.forEach((dayMap) => {
       dayMap.forEach((info, date) => {
         if (!byDay[date]) return;
+        // Skip days with no decisive verdict yet (attendanceDerive.js
+        // returns status: null for a day that's too partially recorded to
+        // call) — otherwise a still-in-progress day dilutes the %.
+        if (info.status == null) return;
         byDay[date].total += 1;
         if (info.status === 'absent') byDay[date].absent += 1;
       });

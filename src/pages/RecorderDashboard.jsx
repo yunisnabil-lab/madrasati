@@ -89,19 +89,27 @@ export default function RecorderDashboard() {
     const derivedToday = deriveByStudentAndDate(todayRecs || []);
     const stats = {};
     mySections.forEach((sec) => { stats[sec.id] = { total: 0, recorded: 0 }; });
-    let recordedCount = 0;
+    let decisiveCount = 0;
     let presentCount = 0;
     list.forEach((s) => {
       if (stats[s.section_id]) stats[s.section_id].total += 1;
       const info = derivedToday.get(s.id)?.get(today);
       if (info) {
-        recordedCount += 1;
+        // "recorded" (data-entry progress) counts any period logged today,
+        // even a day that's only partially entered so far.
         if (stats[s.section_id]) stats[s.section_id].recorded += 1;
-        if (info.status === 'present') presentCount += 1;
+        // The rate itself only counts days with a decisive verdict
+        // (attendanceDerive.js returns status: null for a day that's too
+        // partially recorded to call) — otherwise a still-in-progress day
+        // would drag today's rate down before it's even finished.
+        if (info.status != null) {
+          decisiveCount += 1;
+          if (info.status === 'present') presentCount += 1;
+        }
       }
     });
     setSectionStats(stats);
-    setTodayRate(recordedCount > 0 ? Math.round((presentCount / recordedCount) * 100) : null);
+    setTodayRate(decisiveCount > 0 ? Math.round((presentCount / decisiveCount) * 100) : null);
 
     // needs-attention: students with 3+ absent days in the last 14 days
     const derivedRange = deriveByStudentAndDate(rangeRecs || []);

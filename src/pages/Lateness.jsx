@@ -184,6 +184,11 @@ export default function Lateness() {
 
   const save = async () => {
     if (!selected) return;
+    // catch an accidental double-entry for the same student on the same
+    // day before it hits the database, instead of only after a refresh
+    if ((studentLateness || []).some((l) => l.date === date)) {
+      if (!window.confirm(t.duplicateLatenessConfirm)) return;
+    }
     setSaving(true);
     setSaveMsg(null);
     const { error } = await supabase.from('morning_lateness').insert({
@@ -204,6 +209,7 @@ export default function Lateness() {
   };
 
   const removeLateness = async (id) => {
+    if (!window.confirm(t.confirmDeleteLateness)) return;
     setDeletingId(id);
     const { error } = await supabase.from('morning_lateness').delete().eq('id', id);
     setDeletingId(null);

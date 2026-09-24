@@ -387,6 +387,8 @@ export const TEXT = {
     latenessRecordsTitle: 'سجل التأخير الصباحي',
     noLatenessForStudent: 'لا توجد حالات تأخير مسجّلة لهذا الطالب.',
     latenessSaved: 'تم تسجيل التأخير بنجاح',
+    confirmDeleteLateness: 'هل أنت متأكد من حذف سجل التأخير هذا؟',
+    duplicateLatenessConfirm: 'تم تسجيل تأخير لهذا الطالب في نفس اليوم من قبل. هل تريد تسجيله مرة أخرى؟',
     timesLate: 'مرات التأخير',
     lastLateDate: 'آخر مرة',
     // supervisor report
@@ -812,6 +814,8 @@ export const TEXT = {
     latenessRecordsTitle: 'Morning lateness record',
     noLatenessForStudent: 'No lateness recorded for this student.',
     latenessSaved: 'Lateness recorded successfully',
+    confirmDeleteLateness: 'Are you sure you want to delete this lateness record?',
+    duplicateLatenessConfirm: 'This student already has a lateness record for the same day. Record another one anyway?',
     timesLate: 'Times late',
     lastLateDate: 'Last time',
     // supervisor report

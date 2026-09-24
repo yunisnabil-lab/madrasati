@@ -64,30 +64,32 @@ export default function Header() {
       )}
       <div className="max-w-7xl mx-auto px-6 py-4 flex items-center gap-6">
 
-        {/* School branding — rightmost now that the account block lives only in the sidebar */}
-        <div className="hidden sm:flex items-center gap-2.5">
-          <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${dark ? 'bg-royal/15' : 'bg-royal/10'}`}>
-            {staff && staff.school_logo_url ? (
-              <img src={staff.school_logo_url} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <GraduationCap size={20} className={dark ? 'text-royal-light' : 'text-royal'} />
-            )}
-          </div>
-          <div className="hidden md:block leading-tight">
-            <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.school}</div>
-            <div className={`text-[11px] ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
-          </div>
-        </div>
-
         {/* Search — widened further */}
         <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm max-w-xl border transition-colors focus-within:border-royal ${dark ? 'bg-white/5 border-transparent text-slate-400 focus-within:bg-white/10' : 'bg-slate-100 border-transparent text-slate-500 focus-within:bg-white focus-within:shadow-sm'}`}>
           <Search size={17} className={dark ? 'text-royal-light' : 'text-royal'} />
           <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
         </div>
 
-        {/* Everything else — sits right after search, no leftover gap.
-            Sign-out is last in DOM, so under RTL it renders furthest left. */}
+        {/* Everything else, grouped at the far end of the header (the left
+            edge in Arabic, the right edge in English — flexbox mirrors this
+            on its own from the document's dir, so one order works for both):
+            school branding, live time, language, notifications, sign-out. */}
         <div className="flex items-center gap-6">
+          {/* School branding — the school's own name only, photo to its
+              start side (the side nearer the rest of this group). */}
+          <div className="hidden sm:flex items-center gap-2.5">
+            <div className="hidden md:block leading-tight">
+              <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.school}</div>
+            </div>
+            <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${dark ? 'bg-royal/15' : 'bg-royal/10'}`}>
+              {staff && staff.school_logo_url ? (
+                <img src={staff.school_logo_url} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <GraduationCap size={20} className={dark ? 'text-royal-light' : 'text-royal'} />
+              )}
+            </div>
+          </div>
+
           {/* Live date/time */}
           <div className={`hidden lg:flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold whitespace-nowrap ${dark ? 'bg-white/5 text-slate-300' : 'bg-slate-100 text-slate-600'}`}>
             {dateTimeStr}

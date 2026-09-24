@@ -70,6 +70,14 @@ function AdminOnly({ children, fallback = '/attendance' }) {
   return children;
 }
 
+// the admin sees every staff member's activity; an "edari" only sees the staff
+// the admin picked for them (enforced by the database, not just this route).
+function AdminOrEdari({ children, fallback = '/attendance' }) {
+  const { staff } = useApp();
+  if (staff?.role !== 'admin' && staff?.role !== 'edari') return <Navigate to={fallback} replace />;
+  return children;
+}
+
 // "/" shows a role-appropriate home page: the full admin dashboard for
 // admins and "edari" staff, a personal home (their own classes/students) for
 // recorders, and everyone else falls through to /attendance (which is now
@@ -132,7 +140,7 @@ function Router() {
         <Route path="/supervisor-report" element={<Gate><ViolationsAccess><Layout><SupervisorReport /></Layout></ViolationsAccess></Gate>} />
         <Route path="/contact-requests" element={<Gate><ContactRequestsAccess><Layout><ContactRequests /></Layout></ContactRequestsAccess></Gate>} />
         <Route path="/staff-assignments" element={<Gate><AdminOnly><Layout><StaffAssignments /></Layout></AdminOnly></Gate>} />
-        <Route path="/activity" element={<Gate><AdminOnly><Layout><ActivityLog /></Layout></AdminOnly></Gate>} />
+        <Route path="/activity" element={<Gate><AdminOrEdari><Layout><ActivityLog /></Layout></AdminOrEdari></Gate>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>

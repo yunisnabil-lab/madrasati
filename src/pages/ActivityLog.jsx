@@ -5,6 +5,7 @@ import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import EmptyState from '../components/EmptyState';
+import ActivityViewersModal from '../components/ActivityViewersModal';
 
 const PAGE_SIZE = 50;
 
@@ -42,7 +43,10 @@ function todayStr() {
 }
 
 export default function ActivityLog() {
-  const { t, lang, dark } = useApp();
+  const { t, lang, dark, staff } = useApp();
+  const isAdmin = staff && staff.role === 'admin';
+  const [viewersOpen, setViewersOpen] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
 
   const [summary, setSummary] = useState(null); // per-staff last login + counts
   const [missing, setMissing] = useState(false); // the SQL hasn't been run yet
@@ -75,7 +79,7 @@ export default function ActivityLog() {
       if (error) { setMissing(true); setSummary([]); return; }
       setSummary(data || []);
     })();
-  }, []);
+  }, [reloadKey]);
 
   const buildQuery = useCallback(() => {
     let q = supabase.from('activity_log').select('*').order('created_at', { ascending: false });
@@ -172,7 +176,12 @@ export default function ActivityLog() {
         <main className="max-w-5xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.activityTitle}</h1>
-            <p className={`text-sm mt-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.activitySub}</p>
+            <p className={`text-sm mt-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{isAdmin ? t.activitySub : t.activitySubEdari}</p>
+            {isAdmin && (
+              <button onClick={() => setViewersOpen(true)} className={`mt-3 text-xs font-medium px-4 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                {t.activityViewersBtn}
+              </button>
+            )}
           </motion.div>
 
           {missing && (
@@ -187,7 +196,7 @@ export default function ActivityLog() {
             {summary === null ? (
               <div className="grid sm:grid-cols-2 gap-2.5">{[0, 1, 2, 3].map((i) => <div key={i} className={skeleton(dark, 'h-16 w-full')} />)}</div>
             ) : summary.length === 0 ? (
-              <EmptyState icon={Activity} text={t.activityNoStaff} dark={dark} compact />
+              <EmptyState icon={Activity} text={isAdmin ? t.activityNoStaff : t.activityNoneAssigned} hint={isAdmin ? undefined : t.activityNoneAssignedHint} dark={dark} compact />
             ) : (
               <div className="grid sm:grid-cols-2 gap-2.5">
                 {summary.map((s) => {
@@ -279,6 +288,14 @@ export default function ActivityLog() {
 
         </main>
       </div>
+
+      {viewersOpen && (
+        <ActivityViewersModal
+          staff={staff} t={t} dark={dark} inputCls={inputCls}
+          onClose={() => setViewersOpen(false)}
+          onSaved={() => setReloadKey((k) => k + 1)}
+        />
+      )}
     </div>
   );
 }

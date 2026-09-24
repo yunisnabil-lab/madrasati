@@ -22,7 +22,7 @@ const ITEMS = [
   { to: '/contact-requests', icon: MessageCircle, key: 'navContactRequests', end: false, hideFor: ['recorder', 'edari'], group: 'behavior' },
   { to: '/students', icon: GraduationCap, key: 'navStudents', end: false, hideFor: ['recorder', 'supervisor'], group: 'admin' },
   { to: '/staff-assignments', icon: UsersRound, key: 'navAssignments', end: false, hideFor: ['recorder', 'supervisor', 'edari'], group: 'admin' },
-  { to: '/activity', icon: Activity, key: 'navActivity', end: false, hideFor: ['recorder', 'supervisor', 'edari'], group: 'admin' },
+  { to: '/activity', icon: Activity, key: 'navActivity', end: false, hideFor: ['recorder', 'supervisor'], group: 'admin' },
 ];
 
 const GROUP_ORDER = ['main', 'attendance', 'reports', 'behavior', 'admin'];

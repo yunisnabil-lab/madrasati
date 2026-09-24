@@ -62,11 +62,22 @@ html.dark { color-scheme: dark; }
   .print-area { box-shadow: none !important; }
   .print-only { display: block !important; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  /* The report pages cap their on-screen width with max-w-5xl/6xl and
+     center it with mx-auto so the layout reads well on a monitor — but
+     that same cap carries into print, where the page is already landscape
+     (see @page above). Left in place, it wastes the extra landscape width
+     as empty side margins instead of fitting more student rows per page.
+     Printing should use the page's full width. */
+  .print-area { max-width: none !important; margin-inline: 0 !important; }
   /* Repeat the table header on every printed page instead of just the
      first, and never let a student's row get cut in half across a page
      break — without these, a report that would otherwise fit on one page
      can spill an orphaned row (or two) onto a second page. */
   table thead { display: table-header-group; }
   table tr { page-break-inside: avoid; break-inside: avoid; }
+  /* Tighter rows/font in print so more students fit per landscape page
+     without needing to shrink-to-fit or spill extra pages. */
+  .print-area table { font-size: 11px; }
+  .print-area table th, .print-area table td { padding-top: 4px !important; padding-bottom: 4px !important; }
 }
 .print-only { display: none; }

@@ -71,37 +71,7 @@ export default function Sidebar() {
         dark ? 'bg-navy border-slate-800' : 'bg-white border-slate-200/60'
       }`}
     >
-      {/* Account — pinned at the very top so it's always visible right away,
-          not stranded below the nav where it could end up looking buried
-          near the bottom on a tall nav/short viewport.
-          dir="ltr" is intentional: the photo stays to the left of the name in both Arabic and English. */}
-      <div className={`shrink-0 p-3 border-b ${dark ? 'border-slate-800' : 'border-slate-200/60'}`}>
-        <Link
-          to="/profile"
-          dir="ltr"
-          className={`w-full px-3 py-3 rounded-xl flex items-center gap-2.5 border transition-colors ${dark ? 'border-slate-800 hover:bg-white/5' : 'border-slate-200/60 hover:bg-slate-50'}`}
-        >
-          <div className="relative h-10 w-10 rounded-full shrink-0">
-            {staff && staff.avatar_url ? (
-              <img src={staff.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
-            ) : (
-              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold">
-                {staff ? initials(staff.full_name) : '--'}
-              </div>
-            )}
-          </div>
-          <div className="leading-tight overflow-hidden">
-            <div className={`text-sm font-bold truncate ${dark ? 'text-white' : 'text-navy'}`}>
-              {staff ? staff.full_name : '...'}
-            </div>
-            <div className={`text-[11px] mt-0.5 truncate ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
-              {staff ? t.roleNames[staff.role] : ''}
-            </div>
-          </div>
-        </Link>
-      </div>
-
-      <nav className="px-3 py-5 space-y-1 overflow-y-auto">
+      <nav className="px-3 pt-5 space-y-1">
         {items.map((item) => {
           const Icon = item.icon;
           return (
@@ -127,6 +97,35 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      {/* Account — centered in the leftover space below the nav, back to the
+          original placement per request.
+          dir="ltr" is intentional: the photo stays to the left of the name in both Arabic and English. */}
+      <div className="flex-1 flex items-center justify-center px-3">
+        <Link
+          to="/profile"
+          dir="ltr"
+          className={`w-full px-3 py-3 rounded-xl flex items-center gap-2.5 border transition-colors ${dark ? 'border-slate-800 hover:bg-white/5' : 'border-slate-200/60 hover:bg-slate-50'}`}
+        >
+          <div className="relative h-10 w-10 rounded-full shrink-0">
+            {staff && staff.avatar_url ? (
+              <img src={staff.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+            ) : (
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold">
+                {staff ? initials(staff.full_name) : '--'}
+              </div>
+            )}
+          </div>
+          <div className="leading-tight overflow-hidden">
+            <div className={`text-sm font-bold truncate ${dark ? 'text-white' : 'text-navy'}`}>
+              {staff ? staff.full_name : '...'}
+            </div>
+            <div className={`text-[11px] mt-0.5 truncate ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
+              {staff ? t.roleNames[staff.role] : ''}
+            </div>
+          </div>
+        </Link>
+      </div>
     </aside>
   );
 }

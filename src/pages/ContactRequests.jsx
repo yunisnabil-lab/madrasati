@@ -32,19 +32,38 @@ export default function ContactRequests() {
 
   useEffect(() => { loadAll(); }, [loadAll]);
 
+  const [rowErrors, setRowErrors] = useState({}); // request id -> message
+
+  const markApproved = () => ({ status: 'approved', reviewed_by: staff.id, reviewed_at: new Date().toISOString() });
+
   const approve = async (row) => {
-    setActingId(row.id);
-    const { error } = await supabase.from('contact_requests')
-      .update({ status: 'approved', reviewed_by: staff.id, reviewed_at: new Date().toISOString() })
-      .eq('id', row.id);
-    if (!error) {
-      if (row.channel === 'whatsapp') {
-        const link = buildWhatsAppLink(row.recipient, row.message);
-        if (link) window.open(link, '_blank', 'noopener,noreferrer');
-      } else {
-        await supabase.functions.invoke('send-report-email', { body: { studentId: row.student_id, to: row.recipient, message: row.message } });
-      }
+    setRowErrors((m) => ({ ...m, [row.id]: null }));
+
+    if (row.channel === 'whatsapp') {
+      const link = buildWhatsAppLink(row.recipient, row.message);
+      if (!link) { setRowErrors((m) => ({ ...m, [row.id]: t.saveError })); return; }
+      // open WhatsApp right here, inside the click — browsers (Safari/iPhone
+      // especially) block a new tab opened after an await, which used to
+      // mark the request approved without WhatsApp ever opening
+      window.open(link, '_blank', 'noopener,noreferrer');
+      setActingId(row.id);
+      await supabase.from('contact_requests').update(markApproved()).eq('id', row.id);
+      setActingId(null);
+      loadAll();
+      return;
     }
+
+    // email: send first, and only mark the request approved once it went out
+    setActingId(row.id);
+    const { data, error } = await supabase.functions.invoke('send-report-email', {
+      body: { studentId: row.student_id, to: row.recipient, message: row.message },
+    });
+    if (error || (data && data.error)) {
+      setActingId(null);
+      setRowErrors((m) => ({ ...m, [row.id]: t.emailSendError }));
+      return;
+    }
+    await supabase.from('contact_requests').update(markApproved()).eq('id', row.id);
     setActingId(null);
     loadAll();
   };
@@ -138,6 +157,7 @@ export default function ContactRequests() {
                   <X size={13} /> {t.rejectRequest}
                 </button>
               </div>
+              {rowErrors[r.id] && <p className="text-xs text-rose-500 mt-2">{rowErrors[r.id]}</p>}
           </div>
         </div>
       </li>

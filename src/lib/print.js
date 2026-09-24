@@ -1,4 +1,14 @@
-import { sortSections } from './sections';
+import { sortSections, sectionLabel } from './sections';
+
+// Section label for print headings: the section name ("5/[General]09") is
+// isolated as left-to-right so its digits, slash and brackets keep their order
+// inside an Arabic line instead of being scrambled by the bidi algorithm.
+export function printSectionLabel(section, lang) {
+  const base = sectionLabel(section, lang);
+  const name = section?.section_name;
+  if (!base || !name || !base.endsWith(String(name))) return base;
+  return `${base.slice(0, base.length - String(name).length)}⁦${name}⁩`;
+}
 
 // Prints the current page with a meaningful suggested filename.
 //

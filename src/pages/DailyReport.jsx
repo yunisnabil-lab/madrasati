@@ -9,7 +9,7 @@ import { sectionsFor, sectionLabel as fmtSectionLabel, streamLabel, gradeLabel }
 import { deriveByStudentAndDate, periodsForDate } from '../lib/attendanceDerive';
 import { STATUS_META, STATUS_LIST } from '../lib/status';
 import { exportXlsx } from '../lib/exportXlsx';
-import { printWithTitle, reportName, weekdayName, groupRowsBySection } from '../lib/print';
+import { printWithTitle, reportName, weekdayName, groupRowsBySection, printSectionLabel } from '../lib/print';
 import { PrintSheet, PrintTable, StatusPill } from '../components/PrintSheet';
 import { fetchAllRowsByIds } from '../lib/fetchAll';
 import SectionPicker from '../components/SectionPicker';
@@ -196,8 +196,8 @@ export default function DailyReport() {
   const fileTitle = reportName(t.dailyReportTitle, scopeLabel, `${weekdayName(date, lang)} ${date}`, view === 'day' ? '' : periodOrDayLabel);
 
   const exportCsv = () => {
-    const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGrade, t.colStatus];
-    const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.grade, t[STATUS_META[statusFor(r, view)].key]]);
+    const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGrade, t.colSection, t.colStatus];
+    const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.grade, r.section?.section_name ?? '', t[STATUS_META[statusFor(r, view)].key]]);
     exportXlsx(`${fileTitle}.xlsx`, [header, ...body], { lang });
   };
 
@@ -238,7 +238,7 @@ export default function DailyReport() {
             { label: t.colStatus, width: '70px', align: 'center', render: (r) => { const st = statusFor(r, view); return <StatusPill label={t[STATUS_META[st].key]} color={STATUS_META[st].color} />; } },
             ...(view === 'day' ? [{ label: t.printNotes, render: noteOf }] : []),
           ]}
-          groups={groupRowsBySection(printRows, sections, (r) => r.section_id, (id, rs) => `${rs[0].section_label} (${rs.length})`)}
+          groups={groupRowsBySection(printRows, sections, (r) => r.section_id, (id, rs) => `${printSectionLabel(sections.find((s) => s.id === id), lang) || rs[0].section_label} (${rs.length})`)}
         />
       </PrintSheet>
     );

@@ -10,7 +10,7 @@ import { isSchoolDay } from '../lib/schoolCalendar';
 import { fetchAllRowsByIds } from '../lib/fetchAll';
 import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { exportXlsx } from '../lib/exportXlsx';
-import { printWithTitle, reportName, rangeLabel, groupRowsBySection } from '../lib/print';
+import { printWithTitle, reportName, rangeLabel, groupRowsBySection, printSectionLabel } from '../lib/print';
 import { PrintSheet, PrintTable, StatusPill } from '../components/PrintSheet';
 import SectionPicker from '../components/SectionPicker';
 
@@ -260,7 +260,7 @@ export default function PeriodReport() {
             { label: t.colRate, align: 'center', width: '52px', render: (r) => (r.rate == null ? '—' : `${r.rate}%`) },
             { label: t.colFlag, align: 'center', width: '84px', render: (r) => (r.flagged ? <StatusPill label={t.frequentAbsence} color="#ee5d50" /> : '') },
           ]}
-          groups={groupRowsBySection(printRows, sections, (r) => r.section_id, (id, rs) => `${rs[0].section_label} (${rs.length})`)}
+          groups={groupRowsBySection(printRows, sections, (r) => r.section_id, (id, rs) => `${printSectionLabel(sections.find((s) => s.id === id), lang) || rs[0].section_label} (${rs.length})`)}
         />
       </PrintSheet>
     );

@@ -59,6 +59,9 @@ function NotRecorder({ children, fallback = '/attendance' }) {
   return children;
 }
 
+// strictly the one admin account — used only for the handful of actions the
+// new "edari" (administrative) role does NOT inherit: resetting attendance
+// and linking teachers/supervisors to sections.
 function AdminOnly({ children, fallback = '/attendance' }) {
   const { staff } = useApp();
   if (staff?.role !== 'admin') return <Navigate to={fallback} replace />;
@@ -66,19 +69,20 @@ function AdminOnly({ children, fallback = '/attendance' }) {
 }
 
 // "/" shows a role-appropriate home page: the full admin dashboard for
-// admins, a personal home (their own classes/students) for recorders, and
-// everyone else falls through to /attendance (which itself redirects a
-// supervisor on to /violations, same as before this route existed).
+// admins and "edari" staff, a personal home (their own classes/students) for
+// recorders, and everyone else falls through to /attendance (which is now
+// also usable by a supervisor, scoped to their own sections).
 function HomeRoute() {
   const { staff } = useApp();
-  if (staff?.role === 'admin') return <Dashboard />;
+  if (staff?.role === 'admin' || staff?.role === 'edari') return <Dashboard />;
   if (staff?.role === 'recorder') return <RecorderDashboard />;
   return <Navigate to="/attendance" replace />;
 }
 
-// the "supervisor" role is scoped to behavioral violations + lateness
-// monitoring only — it doesn't take attendance, manage students, or see
-// the other reports, so every other protected page redirects it away.
+// a supervisor now also takes attendance, looks students up, and views the
+// daily/period reports — scoped to the sections they're assigned to, same as
+// a recorder — in addition to their existing violations/lateness access.
+// Student management (add/edit/deactivate) stays out of scope for them.
 function NotSupervisor({ children, fallback = '/violations' }) {
   const { staff } = useApp();
   if (staff?.role === 'supervisor') return <Navigate to={fallback} replace />;
@@ -87,16 +91,16 @@ function NotSupervisor({ children, fallback = '/violations' }) {
 
 function ViolationsAccess({ children, fallback = '/attendance' }) {
   const { staff } = useApp();
-  const allowed = ['admin', 'supervisor', 'viewer'];
+  const allowed = ['admin', 'supervisor', 'viewer', 'edari'];
   if (staff && !allowed.includes(staff.role)) return <Navigate to={fallback} replace />;
   return children;
 }
 
-// only admin/supervisor review and approve parent-contact requests — a
+// only admin/supervisor/edari review and approve parent-contact requests — a
 // teacher can submit one (from Student Lookup) but can't approve their own.
 function ContactRequestsAccess({ children, fallback = '/attendance' }) {
   const { staff } = useApp();
-  const allowed = ['admin', 'supervisor'];
+  const allowed = ['admin', 'supervisor', 'edari'];
   if (staff && !allowed.includes(staff.role)) return <Navigate to={fallback} replace />;
   return children;
 }
@@ -112,11 +116,11 @@ function Router() {
         <Route path="/register-complete" element={<RegisterComplete />} />
         <Route path="/pending" element={<PendingGuard><Pending /></PendingGuard>} />
         <Route path="/" element={<Gate><Layout><HomeRoute /></Layout></Gate>} />
-        <Route path="/attendance" element={<Gate><NotSupervisor><Layout><Attendance /></Layout></NotSupervisor></Gate>} />
+        <Route path="/attendance" element={<Gate><Layout><Attendance /></Layout></Gate>} />
         <Route path="/students" element={<Gate><NotRecorder><NotSupervisor><Layout><Students /></Layout></NotSupervisor></NotRecorder></Gate>} />
-        <Route path="/lookup" element={<Gate><NotSupervisor><Layout><StudentLookup /></Layout></NotSupervisor></Gate>} />
-        <Route path="/daily-report" element={<Gate><NotSupervisor><Layout><DailyReport /></Layout></NotSupervisor></Gate>} />
-        <Route path="/period-report" element={<Gate><NotSupervisor><Layout><PeriodReport /></Layout></NotSupervisor></Gate>} />
+        <Route path="/lookup" element={<Gate><Layout><StudentLookup /></Layout></Gate>} />
+        <Route path="/daily-report" element={<Gate><Layout><DailyReport /></Layout></Gate>} />
+        <Route path="/period-report" element={<Gate><Layout><PeriodReport /></Layout></Gate>} />
         <Route path="/profile" element={<Gate><Layout><Profile /></Layout></Gate>} />
         <Route path="/violations" element={<Gate><ViolationsAccess><Layout><Violations /></Layout></ViolationsAccess></Gate>} />
         <Route path="/lateness" element={<Gate><ViolationsAccess><Layout><Lateness /></Layout></ViolationsAccess></Gate>} />

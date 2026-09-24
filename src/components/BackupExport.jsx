@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Download, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { fetchAllRows } from '../lib/fetchAll';
-import { exportXlsx } from '../lib/exportXlsx';
+import { exportXlsxSheets } from '../lib/exportXlsx';
 import { sectionLabel } from '../lib/sections';
 import { cardFloating } from '../lib/theme';
 import { useDialogs } from '../lib/Dialogs';
@@ -14,17 +14,18 @@ function todayStr() {
   const pad = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
-function monthStartStr() {
+// start of the current school year (1 August)
+function yearStartStr() {
   const d = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-01`;
+  const y = d.getMonth() >= 7 ? d.getFullYear() : d.getFullYear() - 1;
+  return `${y}-08-01`;
 }
 
 // Admin-only: download the school's data as Excel files, as a safety copy.
 export default function BackupExport({ t, lang, dark }) {
   const { notify } = useDialogs();
-  const [busy, setBusy] = useState('');
-  const [from, setFrom] = useState(monthStartStr());
+  const [busy, setBusy] = useState(false);
+  const [from, setFrom] = useState(yearStartStr());
   const [to, setTo] = useState(todayStr());
   const ar = lang === 'ar';
 
@@ -82,17 +83,25 @@ export default function BackupExport({ t, lang, dark }) {
     },
   };
 
-  const download = async (key) => {
-    setBusy(key);
+  const download = async () => {
+    setBusy(true);
     try {
-      const rows = await jobs[key].run();
-      const suffix = key === 'attendance' ? `${from}_${to}` : todayStr();
-      exportXlsx(`madrasati-${key}-${suffix}.xlsx`, rows, { lang, sheetName: key });
-      notify(t.backupDone.replace('{n}', rows.length - 1), 'success');
+      const names = ar
+        ? { students: 'الطلاب', violations: 'المخالفات', lateness: 'التأخير الصباحي', attendance: 'الحضور' }
+        : { students: 'Students', violations: 'Violations', lateness: 'Morning lateness', attendance: 'Attendance' };
+      const sheets = [];
+      let total = 0;
+      for (const key of ['students', 'violations', 'lateness', 'attendance']) {
+        const rows = await jobs[key].run();
+        total += rows.length - 1;
+        sheets.push({ name: names[key], rows });
+      }
+      exportXlsxSheets(`madrasati-backup-${todayStr()}.xlsx`, sheets, { lang });
+      notify(t.backupDone.replace('{n}', total), 'success');
     } catch {
       notify(t.backupError, 'error');
     }
-    setBusy('');
+    setBusy(false);
   };
 
   const inputCls = `rounded-lg px-3 py-2 text-sm outline-none border font-en ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`;
@@ -103,25 +112,17 @@ export default function BackupExport({ t, lang, dark }) {
       <h3 className={`text-sm font-semibold mb-1 ${dark ? 'text-white' : 'text-slate-900'}`}>{t.backupTitle}</h3>
       <p className={`text-xs mb-4 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.backupSub}</p>
 
-      <div className="flex flex-wrap gap-2.5 mb-4">
-        {['students', 'violations', 'lateness'].map((k) => (
-          <button key={k} onClick={() => download(k)} disabled={!!busy} className={btnCls}>
-            {busy === k ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />} {jobs[k].label}
-          </button>
-        ))}
-      </div>
-
       <div className="flex flex-wrap items-end gap-2.5">
         <div>
-          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.fromDate}</label>
+          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.backupAttFrom}</label>
           <input type="date" value={from} max={to} onChange={(e) => setFrom(e.target.value)} className={inputCls} />
         </div>
         <div>
-          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.toDate}</label>
+          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.backupAttTo}</label>
           <input type="date" value={to} min={from} max={todayStr()} onChange={(e) => setTo(e.target.value)} className={inputCls} />
         </div>
-        <button onClick={() => download('attendance')} disabled={!!busy || !from || !to} className={btnCls}>
-          {busy === 'attendance' ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />} {jobs.attendance.label}
+        <button onClick={download} disabled={busy || !from || !to} className={`${btnCls} bg-royal text-white border-royal hover:bg-royal-light`}>
+          {busy ? <Loader2 size={15} className="animate-spin" /> : <Download size={15} />} {busy ? t.backupBusy : t.backupAll}
         </button>
       </div>
     </div>

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ListChecks, UserX, ShieldAlert } from 'lucide-react';
+import { ListChecks, UserX, ShieldAlert, ChevronDown } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { fetchAllRows } from '../lib/fetchAll';
 import { cardFloating, skeleton } from '../lib/theme';
@@ -13,12 +13,23 @@ const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate(
 // Dashboard block for admin/edari: how today's recording is going, who was
 // absent, and how many students the early-warning list flags. Each card opens
 // the page with the detail.
+const OPEN_KEY = 'madrasati-today-open';
+function readOpen() {
+  try { return localStorage.getItem(OPEN_KEY) !== '0'; } catch { return true; }
+}
+
 export default function TodaySummary({ t, lang, dark }) {
   const [data, setData] = useState(null);
+  const [open, setOpen] = useState(readOpen);
+  const toggle = () => setOpen((v) => {
+    try { localStorage.setItem(OPEN_KEY, v ? '0' : '1'); } catch { /* storage unavailable */ }
+    return !v;
+  });
   const today = fmt(new Date());
   const offDay = nonSchoolDay(today, lang);
 
   useEffect(() => {
+    if (!open || data) return undefined;
     let cancelled = false;
     (async () => {
       const from = new Date();
@@ -68,7 +79,7 @@ export default function TodaySummary({ t, lang, dark }) {
       setData({ done, total: Object.keys(perSection).length * periods, absent: absent.size, warn });
     })();
     return () => { cancelled = true; };
-  }, [today]);
+  }, [today, open, data]);
 
   const cards = [
     {
@@ -90,11 +101,21 @@ export default function TodaySummary({ t, lang, dark }) {
 
   return (
     <div className="mb-6">
-      <div className="flex flex-wrap items-baseline gap-x-3 mb-3">
-        <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>{t.todayTitle}</h2>
-        {offDay && <span className={`text-xs ${dark ? 'text-amber-200' : 'text-amber-700'}`}>{t.notSchoolDayNote.replace('{name}', offDay.name)}</span>}
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <button
+        onClick={toggle}
+        aria-expanded={open}
+        className={`w-full flex items-center justify-between gap-3 text-start ${open ? 'mb-3' : ''}`}
+      >
+        <span className="flex flex-wrap items-baseline gap-x-3">
+          <span className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>{t.todayTitle}</span>
+          {offDay && <span className={`text-xs ${dark ? 'text-amber-200' : 'text-amber-700'}`}>{t.notSchoolDayNote.replace('{name}', offDay.name)}</span>}
+        </span>
+        <span className={`flex items-center gap-1 text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
+          {open ? t.todayHide : t.todayShow}
+          <ChevronDown size={16} className={`transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        </span>
+      </button>
+      {open && <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {cards.map((c) => {
           const Icon = c.icon;
           return (
@@ -109,7 +130,7 @@ export default function TodaySummary({ t, lang, dark }) {
             </Link>
           );
         })}
-      </div>
+      </div>}
     </div>
   );
 }

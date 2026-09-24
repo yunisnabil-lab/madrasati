@@ -17,6 +17,23 @@ function sanitizeFilename(name) {
   return String(name).replace(/[\\/:*?"<>|]/g, '-');
 }
 
+// One workbook with several sheets: sheets = [{ name, rows }].
+export function exportXlsxSheets(filename, sheets, { lang = 'ar' } = {}) {
+  const wb = XLSX.utils.book_new();
+  wb.Workbook = { Views: sheets.map(() => ({ RTL: lang === 'ar' })) };
+  sheets.forEach(({ name, rows }) => {
+    const ws = XLSX.utils.aoa_to_sheet(rows);
+    const colCount = rows[0]?.length || 0;
+    ws['!cols'] = Array.from({ length: colCount }, (_, c) => {
+      // sample the first rows only: sizing over hundreds of thousands of rows is slow
+      const longest = rows.slice(0, 500).reduce((max, r) => Math.max(max, String(r[c] ?? '').length), 0);
+      return { wch: Math.min(Math.max(longest + 2, 8), 40) };
+    });
+    XLSX.utils.book_append_sheet(wb, ws, String(name).replace(/[\\/?*[\]:]/g, '-').slice(0, 31));
+  });
+  XLSX.writeFile(wb, sanitizeFilename(filename));
+}
+
 export function exportXlsx(filename, rows, { lang = 'ar', sheetName = 'Report' } = {}) {
   const safeFilename = sanitizeFilename(filename);
   const ws = XLSX.utils.aoa_to_sheet(rows);

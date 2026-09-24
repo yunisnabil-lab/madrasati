@@ -22,6 +22,7 @@ import SupervisorReport from './pages/SupervisorReport';
 import ContactRequests from './pages/ContactRequests';
 import ActivityLog from './pages/ActivityLog';
 import RecordingStatus from './pages/RecordingStatus';
+import Insights from './pages/Insights';
 import Layout from './components/Layout';
 
 function Gate({ children }) {
@@ -142,6 +143,7 @@ function Router() {
         <Route path="/contact-requests" element={<Gate><ContactRequestsAccess><Layout><ContactRequests /></Layout></ContactRequestsAccess></Gate>} />
         <Route path="/staff-assignments" element={<Gate><AdminOnly><Layout><StaffAssignments /></Layout></AdminOnly></Gate>} />
         <Route path="/recording-status" element={<Gate><NotRecorder><Layout><RecordingStatus /></Layout></NotRecorder></Gate>} />
+        <Route path="/insights" element={<Gate><NotRecorder><Layout><Insights /></Layout></NotRecorder></Gate>} />
         <Route path="/activity" element={<Gate><AdminOrEdari><Layout><ActivityLog /></Layout></AdminOrEdari></Gate>} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>

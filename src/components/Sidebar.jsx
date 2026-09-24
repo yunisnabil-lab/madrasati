@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3, ChevronDown, UserRound, Sun, Moon, Languages, LogOut, Menu, Activity, ListChecks } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3, ChevronDown, UserRound, Sun, Moon, Languages, LogOut, Menu, Activity, ListChecks, ShieldAlert } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 
 function initials(name) {
@@ -17,6 +17,7 @@ const ITEMS = [
   { to: '/recording-status', icon: ListChecks, key: 'navRecordingStatus', end: false, hideFor: ['recorder'], group: 'attendance' },
   { to: '/daily-report', icon: FileText, key: 'navDailyReport', end: false, hideFor: [], group: 'reports' },
   { to: '/period-report', icon: FileBarChart, key: 'navPeriodReport', end: false, hideFor: [], group: 'reports' },
+  { to: '/insights', icon: ShieldAlert, key: 'navInsights', end: false, hideFor: ['recorder'], group: 'reports' },
   { to: '/supervisor-report', icon: BarChart3, key: 'navSupervisorReport', end: false, hideFor: ['recorder'], group: 'reports' },
   { to: '/violations', icon: AlertTriangle, key: 'navViolations', end: false, hideFor: [], group: 'behavior', primary: true },
   { to: '/lateness', icon: Clock3, key: 'navLateness', end: false, hideFor: ['recorder'], group: 'behavior' },

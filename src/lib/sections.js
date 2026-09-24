@@ -16,6 +16,22 @@ const STREAM_LABELS = {
 
 const STREAM_ORDER = { General: 1, Advanced: 2, 'Gen-3rdLanguage': 3 };
 
+// Arabic grade names -> English, used when the school hasn't filled in
+// grade_name_en for a grade, so English mode doesn't show Arabic grade names.
+// A name that isn't recognised is shown as stored.
+const ORDINALS_AR_EN = [
+  ['الثاني عشر', '12th'], ['الحادي عشر', '11th'], ['العاشر', '10th'], ['التاسع', '9th'],
+  ['الثامن', '8th'], ['السابع', '7th'], ['السادس', '6th'], ['الخامس', '5th'],
+  ['الرابع', '4th'], ['الثالث', '3rd'], ['الثاني', '2nd'], ['الأول', '1st'], ['الاول', '1st'],
+];
+
+export function gradeLabel(gradeName, gradeNameEn, lang) {
+  if (lang !== 'en') return gradeName;
+  if (gradeNameEn) return gradeNameEn;
+  const m = ORDINALS_AR_EN.find(([ar]) => (gradeName || '').includes(ar));
+  return m ? `Grade ${m[1]}` : gradeName;
+}
+
 export function streamLabel(stream, lang) {
   if (!stream) return '';
   const dict = STREAM_LABELS[lang] || STREAM_LABELS.ar;
@@ -47,7 +63,7 @@ export function sortSections(sections) {
 // e.g. "الصف الحادي عشر — متقدم — 11[Advanced]/1"
 export function sectionLabel(section, lang) {
   if (!section) return '';
-  const gradeName = (lang === 'en' && section.grade_name_en) ? section.grade_name_en : section.grade_name;
+  const gradeName = gradeLabel(section.grade_name, section.grade_name_en, lang);
   const parts = [gradeName];
   const stLabel = streamLabel(section.stream, lang);
   if (stLabel) parts.push(stLabel);

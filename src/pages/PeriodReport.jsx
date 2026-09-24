@@ -5,7 +5,7 @@ import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recha
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
-import { sectionLabel as fmtSectionLabel, sectionsFor, streamLabel } from '../lib/sections';
+import { sectionLabel as fmtSectionLabel, sectionsFor, streamLabel, gradeLabel } from '../lib/sections';
 import { fetchAllRowsByIds } from '../lib/fetchAll';
 import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { exportXlsx } from '../lib/exportXlsx';
@@ -159,7 +159,7 @@ export default function PeriodReport() {
         id: s.id,
         sis_no: s.sis_no,
         name: lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar),
-        grade: (lang === 'en' && s.sections?.grade_name_en) ? s.sections.grade_name_en : s.sections?.grade_name,
+        grade: gradeLabel(s.sections?.grade_name, s.sections?.grade_name_en, lang),
         section_id: s.section_id,
         section_label: fmtSectionLabel(s.sections, lang),
         present, absent, excused, lateDays, notRecorded, rate, flagged,
@@ -211,7 +211,7 @@ export default function PeriodReport() {
       return sec ? fmtSectionLabel(sec, lang) : grade;
     }
     const gradeInfo = sections.find((s) => s.grade_name === grade);
-    const gradeDisplay = (lang === 'en' && gradeInfo?.grade_name_en) ? gradeInfo.grade_name_en : grade;
+    const gradeDisplay = gradeLabel(grade, gradeInfo?.grade_name_en, lang);
     return stream ? `${gradeDisplay} — ${streamLabel(stream, lang)}` : gradeDisplay;
   }, [grade, stream, sectionSel, sections, lang]);
 

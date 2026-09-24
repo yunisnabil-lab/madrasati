@@ -5,7 +5,7 @@ import { BarChart, Bar, XAxis, YAxis, Cell, LabelList, Tooltip, ResponsiveContai
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
-import { sectionsFor, sectionLabel as fmtSectionLabel, streamLabel } from '../lib/sections';
+import { sectionsFor, sectionLabel as fmtSectionLabel, streamLabel, gradeLabel } from '../lib/sections';
 import { deriveByStudentAndDate, PERIODS_PER_DAY } from '../lib/attendanceDerive';
 import { STATUS_META, STATUS_LIST } from '../lib/status';
 import { exportXlsx } from '../lib/exportXlsx';
@@ -99,7 +99,7 @@ export default function DailyReport() {
         id: s.id,
         sis_no: s.sis_no,
         name: lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar),
-        grade: (lang === 'en' && s.sections?.grade_name_en) ? s.sections.grade_name_en : s.sections?.grade_name,
+        grade: gradeLabel(s.sections?.grade_name, s.sections?.grade_name_en, lang),
         section: s.sections,
         section_id: s.section_id,
         section_label: fmtSectionLabel(s.sections, lang),
@@ -183,7 +183,7 @@ export default function DailyReport() {
       return sec ? fmtSectionLabel(sec, lang) : grade;
     }
     const gradeInfo = sections.find((s) => s.grade_name === grade);
-    const gradeDisplay = (lang === 'en' && gradeInfo?.grade_name_en) ? gradeInfo.grade_name_en : grade;
+    const gradeDisplay = gradeLabel(grade, gradeInfo?.grade_name_en, lang);
     return stream ? `${gradeDisplay} — ${streamLabel(stream, lang)}` : gradeDisplay;
   }, [grade, stream, sectionSel, sections, lang]);
 

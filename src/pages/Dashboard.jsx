@@ -575,6 +575,7 @@ export default function Dashboard() {
               initial={sectionChoice[sectionModalFor.id] || []}
               cycles={staffCycles(sectionModalFor)}
               t={t}
+              lang={lang}
               dark={dark}
               onClose={() => setSectionModalFor(null)}
               onDone={(ids) => { setSectionChoice((m) => ({ ...m, [sectionModalFor.id]: ids })); setSectionModalFor(null); }}

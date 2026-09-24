@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { distinctGrades, distinctStreams, sectionsFor, streamLabel } from '../lib/sections';
+import { distinctGrades, distinctStreams, sectionsFor, streamLabel, gradeLabel } from '../lib/sections';
 
 // Controlled cascading picker: grade -> stream (only if the grade has one) -> section number.
 // Reports the resolved section_id via onChange(sectionId).
@@ -44,7 +44,7 @@ export default function SectionPicker({
       >
         <option value="">{t.chooseGrade}</option>
         {grades.map((g) => (
-          <option key={g.grade_name} value={g.grade_name}>{(lang === 'en' && g.grade_name_en) ? g.grade_name_en : g.grade_name}</option>
+          <option key={g.grade_name} value={g.grade_name}>{gradeLabel(g.grade_name, g.grade_name_en, lang)}</option>
         ))}
       </select>
 

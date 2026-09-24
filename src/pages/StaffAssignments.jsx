@@ -4,7 +4,7 @@ import { X, Loader2, Users2, Search } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
-import { sortSections, sectionLabel as fmtSectionLabel } from '../lib/sections';
+import { sortSections, sectionLabel as fmtSectionLabel, gradeLabel } from '../lib/sections';
 import { normalizeArabic } from '../lib/search';
 import { staffCycles, shownSubjects, namesOf } from '../lib/staffInfo';
 
@@ -115,7 +115,7 @@ export default function StaffAssignments() {
   const grouped = [];
   sections.forEach((s) => {
     let g = grouped.find((x) => x.grade_name === s.grade_name);
-    if (!g) { g = { grade_name: s.grade_name, items: [] }; grouped.push(g); }
+    if (!g) { g = { grade_name: s.grade_name, grade_name_en: s.grade_name_en, items: [] }; grouped.push(g); }
     g.items.push(s);
   });
 
@@ -215,7 +215,7 @@ export default function StaffAssignments() {
               <div className="flex-1 overflow-y-auto space-y-4 pe-1">
                 {grouped.map((g) => (
                   <div key={g.grade_name}>
-                    <div className={`text-xs font-semibold mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{g.grade_name}</div>
+                    <div className={`text-xs font-semibold mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{gradeLabel(g.grade_name, g.grade_name_en, lang)}</div>
                     <div className="flex flex-wrap gap-1.5">
                       {g.items.map((s) => {
                         const active = checked.has(s.id);

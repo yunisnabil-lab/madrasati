@@ -237,7 +237,7 @@ export default function Sidebar() {
                   type="button"
                   onClick={() => toggleGroup(groupKey)}
                   aria-expanded={open}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold tracking-wide transition-colors ${
+                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-wide transition-colors ${
                     hasActive && !open
                       ? (dark ? 'text-royal-light' : 'text-royal')
                       : (dark ? 'text-slate-300 hover:text-white' : 'text-slate-400 hover:text-slate-700')
@@ -245,7 +245,7 @@ export default function Sidebar() {
                 >
                   <span className="flex-1 text-start">{t[GROUP_LABEL_KEYS[groupKey]]}</span>
                   {hasActive && !open && <span className="h-1.5 w-1.5 rounded-full bg-royal" />}
-                  <ChevronDown size={14} className={`shrink-0 transition-transform duration-200 ${open ? '' : 'ltr:-rotate-90 rtl:rotate-90'}`} />
+                  <ChevronDown size={16} className={`shrink-0 transition-transform duration-200 ${open ? '' : 'ltr:-rotate-90 rtl:rotate-90'}`} />
                 </button>
               )}
               {open && (
@@ -259,7 +259,7 @@ export default function Sidebar() {
                         end={item.end}
                         onClick={guardNav}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                          `flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15px] font-medium transition-colors ${
                             isActive
                               ? dark
                                 ? 'bg-royal/25 text-white font-semibold'
@@ -270,7 +270,7 @@ export default function Sidebar() {
                           }`
                         }
                       >
-                        <Icon size={18} className="shrink-0" />
+                        <Icon size={20} className="shrink-0" />
                         <span className="leading-snug truncate">{t[item.key]}</span>
                       </NavLink>
                     );

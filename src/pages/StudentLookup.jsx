@@ -12,6 +12,7 @@ import { buildWhatsAppLink } from '../lib/whatsapp';
 import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { printWithTitle, reportName, rangeLabel } from '../lib/print';
 import { PrintSheet, PrintTable, StatusPill } from '../components/PrintSheet';
+import { sheetToPdfBase64 } from '../lib/pdfReport';
 import { STATUS_META } from '../lib/status';
 import SectionPicker from '../components/SectionPicker';
 import PeriodBreakdown from '../components/PeriodBreakdown';
@@ -594,6 +595,7 @@ function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, d
   const [email, setEmail] = useState(student.parent_email || '');
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailMsg, setEmailMsg] = useState(null);
+  const [attachPdf, setAttachPdf] = useState(true);
 
   const dayName = (dateStr) => new Intl.DateTimeFormat(lang === 'ar' ? 'ar-u-nu-latn' : 'en', { weekday: 'long' }).format(new Date(`${dateStr}T00:00:00`));
   const rowIcon = (status) => (status === 'present' ? '✅' : status === 'absent' ? '❌' : status === 'late' ? '⏰' : status === 'excused' ? '📝' : '❔');
@@ -616,8 +618,21 @@ function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, d
   const sendEmail = async () => {
     setSendingEmail(true);
     setEmailMsg(null);
+    let attachment;
+    if (attachPdf) {
+      try {
+        attachment = {
+          filename: `${reportName(name, student.sis_no, todayStr())}.pdf`,
+          contentBase64: await sheetToPdfBase64(document.querySelector('.ps-sheet')),
+        };
+      } catch {
+        setSendingEmail(false);
+        setEmailMsg({ type: 'err', text: t.emailPdfError });
+        return;
+      }
+    }
     const { data, error } = await supabase.functions.invoke('send-report-email', {
-      body: { studentId: student.id, to: email.trim(), message },
+      body: { studentId: student.id, to: email.trim(), message: attachment ? t.emailPdfBody : message, attachment },
     });
     setSendingEmail(false);
     if (error || (data && data.error)) {
@@ -674,6 +689,10 @@ function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, d
           {sendingEmail ? <Loader2 size={15} className="animate-spin" /> : <Mail size={15} />} {t.sendEmail}
         </button>
       </div>
+      <label className={`flex items-center gap-2 text-xs cursor-pointer ${dark ? 'text-slate-200' : 'text-slate-600'}`}>
+        <input type="checkbox" checked={attachPdf} onChange={(e) => setAttachPdf(e.target.checked)} className="h-4 w-4 accent-royal" />
+        {t.attachPdf}
+      </label>
       {emailMsg && <p className={`text-xs ${emailMsg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{emailMsg.text}</p>}
     </div>
   );

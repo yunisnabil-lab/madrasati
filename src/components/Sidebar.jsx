@@ -18,7 +18,7 @@ const ITEMS = [
   { to: '/violations', icon: AlertTriangle, key: 'navViolations', end: false, hideFor: ['recorder'] },
   { to: '/lateness', icon: Clock3, key: 'navLateness', end: false, hideFor: ['recorder'] },
   { to: '/supervisor-report', icon: BarChart3, key: 'navSupervisorReport', end: false, hideFor: ['recorder'] },
-  { to: '/contact-requests', icon: MessageCircle, key: 'navContactRequests', end: false, hideFor: ['recorder'] },
+  { to: '/contact-requests', icon: MessageCircle, key: 'navContactRequests', end: false, hideFor: ['recorder', 'edari'] },
   { to: '/staff-assignments', icon: UsersRound, key: 'navAssignments', end: false, hideFor: ['recorder', 'supervisor', 'edari'] },
 ];
 

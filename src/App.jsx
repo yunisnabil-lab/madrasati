@@ -96,11 +96,12 @@ function ViolationsAccess({ children, fallback = '/attendance' }) {
   return children;
 }
 
-// only admin/supervisor/edari review and approve parent-contact requests — a
-// teacher can submit one (from Student Lookup) but can't approve their own.
+// only the supervisor (and the admin) review and approve parent-contact
+// requests — a teacher submits one from Student Lookup. "edari" staff contact
+// parents directly without approval, so they have no review queue.
 function ContactRequestsAccess({ children, fallback = '/attendance' }) {
   const { staff } = useApp();
-  const allowed = ['admin', 'supervisor', 'edari'];
+  const allowed = ['admin', 'supervisor'];
   if (staff && !allowed.includes(staff.role)) return <Navigate to={fallback} replace />;
   return children;
 }

@@ -8,7 +8,7 @@ function initials(name) {
 }
 
 const ITEMS = [
-  { to: '/', icon: LayoutDashboard, key: 'navDashboard', end: true, hideFor: ['viewer', 'supervisor'] },
+  { to: '/', icon: LayoutDashboard, key: 'navDashboard', end: true, hideFor: ['supervisor'] },
   { to: '/attendance', icon: ClipboardCheck, key: 'navAttendance', end: false, hideFor: [] },
   { to: '/lookup', icon: Search, key: 'navLookup', end: false, hideFor: [] },
   { to: '/daily-report', icon: FileText, key: 'navDailyReport', end: false, hideFor: [] },
@@ -17,8 +17,8 @@ const ITEMS = [
   { to: '/violations', icon: AlertTriangle, key: 'navViolations', end: false, hideFor: ['recorder'] },
   { to: '/lateness', icon: Clock3, key: 'navLateness', end: false, hideFor: ['recorder'] },
   { to: '/supervisor-report', icon: BarChart3, key: 'navSupervisorReport', end: false, hideFor: ['recorder'] },
-  { to: '/contact-requests', icon: MessageCircle, key: 'navContactRequests', end: false, hideFor: ['recorder', 'viewer'] },
-  { to: '/staff-assignments', icon: UsersRound, key: 'navAssignments', end: false, hideFor: ['recorder', 'viewer', 'supervisor', 'edari'] },
+  { to: '/contact-requests', icon: MessageCircle, key: 'navContactRequests', end: false, hideFor: ['recorder'] },
+  { to: '/staff-assignments', icon: UsersRound, key: 'navAssignments', end: false, hideFor: ['recorder', 'supervisor', 'edari'] },
 ];
 
 function visibleItems(role) {

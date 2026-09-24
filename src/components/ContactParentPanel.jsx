@@ -12,7 +12,7 @@ function buildDefaultMessage({ name, sectionLabel, note, lang, t }) {
 
 // Contact-parent panel used in two modes:
 //  - "direct": admin/supervisor send the WhatsApp message or email right away
-//    (used on the Violations and Lateness pages, and by admin/viewer on
+//    (used on the Violations and Lateness pages, and by admin/edari on
 //    Student Lookup).
 //  - "request": a teacher (recorder) can't contact parents directly — they
 //    submit a request that goes into contact_requests for a supervisor or

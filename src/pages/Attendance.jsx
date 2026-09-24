@@ -6,6 +6,7 @@ import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionsFor, sectionLabel } from '../lib/sections';
+import { fetchAllRows } from '../lib/fetchAll';
 import SectionPicker from '../components/SectionPicker';
 
 const STATUS_OPTIONS = [
@@ -34,7 +35,7 @@ function initials(name) {
 }
 
 export default function Attendance() {
-  const { t, lang, dark, staff } = useApp();
+  const { t, lang, dark, staff, setHasUnsaved } = useApp();
   const location = useLocation();
   // Coming from the recorder dashboard's "my sections" card (a specific
   // section's "Record attendance" button) hands us that section directly, so
@@ -133,12 +134,17 @@ export default function Attendance() {
         .in('section_id', activeSectionIds)
         .eq('is_active', true)
         .order('name_ar', { ascending: true }),
-      supabase
+      // school-wide for this date/period — in a school with more than 1000
+      // students a single request is silently cut off at the row cap, which
+      // made some already-saved students look "present" and get inserted
+      // again on save. Page through all of them instead.
+      fetchAllRows(() => supabase
         .from('attendance_records')
         .select('id, student_id, status')
         .eq('date', date)
         .eq('period', period)
-        .eq('school_id', staff.school_id),
+        .eq('school_id', staff.school_id)
+        .order('id')),
     ]);
 
     const list = studs || [];
@@ -180,6 +186,25 @@ export default function Attendance() {
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty]);
 
+  // let the sidebar/header links ask before leaving the page with unsaved edits
+  useEffect(() => {
+    setHasUnsaved(isDirty);
+  }, [isDirty, setHasUnsaved]);
+  useEffect(() => () => setHasUnsaved(false), [setHasUnsaved]);
+
+  // changing the section, period or date reloads the roster and drops any
+  // unsaved marks — ask first instead of losing them silently. Once the user
+  // agrees, the edits are treated as discarded, so a follow-up automatic
+  // change (the picker auto-selecting a grade's only stream) doesn't ask twice.
+  const guarded = (fn) => (...args) => {
+    if (isDirty) {
+      if (!window.confirm(t.unsavedLeaveConfirm)) return;
+      setSavedStatusMap(statusMap);
+      setHasUnsaved(false);
+    }
+    fn(...args);
+  };
+
   const setStatus = (studentId, status) => {
     setStatusMap((m) => ({ ...m, [studentId]: status }));
   };
@@ -204,7 +229,7 @@ export default function Attendance() {
       const status = statusMap[s.id] || 'present';
       const existingId = recordMap[s.id];
       if (existingId) {
-        toUpdate.push({ id: existingId, status });
+        toUpdate.push({ id: existingId, student_id: s.id, status });
       } else {
         toInsert.push({
           school_id: staff.school_id,
@@ -225,18 +250,27 @@ export default function Attendance() {
       if (error) { hadError = true; debugMsg = `INSERT: ${error.message} (code: ${error.code || '—'})`; }
     }
 
-    for (const u of toUpdate) {
+    // only rows whose status actually changed, grouped by status — one
+    // request per status (at most 4) instead of one request per student
+    const changedByStatus = {};
+    toUpdate
+      .filter((u) => u.status !== savedStatusMap[u.student_id])
+      .forEach((u) => {
+        if (!changedByStatus[u.status]) changedByStatus[u.status] = [];
+        changedByStatus[u.status].push(u.id);
+      });
+    for (const [status, ids] of Object.entries(changedByStatus)) {
       const { error } = await supabase
         .from('attendance_records')
-        .update({ status: u.status })
-        .eq('id', u.id);
+        .update({ status })
+        .in('id', ids);
       if (error) { hadError = true; debugMsg = `UPDATE: ${error.message} (code: ${error.code || '—'})`; }
     }
 
     setSaving(false);
     if (hadError) {
       console.error('Attendance save error:', debugMsg);
-      setSaveMsg({ type: 'err', text: 'DEBUG: ' + debugMsg });
+      setSaveMsg({ type: 'err', text: t.saveError });
     } else {
       setSaveMsg({ type: 'ok', text: t.savedSuccess });
       loadRoster();
@@ -265,9 +299,9 @@ export default function Attendance() {
                 stream={stream}
                 sectionId={sectionSel}
                 allowAll
-                onGradeChange={(g) => { setGrade(g); setStream(''); setSectionSel(''); }}
-                onStreamChange={(s) => { setStream(s); setSectionSel(''); }}
-                onSectionChange={setSectionSel}
+                onGradeChange={guarded((g) => { setGrade(g); setStream(''); setSectionSel(''); })}
+                onStreamChange={guarded((s) => { setStream(s); setSectionSel(''); })}
+                onSectionChange={guarded(setSectionSel)}
                 inputCls={`w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${
                   dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
                 }`}
@@ -281,7 +315,7 @@ export default function Attendance() {
                 </label>
                 <select
                   value={period}
-                  onChange={(e) => setPeriod(e.target.value)}
+                  onChange={guarded((e) => setPeriod(e.target.value))}
                   className={`w-full rounded-lg px-3 py-2.5 text-sm outline-none border font-en ${
                     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
                   }`}
@@ -300,7 +334,7 @@ export default function Attendance() {
                 <input
                   type="date"
                   value={date}
-                  onChange={(e) => setDate(e.target.value)}
+                  onChange={guarded((e) => setDate(e.target.value))}
                   className={`w-full rounded-lg px-3 py-2.5 text-sm outline-none border font-en ${
                     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
                   }`}
@@ -363,12 +397,14 @@ export default function Attendance() {
           ) : (
             <div className={cardFloating(dark, 'overflow-hidden')}>
               <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                {/* Students already marked absent/late/excused float to the top, so a
+                {/* Students already saved as absent/late/excused float to the top, so a
                     late arrival can be found and corrected without scrolling through
-                    everyone who's simply present. */}
+                    everyone who's simply present. Sorted by the last-saved status, not
+                    the live one — otherwise a row jumps to the top the moment it's
+                    tapped and the teacher's next tap lands on the wrong student. */}
                 {[...students].sort((a, b) => {
-                  const aFlagged = (statusMap[a.id] || 'present') !== 'present';
-                  const bFlagged = (statusMap[b.id] || 'present') !== 'present';
+                  const aFlagged = (savedStatusMap[a.id] || 'present') !== 'present';
+                  const bFlagged = (savedStatusMap[b.id] || 'present') !== 'present';
                   return aFlagged === bFlagged ? 0 : aFlagged ? -1 : 1;
                 }).map((s) => {
                   const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);

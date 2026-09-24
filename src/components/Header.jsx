@@ -15,7 +15,7 @@ function useLiveNow() {
 }
 
 export default function Header() {
-  const { t, lang, setLang, dark, staff, signOut } = useApp();
+  const { t, lang, setLang, dark, staff, signOut, confirmLeave } = useApp();
   // Staff/registration-request management is admin-only — "edari" staff
   // does not manage staff, so this notification stays admin-only too.
   const isAdmin = staff && staff.role === 'admin';
@@ -124,7 +124,7 @@ export default function Header() {
 
           {/* Account — mobile only; on desktop it lives at the top of the sidebar,
               which is hidden on small screens. */}
-          <Link to="/profile" className="md:hidden h-10 w-10 rounded-full shrink-0 overflow-hidden">
+          <Link to="/profile" onClick={(e) => { if (!confirmLeave()) e.preventDefault(); }} className="md:hidden h-10 w-10 rounded-full shrink-0 overflow-hidden">
             {staff && staff.avatar_url ? (
               <img src={staff.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
             ) : (
@@ -136,7 +136,7 @@ export default function Header() {
 
           {/* Sign-out */}
           <button
-            onClick={signOut}
+            onClick={() => { if (confirmLeave()) signOut(); }}
             title={t.signOut}
             className={`h-10 w-10 rounded-full flex items-center justify-center shrink-0 transition-colors ${dark ? 'bg-rose-500/15 text-rose-400 hover:bg-rose-500/25' : 'bg-rose-50 text-rose-500 hover:bg-rose-100'}`}
           >

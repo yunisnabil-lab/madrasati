@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3, ChevronDown, UserRound, Sun, Moon, Languages, LogOut } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 
 function initials(name) {
@@ -28,7 +29,8 @@ function visibleItems(role) {
 export { ITEMS, visibleItems };
 
 export function MobileNav() {
-  const { t, dark, staff } = useApp();
+  const { t, dark, staff, confirmLeave } = useApp();
+  const guardNav = (e) => { if (!confirmLeave()) e.preventDefault(); };
   const items = visibleItems(staff?.role);
   return (
     <nav
@@ -44,6 +46,7 @@ export function MobileNav() {
             key={item.to}
             to={item.to}
             end={item.end}
+            onClick={guardNav}
             className={({ isActive }) =>
               `flex-1 min-w-[68px] flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium ${
                 isActive
@@ -62,8 +65,21 @@ export function MobileNav() {
 }
 
 export default function Sidebar() {
-  const { t, dark, staff } = useApp();
+  const { t, lang, setLang, dark, setDark, staff, signOut, confirmLeave } = useApp();
+  const guardNav = (e) => { if (!confirmLeave()) e.preventDefault(); };
   const items = visibleItems(staff?.role);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const onKey = (e) => { if (e.key === 'Escape') setMenuOpen(false); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [menuOpen]);
+
+  const menuItemCls = `w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-medium transition-colors ${
+    dark ? 'text-slate-200 hover:bg-white/5' : 'text-slate-700 hover:bg-slate-50'
+  }`;
 
   return (
     <aside
@@ -71,30 +87,69 @@ export default function Sidebar() {
         dark ? 'bg-navy border-slate-800' : 'bg-white border-slate-200/60'
       }`}
     >
-      {/* Account — pinned at the top of the sidebar, photo and name centered.
-          shrink-0 keeps it in place; only the nav below it scrolls when a
-          role has more links than fit on a short screen. */}
-      <div className={`shrink-0 px-3 pt-5 pb-4 border-b ${dark ? 'border-slate-800' : 'border-slate-200/60'}`}>
-        <Link
-          to="/profile"
-          className={`w-full px-3 py-4 rounded-xl flex flex-col items-center text-center gap-2 border transition-colors ${dark ? 'border-slate-800 hover:bg-white/5' : 'border-slate-200/60 hover:bg-slate-50'}`}
+      {/* Account — pinned at the top of the sidebar, the same height as the
+          page header (py-4 + 40px row + 1px border = 73px) so the two read as
+          one bar. Clicking it opens a small menu of account actions.
+          shrink-0 keeps it in place; only the nav below it scrolls. */}
+      <div className={`relative shrink-0 h-[73px] px-3 flex items-center border-b ${dark ? 'border-slate-800' : 'border-slate-200/60'}`}>
+        <button
+          type="button"
+          onClick={() => setMenuOpen((v) => !v)}
+          aria-haspopup="menu"
+          aria-expanded={menuOpen}
+          className={`w-full h-12 px-2 rounded-xl flex items-center gap-2.5 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'} ${menuOpen ? (dark ? 'bg-white/5' : 'bg-slate-50') : ''}`}
         >
           {staff && staff.avatar_url ? (
-            <img src={staff.avatar_url} alt="" className="h-14 w-14 rounded-full object-cover" />
+            <img src={staff.avatar_url} alt="" className="h-9 w-9 rounded-full object-cover shrink-0" />
           ) : (
-            <div className="h-14 w-14 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-sm font-semibold">
+            <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold shrink-0">
               {staff ? initials(staff.full_name) : '--'}
             </div>
           )}
-          <div className="w-full leading-snug">
-            <div className={`text-sm font-bold break-words ${dark ? 'text-white' : 'text-navy'}`}>
+          <div className="flex-1 min-w-0 leading-tight">
+            <div className={`text-sm font-bold truncate ${dark ? 'text-white' : 'text-navy'}`} title={staff?.full_name || ''}>
               {staff ? staff.full_name : '...'}
             </div>
-            <div className={`text-xs mt-0.5 font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
+            <div className={`text-xs mt-0.5 font-medium truncate ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
               {staff ? t.roleNames[staff.role] : ''}
             </div>
           </div>
-        </Link>
+          <ChevronDown size={16} className={`shrink-0 transition-transform ${menuOpen ? 'rotate-180' : ''} ${dark ? 'text-slate-200' : 'text-slate-500'}`} />
+        </button>
+
+        {menuOpen && (
+          <>
+            <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
+            <div
+              role="menu"
+              className={`absolute top-full inset-x-3 mt-1 z-50 rounded-xl border shadow-xl py-1.5 ${dark ? 'bg-navy-soft border-slate-700' : 'bg-white border-slate-200'}`}
+            >
+              <Link
+                to="/profile"
+                role="menuitem"
+                onClick={(e) => { guardNav(e); setMenuOpen(false); }}
+                className={menuItemCls}
+              >
+                <UserRound size={16} /> {lang === 'ar' ? 'الملف الشخصي' : 'My profile'}
+              </Link>
+              <button type="button" role="menuitem" onClick={() => { setDark((d) => !d); setMenuOpen(false); }} className={menuItemCls}>
+                {dark ? <Sun size={16} /> : <Moon size={16} />} {dark ? t.lightMode : t.darkMode}
+              </button>
+              <button type="button" role="menuitem" onClick={() => { setLang(lang === 'ar' ? 'en' : 'ar'); setMenuOpen(false); }} className={menuItemCls}>
+                <Languages size={16} /> {lang === 'ar' ? 'English' : 'العربية'}
+              </button>
+              <div className={`my-1.5 border-t ${dark ? 'border-slate-700' : 'border-slate-100'}`} />
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => { setMenuOpen(false); if (confirmLeave()) signOut(); }}
+                className={`w-full flex items-center gap-2.5 px-3.5 py-2.5 text-sm font-medium text-rose-500 ${dark ? 'hover:bg-rose-500/10' : 'hover:bg-rose-50'}`}
+              >
+                <LogOut size={16} /> {t.signOut}
+              </button>
+            </div>
+          </>
+        )}
       </div>
 
       <nav className="flex-1 min-h-0 overflow-y-auto px-3 pt-4 pb-4 space-y-1">
@@ -105,6 +160,7 @@ export default function Sidebar() {
               key={item.to}
               to={item.to}
               end={item.end}
+              onClick={guardNav}
               className={({ isActive }) =>
                 `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
                   isActive

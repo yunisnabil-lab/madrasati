@@ -10,8 +10,17 @@ export function AppProvider({ children }) {
   const [session, setSession] = useState(undefined); // undefined = not checked yet
   const [staff, setStaff] = useState(null);
   const [staffLoading, setStaffLoading] = useState(true);
+  // set by a page (Attendance) while it holds unsaved edits, so navigation
+  // links elsewhere in the layout can ask before throwing them away
+  const [hasUnsaved, setHasUnsaved] = useState(false);
 
   const t = TEXT[lang];
+
+  // true = OK to leave; asks first when the current page has unsaved edits
+  const confirmLeave = useCallback(
+    () => !hasUnsaved || window.confirm(TEXT[lang].unsavedLeaveConfirm),
+    [hasUnsaved, lang]
+  );
 
   useEffect(() => {
     document.documentElement.lang = lang;
@@ -77,6 +86,8 @@ export function AppProvider({ children }) {
     refreshStaff,
     fetchStaff,
     signOut,
+    setHasUnsaved,
+    confirmLeave,
   };
 
   return <AppCtx.Provider value={value}>{children}</AppCtx.Provider>;

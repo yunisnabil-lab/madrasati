@@ -51,7 +51,10 @@ export default function SupervisorReport() {
     const [{ data: violRows }, { data: lateRows }] = await Promise.all([
       fetchAllRows(() => supabase
         .from('behavior_violations')
-        .select('id, student_id, violation_type, description, date, created_at, students(name_ar, name_en, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)), staff(full_name)')
+        // qualified with the explicit FK name: behavior_violations now has a
+        // second FK to students (affected_student_id), so an unqualified
+        // "students(...)" embed is ambiguous to PostgREST.
+        .select('id, student_id, violation_type, description, date, created_at, students!behavior_violations_student_id_fkey(name_ar, name_en, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)), staff(full_name)')
         .gte('date', fromDate)
         .lte('date', toDate)),
       fetchAllRows(() => supabase

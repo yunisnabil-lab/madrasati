@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Loader2, Trash2, AlertTriangle } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
@@ -49,8 +49,15 @@ export default function Violations() {
   const [violationType, setViolationType] = useState('');
   const [date, setDate] = useState(todayStr());
   const [description, setDescription] = useState('');
+  const [period, setPeriod] = useState('');
+  const [affectedQuery, setAffectedQuery] = useState('');
+  const [affectedMatches, setAffectedMatches] = useState([]);
+  const [affectedStudent, setAffectedStudent] = useState(null);
+  const [teacherAction, setTeacherAction] = useState('');
+  const [supervisorAction, setSupervisorAction] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
+  const allStudentsRef = useRef(null);
 
   const [studentViolations, setStudentViolations] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
@@ -68,7 +75,10 @@ export default function Violations() {
     const { data } = await fetchAllRows(() => {
       let q = supabase
         .from('behavior_violations')
-        .select('id, student_id, violation_type, date, students(name_ar, name_en, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order))');
+        // qualified with the explicit FK name: behavior_violations now has a
+        // second FK to students (affected_student_id), so an unqualified
+        // "students(...)" embed is ambiguous to PostgREST.
+        .select('id, student_id, violation_type, date, students!behavior_violations_student_id_fkey(name_ar, name_en, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order))');
       if (from) q = q.gte('date', from);
       if (to) q = q.lte('date', to);
       return q;
@@ -123,6 +133,32 @@ export default function Violations() {
     })();
   }, [sectionFilterKey]);
 
+  // Full active-student roster for the "affected student" picker, fetched
+  // lazily and cached — it's a separate, ad hoc search independent of the
+  // section filter / main lookup above.
+  const ensureAllStudents = useCallback(async () => {
+    if (allStudentsRef.current) return allStudentsRef.current;
+    const { data } = await fetchAllRows(() => supabase
+      .from('students')
+      .select('id, sis_no, name_ar, name_en, section_id, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)')
+      .eq('is_active', true));
+    allStudentsRef.current = data || [];
+    return allStudentsRef.current;
+  }, []);
+
+  useEffect(() => {
+    const q = affectedQuery.trim();
+    if (!q) { setAffectedMatches([]); return; }
+    let cancelled = false;
+    (async () => {
+      const list = await ensureAllStudents();
+      if (cancelled) return;
+      const found = list.filter((s) => s.id !== selected?.id && matchesStudentSearch(s, q)).slice(0, 6);
+      setAffectedMatches(found);
+    })();
+    return () => { cancelled = true; };
+  }, [affectedQuery, selected, ensureAllStudents]);
+
   const results = useMemo(() => {
     const q = query.trim();
     if (sectionRoster !== null) {
@@ -140,7 +176,11 @@ export default function Violations() {
   const loadStudentViolations = useCallback(async (studentId) => {
     const { data } = await supabase
       .from('behavior_violations')
-      .select('id, violation_type, description, date, created_at, staff(full_name)')
+      .select(`
+        id, violation_type, description, date, period, teacher_action, supervisor_action, created_at,
+        staff(full_name),
+        affected_student:students!behavior_violations_affected_student_id_fkey(name_ar, name_en)
+      `)
       .eq('student_id', studentId)
       .order('date', { ascending: false });
     setStudentViolations(data || []);
@@ -172,6 +212,12 @@ export default function Violations() {
     setViolationType('');
     setDescription('');
     setDate(todayStr());
+    setPeriod('');
+    setAffectedQuery('');
+    setAffectedMatches([]);
+    setAffectedStudent(null);
+    setTeacherAction('');
+    setSupervisorAction('');
   };
 
   const selectFromAgg = (r) => {
@@ -196,6 +242,10 @@ export default function Violations() {
       violation_type: violationType,
       description: description.trim() || null,
       date,
+      period: period ? Number(period) : null,
+      affected_student_id: affectedStudent?.id || null,
+      teacher_action: teacherAction.trim() || null,
+      supervisor_action: supervisorAction.trim() || null,
     });
     setSaving(false);
     if (error) {
@@ -205,6 +255,12 @@ export default function Violations() {
     setSaveMsg({ type: 'ok', text: t.violationSaved });
     setViolationType('');
     setDescription('');
+    setPeriod('');
+    setAffectedQuery('');
+    setAffectedMatches([]);
+    setAffectedStudent(null);
+    setTeacherAction('');
+    setSupervisorAction('');
     loadStudentViolations(selected.id);
     loadAggregate(fromDate, toDate);
   };
@@ -224,6 +280,8 @@ export default function Violations() {
   }`;
 
   const fmtDate = (d) => (d ? new Date(d + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US') : '—');
+  const dayName = (d) => (d ? new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', { weekday: 'long' }).format(new Date(d + 'T00:00:00')) : '');
+  const affectedStudentName = (s) => (s ? (lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar)) : '');
 
   const repeated = aggRows.filter((r) => r.count >= REPEAT_THRESHOLD);
   const rest = aggRows.filter((r) => r.count < REPEAT_THRESHOLD);
@@ -385,7 +443,15 @@ export default function Violations() {
 
                 {canManage && (
                   <div className="space-y-3 mb-2">
-                    <div className="grid sm:grid-cols-2 gap-3">
+                    <div className={`text-xs rounded-lg px-3 py-2 flex flex-wrap gap-x-4 gap-y-1 ${dark ? 'bg-white/5 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
+                      <span>{t.violationTeacherNameLabel}: <span className="font-medium">{staff.full_name}</span></span>
+                      {staff.subject && (
+                        <span>{t.subject}: <span className="font-medium">{t.subjectNames[staff.subject] || staff.subject}</span></span>
+                      )}
+                      <span>{t.violationDayLabel}: <span className="font-medium">{dayName(date)}</span></span>
+                    </div>
+
+                    <div className="grid sm:grid-cols-3 gap-3">
                       <div>
                         <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.violationType}</label>
                         <select value={violationType} onChange={(e) => setViolationType(e.target.value)} className={inputCls}>
@@ -397,11 +463,69 @@ export default function Violations() {
                         <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.violationDate}</label>
                         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls + ' font-en'} />
                       </div>
+                      <div>
+                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.violationPeriodOptionalLabel}</label>
+                        <select value={period} onChange={(e) => setPeriod(e.target.value)} className={inputCls + ' font-en'}>
+                          <option value="">{t.choosePeriod}</option>
+                          {[1, 2, 3, 4, 5, 6, 7, 8].map((p) => (
+                            <option key={p} value={p}>{t.periodN.replace('{n}', p)}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
+
+                    <div>
+                      <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.affectedStudentLabel}</label>
+                      {affectedStudent ? (
+                        <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm border ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
+                          <span className="flex-1 truncate">{affectedStudentName(affectedStudent)}</span>
+                          <button onClick={() => { setAffectedStudent(null); setAffectedQuery(''); }} className="text-xs font-medium text-rose-500 shrink-0">
+                            {t.affectedStudentClear}
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="relative">
+                          <input
+                            value={affectedQuery}
+                            onChange={(e) => setAffectedQuery(e.target.value)}
+                            placeholder={t.affectedStudentPlaceholder}
+                            className={inputCls}
+                          />
+                          {affectedMatches.length > 0 && (
+                            <ul className={`absolute z-10 mt-1 w-full rounded-lg border shadow-lg overflow-hidden ${dark ? 'bg-navy border-slate-700' : 'bg-white border-slate-200'}`}>
+                              {affectedMatches.map((s) => (
+                                <li key={s.id}>
+                                  <button
+                                    onClick={() => { setAffectedStudent(s); setAffectedQuery(''); setAffectedMatches([]); }}
+                                    className={`w-full flex items-center gap-2 px-3 py-2 text-start text-sm ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
+                                  >
+                                    <span className="flex-1 truncate">{affectedStudentName(s)}</span>
+                                    <span className={`text-[11px] shrink-0 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{s.sections ? fmtSectionLabel(s.sections, lang) : ''}</span>
+                                  </button>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+                      )}
+                    </div>
+
                     <div>
                       <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.violationDescription}</label>
                       <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder={t.violationDescriptionPlaceholder} className={inputCls} />
                     </div>
+
+                    <div className="grid sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.teacherActionLabel}</label>
+                        <textarea value={teacherAction} onChange={(e) => setTeacherAction(e.target.value)} rows={2} placeholder={t.teacherActionPlaceholder} className={inputCls} />
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.supervisorActionLabel}</label>
+                        <textarea value={supervisorAction} onChange={(e) => setSupervisorAction(e.target.value)} rows={2} placeholder={t.supervisorActionPlaceholder} className={inputCls} />
+                      </div>
+                    </div>
+
                     {saveMsg && <p className={`text-xs ${saveMsg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{saveMsg.text}</p>}
                     <button onClick={save} disabled={saving || !violationType} className="flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white transition-colors disabled:opacity-60">
                       {saving && <Loader2 size={14} className="animate-spin" />} {t.addViolation}
@@ -439,9 +563,24 @@ export default function Violations() {
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium">{t.violationTypeNames[v.violation_type] || v.violation_type}</div>
                           <div className={`text-xs mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
-                            {fmtDate(v.date)}{v.staff?.full_name ? ' · ' + t.recordedBy + ' ' + v.staff.full_name : ''}
+                            {fmtDate(v.date)} · {dayName(v.date)}{v.period ? ' · ' + t.periodN.replace('{n}', v.period) : ''}{v.staff?.full_name ? ' · ' + t.recordedBy + ' ' + v.staff.full_name : ''}
                           </div>
                           {v.description && <div className={`text-xs mt-1 ${dark ? 'text-slate-400' : 'text-slate-600'}`}>{v.description}</div>}
+                          {v.affected_student && (
+                            <div className={`text-xs mt-1 ${dark ? 'text-slate-400' : 'text-slate-600'}`}>
+                              {t.affectedStudentDisplayLabel}: {affectedStudentName(v.affected_student)}
+                            </div>
+                          )}
+                          {v.teacher_action && (
+                            <div className={`text-xs mt-1 ${dark ? 'text-slate-400' : 'text-slate-600'}`}>
+                              {t.teacherActionDisplayLabel}: {v.teacher_action}
+                            </div>
+                          )}
+                          {v.supervisor_action && (
+                            <div className={`text-xs mt-1 ${dark ? 'text-slate-400' : 'text-slate-600'}`}>
+                              {t.supervisorActionDisplayLabel}: {v.supervisor_action}
+                            </div>
+                          )}
                         </div>
                         {canManage && (
                           <button onClick={() => removeViolation(v.id)} disabled={deletingId === v.id} className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg p-2 shrink-0">

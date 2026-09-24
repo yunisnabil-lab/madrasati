@@ -9,6 +9,7 @@ import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionsFor, sectionLabel } from '../lib/sections';
 import { fetchAllRows } from '../lib/fetchAll';
 import { periodsForDate } from '../lib/attendanceDerive';
+import { nonSchoolDay } from '../lib/schoolCalendar';
 import SectionPicker from '../components/SectionPicker';
 
 const STATUS_OPTIONS = [
@@ -343,6 +344,12 @@ export default function Attendance() {
                   }`}
                 />
               </div>
+
+              {nonSchoolDay(date, lang) && (
+                <p className={`text-xs rounded-lg px-3 py-2 self-center ${dark ? 'bg-amber-500/10 text-amber-200' : 'bg-amber-50 text-amber-800'}`}>
+                  {t.notSchoolDayNote.replace('{name}', nonSchoolDay(date, lang).name)}
+                </p>
+              )}
 
               {students.length > 0 && (
                 <div className="flex flex-wrap items-center gap-2">

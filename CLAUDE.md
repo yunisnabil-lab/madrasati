@@ -24,5 +24,5 @@ Full detail: `PROJECT_DOCUMENTATION.md`. The old "madrasati-school-system" skill
 - Supabase returns max 1000 rows: page with `fetchAllRows` (+ unique `.order('id')`) and chunk long `.in()` lists (`fetchAllRowsByIds`).
 - Attendance: 8 periods/day; the day is present if attended (present/late/excused) x 8 >= 5 x recorded periods, else absent (5 of 8, proportional when fewer recorded); fewer than 3 recorded = undecided (`attendanceDerive.js`).
 - Pages keep `min-h-screen`, `max-w-5xl` (lists/forms) / `6xl` (reports) / `7xl` (dashboards) containers, cards via `cardFloating(dark)`. Dark-mode text uses slate-200/300, never slate-400.
-- School week: Saturday and Sunday are off; Friday has only 4 periods (`periodsForDate` in `attendanceDerive.js`; period pickers and chips follow it). Weekends are already excluded from "not recorded" days in the time report.
+- School calendar: `src/lib/schoolCalendar.js` (MoE 2026-2029 student calendar + Commemoration Day and National Day); `isSchoolDay()` drives "not recorded" days in the time report and a note on the Attendance page. School week: Saturday and Sunday are off; Friday has only 4 periods (`periodsForDate` in `attendanceDerive.js`; period pickers and chips follow it). Weekends are already excluded from "not recorded" days in the time report.
 - Dates: use `ar-u-nu-latn` (Arabic words, Latin digits) everywhere.

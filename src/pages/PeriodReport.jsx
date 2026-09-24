@@ -6,6 +6,7 @@ import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionLabel as fmtSectionLabel, sectionsFor, streamLabel, gradeLabel } from '../lib/sections';
+import { isSchoolDay } from '../lib/schoolCalendar';
 import { fetchAllRowsByIds } from '../lib/fetchAll';
 import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { exportXlsx } from '../lib/exportXlsx';
@@ -25,10 +26,11 @@ function weekAgoStr() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-// The school week runs Monday–Friday (weekend: Saturday & Sunday) — used to
-// tell a real "not recorded" gap (a school day nobody took attendance on)
-// apart from an ordinary weekend, so a period report can't quietly read as
-// full attendance when days were simply never recorded.
+// School days in the range: Monday–Friday minus the official holidays and
+// breaks (lib/schoolCalendar.js) — used to tell a real "not recorded" gap (a
+// school day nobody took attendance on) apart from a weekend or holiday, so
+// a period report can't quietly read as full attendance when days were
+// simply never recorded, and a holiday doesn't count as a gap.
 function schoolDaysInRange(fromDate, toDate) {
   const days = [];
   if (!fromDate || !toDate) return days;
@@ -36,10 +38,8 @@ function schoolDaysInRange(fromDate, toDate) {
   const end = new Date(`${toDate}T00:00:00`);
   const pad = (n) => String(n).padStart(2, '0');
   while (cur <= end) {
-    const dow = cur.getDay(); // 0=Sunday, 6=Saturday
-    if (dow !== 0 && dow !== 6) {
-      days.push(`${cur.getFullYear()}-${pad(cur.getMonth() + 1)}-${pad(cur.getDate())}`);
-    }
+    const iso = `${cur.getFullYear()}-${pad(cur.getMonth() + 1)}-${pad(cur.getDate())}`;
+    if (isSchoolDay(iso)) days.push(iso);
     cur.setDate(cur.getDate() + 1);
   }
   return days;

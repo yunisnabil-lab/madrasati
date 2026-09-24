@@ -37,6 +37,19 @@ function initials(name) {
   return ((parts[0] ? parts[0][0] : '') + (parts[1] ? parts[1][0] : '')).toUpperCase();
 }
 
+// Marks that were not saved yet survive the page being reloaded or the browser
+// discarding the tab (kept in sessionStorage, dropped when the user leaves).
+const DRAFT_KEY = 'madrasati-attendance-draft';
+function readDraft() {
+  try { return JSON.parse(sessionStorage.getItem(DRAFT_KEY)) || null; } catch { return null; }
+}
+function writeDraft(value) {
+  try {
+    if (value) sessionStorage.setItem(DRAFT_KEY, JSON.stringify(value));
+    else sessionStorage.removeItem(DRAFT_KEY);
+  } catch { /* storage unavailable */ }
+}
+
 export default function Attendance() {
   const { t, lang, dark, staff, setHasUnsaved } = useApp();
   const { confirm } = useDialogs();
@@ -50,11 +63,12 @@ export default function Attendance() {
 
   const [sections, setSections] = useState([]);
   const [sectionsLoading, setSectionsLoading] = useState(true);
-  const [grade, setGrade] = useState('');
-  const [stream, setStream] = useState('');
-  const [sectionSel, setSectionSel] = useState(''); // section_id or '__ALL__'
-  const [date, setDate] = useState(todayStr());
-  const [period, setPeriod] = useState('');
+  const [draft] = useState(() => (incomingSectionId ? null : readDraft()));
+  const [grade, setGrade] = useState(draft?.grade ?? '');
+  const [stream, setStream] = useState(draft?.stream ?? '');
+  const [sectionSel, setSectionSel] = useState(draft?.sectionSel ?? ''); // section_id or '__ALL__'
+  const [date, setDate] = useState(draft?.date ?? todayStr());
+  const [period, setPeriod] = useState(draft?.period ?? '');
 
   const [students, setStudents] = useState([]);
   const [studentsLoading, setStudentsLoading] = useState(false);
@@ -62,6 +76,7 @@ export default function Attendance() {
   const [savedStatusMap, setSavedStatusMap] = useState({}); // last-saved snapshot, for dirty check
   const [recordMap, setRecordMap] = useState({}); // student_id -> attendance_records.id
 
+  const draftRef = useRef(draft);
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null); // { type: 'ok' | 'err', text }
 
@@ -85,7 +100,7 @@ export default function Attendance() {
       setSections(list);
       setSectionsLoading(false);
     })();
-  }, [staff]);
+  }, [staff?.id, staff?.role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Apply the section handed to us from the recorder dashboard, once —
   // after that the picker is fully under the teacher's own control again.
@@ -165,7 +180,15 @@ export default function Attendance() {
         sMap[rec.student_id] = rec.status;
         rMap[rec.student_id] = rec.id;
       });
-      setStatusMap(sMap);
+      // put back marks that were not saved when the page was reloaded
+      const d = draftRef.current;
+      draftRef.current = null;
+      let shown = sMap;
+      if (d && d.statusMap && d.key === `${date}|${period}|${activeSectionIds.join(',')}`) {
+        shown = { ...sMap };
+        Object.keys(d.statusMap).forEach((id) => { if (idSet.has(Number(id)) || idSet.has(id)) shown[id] = d.statusMap[id]; });
+      }
+      setStatusMap(shown);
       setSavedStatusMap(sMap);
       setRecordMap(rMap);
     } else {
@@ -189,6 +212,18 @@ export default function Attendance() {
     window.addEventListener('beforeunload', handler);
     return () => window.removeEventListener('beforeunload', handler);
   }, [isDirty]);
+
+  // keep the draft current (filters always, marks only while unsaved)
+  useEffect(() => {
+    if (sectionsLoading) return;
+    writeDraft({
+      grade, stream, sectionSel, date, period,
+      key: `${date}|${period}|${activeSectionIds.join(',')}`,
+      statusMap: isDirty ? statusMap : null,
+    });
+  }, [grade, stream, sectionSel, date, period, activeSectionIds, statusMap, isDirty, sectionsLoading]);
+  // leaving the page on purpose (already confirmed) drops the draft
+  useEffect(() => () => writeDraft(null), []);
 
   // let the sidebar/header links ask before leaving the page with unsaved edits
   useEffect(() => {

@@ -4,7 +4,7 @@ import { Search, Loader2, Trash2, AlertTriangle, Inbox, Check, X, MessageCircle 
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
-import { matchesStudentSearch } from '../lib/search';
+import { matchesStudentSearch, searchStudents, studentMatchRank } from '../lib/search';
 import { fetchAllRows } from '../lib/fetchAll';
 import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
 import { VIOLATION_TYPE_KEYS } from '../lib/i18n';
@@ -228,7 +228,7 @@ export default function Violations() {
     (async () => {
       const list = await ensureAllStudents();
       if (cancelled) return;
-      const found = list.filter((s) => s.id !== selected?.id && matchesStudentSearch(s, q)).slice(0, 6);
+      const found = searchStudents(list.filter((s) => s.id !== selected?.id), q).slice(0, 6);
       setAffectedMatches(found);
     })();
     return () => { cancelled = true; };
@@ -237,7 +237,7 @@ export default function Violations() {
   const results = useMemo(() => {
     const q = query.trim();
     if (sectionRoster !== null) {
-      return q ? sectionRoster.filter((s) => matchesStudentSearch(s, q)) : sectionRoster;
+      return q ? searchStudents(sectionRoster, q) : sectionRoster;
     }
     return matches;
   }, [sectionRoster, matches, query]);
@@ -302,7 +302,7 @@ export default function Violations() {
       .select('id, sis_no, name_ar, name_en, section_id, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)')
       .eq('is_active', true));
     const found = (data || []).filter((s) => matchesStudentSearch(s, q));
-    found.sort((a, b) => (a.sections?.grade_order ?? 999) - (b.sections?.grade_order ?? 999));
+    found.sort((a, b) => studentMatchRank(a, q) - studentMatchRank(b, q) || (a.sections?.grade_order ?? 999) - (b.sections?.grade_order ?? 999));
     setMatches(found);
     setSearching(false);
   };

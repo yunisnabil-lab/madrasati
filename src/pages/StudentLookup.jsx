@@ -4,7 +4,7 @@ import { Search, ArrowRight, Flag, Printer, MessageCircle, Trash2, Loader2, Mail
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
-import { matchesStudentSearch } from '../lib/search';
+import { matchesStudentSearch, searchStudents, studentMatchRank } from '../lib/search';
 import { fetchAllRows } from '../lib/fetchAll';
 import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
 import { buildWhatsAppLink } from '../lib/whatsapp';
@@ -118,7 +118,7 @@ export default function StudentLookup() {
   const results = useMemo(() => {
     const q = query.trim();
     if (sectionRoster !== null) {
-      return q ? sectionRoster.filter((s) => matchesStudentSearch(s, q)) : sectionRoster;
+      return q ? searchStudents(sectionRoster, q) : sectionRoster;
     }
     return globalMatches;
   }, [sectionRoster, globalMatches, query]);
@@ -138,7 +138,8 @@ export default function StudentLookup() {
     const matched = (data || [])
       .filter((s) => !searchScope || searchScope.has(s.section_id))
       .filter((s) => matchesStudentSearch(s, q));
-    matched.sort((a, b) => (a.sections?.grade_order ?? 999) - (b.sections?.grade_order ?? 999));
+    // first-name matches first, then by grade
+    matched.sort((a, b) => studentMatchRank(a, q) - studentMatchRank(b, q) || (a.sections?.grade_order ?? 999) - (b.sections?.grade_order ?? 999));
     setGlobalMatches(matched);
     setSearching(false);
   };

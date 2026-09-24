@@ -302,8 +302,8 @@ export const TEXT = {
     dayTotalTab: 'الحضور الإجمالي',
     todayAbsenceStat: 'غياب اليوم',
     // period report
-    navPeriodReport: 'تقرير فترة',
-    periodReportTitle: 'تقرير فترة',
+    navPeriodReport: 'التقرير الزمني',
+    periodReportTitle: 'التقرير الزمني',
     colPresentDays: 'أيام الحضور',
     colAbsentDays: 'أيام الغياب',
     colLateDays: 'أيام فيها تأخير',
@@ -741,7 +741,7 @@ export const TEXT = {
     todayAbsenceStat: "Today's absence",
     // period report
     navPeriodReport: 'Time Report',
-    periodReportTitle: 'Period Report',
+    periodReportTitle: 'Time Report',
     colPresentDays: 'Present days',
     colAbsentDays: 'Absent days',
     colLateDays: 'Days with lateness',

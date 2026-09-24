@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Loader2, Trash2, Clock3, AlertTriangle, Check } from 'lucide-react';
+import { Search, Loader2, Trash2, Clock3, AlertTriangle, Check, MessageCircle } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -9,6 +9,7 @@ import { fetchAllRows } from '../lib/fetchAll';
 import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
 import SectionPicker from '../components/SectionPicker';
 import ContactParentPanel from '../components/ContactParentPanel';
+import BulkContactModal from '../components/BulkContactModal';
 
 const REPEAT_THRESHOLD = 3;
 
@@ -243,12 +244,33 @@ export default function Lateness() {
   const repeated = aggRows.filter((r) => r.count >= REPEAT_THRESHOLD);
   const rest = aggRows.filter((r) => r.count < REPEAT_THRESHOLD);
 
+  // "select several" mode: rows toggle a checkmark instead of opening the
+  // student, and a bar at the bottom opens the bulk parent-contact window
+  const [selectMode, setSelectMode] = useState(false);
+  const [picked, setPicked] = useState(new Map()); // student id -> { id, name, sectionLabel }
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const togglePick = (id, s) => {
+    setPicked((prev) => {
+      const next = new Map(prev);
+      if (next.has(id)) next.delete(id);
+      else next.set(id, { id, name: lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar), sectionLabel: s.sections ? fmtSectionLabel(s.sections, lang) : '' });
+      return next;
+    });
+  };
+  const exitSelectMode = () => { setSelectMode(false); setPicked(new Map()); };
+  const pickMark = (id) => selectMode && (
+    <span className={`h-5 w-5 rounded-md border flex items-center justify-center shrink-0 ${picked.has(id) ? 'bg-royal border-royal text-white' : (dark ? 'border-slate-500' : 'border-slate-300')}`}>
+      {picked.has(id) && <Check size={13} />}
+    </span>
+  );
+
   function AggRow({ r }) {
     const s = r.student;
     const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
     return (
       <li>
-        <button onClick={() => selectFromAgg(r)} className={`w-full flex items-center gap-3 py-3 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+        <button onClick={() => (selectMode ? togglePick(r.id, s) : selectFromAgg(r))} className={`w-full flex items-center gap-3 py-3 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+          {pickMark(r.id)}
           <div className="h-9 w-9 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 text-xs font-semibold">
             {initials(name)}
           </div>
@@ -278,6 +300,16 @@ export default function Lateness() {
 
           {!selected ? (
             <>
+              {canManage && (
+                <div className="flex justify-end mb-3">
+                  <button
+                    onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+                    className={`text-xs font-medium px-4 py-2 rounded-lg border ${selectMode ? 'bg-royal text-white border-transparent' : (dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50')}`}
+                  >
+                    {selectMode ? t.cancelSelectBtn : t.selectManyBtn}
+                  </button>
+                </div>
+              )}
               <div className={cardFloating(dark, 'p-4 mb-5 flex flex-col sm:flex-row gap-3 sm:items-end')}>
                 <div className="flex-1">
                   <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.fromDate}</label>
@@ -338,7 +370,8 @@ export default function Lateness() {
                         const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
                         return (
                           <li key={s.id}>
-                            <button onClick={() => selectStudent(s)} className={`w-full flex items-center gap-3 px-4 py-3 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+                            <button onClick={() => (selectMode ? togglePick(s.id, s) : selectStudent(s))} className={`w-full flex items-center gap-3 px-4 py-3 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+                              {pickMark(s.id)}
                               <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials(name)}</div>
                               <div className="flex-1 min-w-0">
                                 <div className="text-sm font-semibold truncate">{name}</div>
@@ -477,6 +510,27 @@ export default function Lateness() {
           )}
         </main>
       </div>
+
+      {selectMode && picked.size > 0 && (
+        <div className="no-print fixed bottom-16 md:bottom-4 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
+          <button
+            onClick={() => setBulkOpen(true)}
+            className="pointer-events-auto flex items-center gap-2 text-sm font-medium px-6 py-3 rounded-full bg-royal hover:bg-royal-light text-white shadow-xl"
+          >
+            <MessageCircle size={16} /> {t.sendToSelectedBtn.replace('{n}', picked.size)}
+          </button>
+        </div>
+      )}
+
+      {bulkOpen && (
+        <BulkContactModal
+          students={[...picked.values()]}
+          contextType="lateness"
+          defaultNote={t.bulkContactDefaultNote}
+          staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls}
+          onClose={() => setBulkOpen(false)}
+        />
+      )}
     </div>
   );
 }

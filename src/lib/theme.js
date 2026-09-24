@@ -5,7 +5,7 @@ export const cardFloating = (dark, extra = '') =>
   `${dark
     ? 'bg-navy-soft border border-slate-700/70 shadow-lg shadow-black/30 ring-1 ring-white/[0.04] ring-inset hover:shadow-xl hover:shadow-black/40 hover:ring-white/[0.07]'
     : 'bg-white border border-slate-100 shadow-lg shadow-slate-200/60 hover:shadow-xl hover:shadow-slate-200/80'
-  } rounded-2xl hover:-translate-y-1 transition-all duration-300 ${extra}`;
+  } rounded-2xl transition-shadow duration-300 ${extra}`;
 
 // Page background (Design Rule #6): soft slate, never pure white —
 // makes the floating white cards read as elevated.

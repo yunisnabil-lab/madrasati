@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Loader2, Trash2, AlertTriangle, Inbox, Check, X, MessageCircle } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
+import { useDialogs } from '../lib/Dialogs';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { matchesStudentSearch, searchStudents, studentMatchRank } from '../lib/search';
@@ -35,6 +36,8 @@ function daysAgoStr(n) {
 
 export default function Violations() {
   const { t, lang, dark, staff } = useApp();
+  const { confirm, notify } = useDialogs();
+  const alertMsg = (m) => notify(m, 'error');
   const canManage = staff && (staff.role === 'admin' || staff.role === 'supervisor' || staff.role === 'edari');
   // A teacher (recorder) reports violations for students in their own
   // sections; each report waits as "pending" until the supervisor (or the
@@ -174,7 +177,7 @@ export default function Violations() {
       .update({ status: approve ? 'approved' : 'rejected', reviewed_by: staff.id, reviewed_at: new Date().toISOString() })
       .eq('id', v.id);
     setReviewingId(null);
-    if (error) { window.alert(t.saveError); return; }
+    if (error) { alertMsg(t.saveError); return; }
     if (approve && v.students) {
       // go straight to the student so the supervisor can add their action
       // and contact the parent, with the message already about this violation
@@ -282,7 +285,7 @@ export default function Violations() {
     setSavingAction(true);
     const { error } = await supabase.from('behavior_violations').update({ supervisor_action: actionDraft.trim() || null }).eq('id', id);
     setSavingAction(false);
-    if (error) { window.alert(t.saveError); return; }
+    if (error) { alertMsg(t.saveError); return; }
     setEditingActionId(null);
     loadStudentViolations(selected.id);
   };
@@ -374,7 +377,7 @@ export default function Violations() {
 
   // deleting is permanent, so it asks first (it used to delete on one tap)
   const removeViolation = async (id) => {
-    if (!window.confirm(t.confirmDeleteViolation)) return;
+    if (!(await confirm(t.confirmDeleteViolation))) return;
     setDeletingId(id);
     const { error } = await supabase.from('behavior_violations').delete().eq('id', id);
     setDeletingId(null);
@@ -394,15 +397,15 @@ export default function Violations() {
     const cls = status === 'pending'
       ? (dark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-50 text-amber-700')
       : (dark ? 'bg-rose-500/15 text-rose-300' : 'bg-rose-50 text-rose-600');
-    return <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${cls}`}>{status === 'pending' ? t.violationStatusPending : t.violationStatusRejected}</span>;
+    return <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${cls}`}>{status === 'pending' ? t.violationStatusPending : t.violationStatusRejected}</span>;
   };
 
   const inputCls = `w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${
     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
   }`;
 
-  const fmtDate = (d) => (d ? new Date(d + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US') : '—');
-  const dayName = (d) => (d ? new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', { weekday: 'long' }).format(new Date(d + 'T00:00:00')) : '');
+  const fmtDate = (d) => (d ? new Date(d + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-u-nu-latn' : 'en-US') : '—');
+  const dayName = (d) => (d ? new Intl.DateTimeFormat(lang === 'ar' ? 'ar-u-nu-latn' : 'en', { weekday: 'long' }).format(new Date(d + 'T00:00:00')) : '');
   const affectedStudentName = (s) => (s ? (lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar)) : '');
 
   const repeated = aggRows.filter((r) => r.count >= REPEAT_THRESHOLD);
@@ -440,13 +443,13 @@ export default function Violations() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium truncate">{name}</div>
-            <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
+            <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
               {s.sections ? fmtSectionLabel(s.sections, lang) : '—'}{r.lastType ? ' · ' + (t.violationTypeNames[r.lastType] || r.lastType) : ''}
             </div>
           </div>
           <div className="text-end shrink-0">
             <div className="text-sm font-bold font-en" style={{ color: r.count >= REPEAT_THRESHOLD ? '#ee5d50' : undefined }}>{r.count}</div>
-            <div className={`text-[11px] ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.lastLateDate}: {fmtDate(r.lastDate)}</div>
+            <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.lastLateDate}: {fmtDate(r.lastDate)}</div>
           </div>
         </button>
       </li>
@@ -456,7 +459,7 @@ export default function Violations() {
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
       <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
-        <main className="max-w-3xl mx-auto px-5 py-7">
+        <main className="max-w-5xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.violationsTitle}</h1>
           </motion.div>
@@ -485,7 +488,7 @@ export default function Violations() {
                             <div className="flex flex-wrap items-center gap-2">
                               <span className="text-sm font-semibold">{name}</span>
                               {s.sections && (
-                                <span className={`text-[11px] px-2 py-0.5 rounded-full ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>{fmtSectionLabel(s.sections, lang)}</span>
+                                <span className={`text-xs px-2 py-0.5 rounded-full ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>{fmtSectionLabel(s.sections, lang)}</span>
                               )}
                               <span className="text-xs font-semibold text-rose-500">{t.violationTypeNames[v.violation_type] || v.violation_type}</span>
                             </div>
@@ -595,7 +598,7 @@ export default function Violations() {
               {results !== null && (
                 <div className={cardFloating(dark, 'overflow-hidden mb-5')}>
                   {results.length === 0 ? (
-                    <div className="p-8 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.lookupNoResults}</p></div>
+                    <div className="p-8 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.lookupNoResults}</p></div>
                   ) : (
                     <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                       {results.map((s) => {
@@ -607,7 +610,7 @@ export default function Violations() {
                               <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials(name)}</div>
                               <div className="flex-1 min-w-0">
                                 <div className="text-sm font-semibold truncate">{name}</div>
-                                <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.sisNo}: {s.sis_no}</div>
+                                <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.sisNo}: {s.sis_no}</div>
                               </div>
                               <span className={`text-xs px-2.5 py-1 rounded-full shrink-0 ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>{fmtSectionLabel(s.sections, lang)}</span>
                             </button>
@@ -632,7 +635,7 @@ export default function Violations() {
                         const s = v.students || {};
                         const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
                         const approvedChip = v.status === 'approved'
-                          ? <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${dark ? 'bg-emerald-500/15 text-emerald-300' : 'bg-emerald-50 text-emerald-700'}`}>{t.violationStatusApproved}</span>
+                          ? <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${dark ? 'bg-emerald-500/15 text-emerald-300' : 'bg-emerald-50 text-emerald-700'}`}>{t.violationStatusApproved}</span>
                           : statusChip(v.status);
                         return (
                           <li key={v.id}>
@@ -663,7 +666,7 @@ export default function Violations() {
                 {aggLoading ? (
                   <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
                 ) : repeated.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noViolationsInPeriod}</p>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noViolationsInPeriod}</p>
                 ) : (
                   <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                     {repeated.map((r) => <AggRow key={r.id} r={r} />)}
@@ -676,9 +679,9 @@ export default function Violations() {
                 {aggLoading ? (
                   <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
                 ) : rest.length === 0 && repeated.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noViolationsInPeriod}</p>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noViolationsInPeriod}</p>
                 ) : rest.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>—</p>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>—</p>
                 ) : (
                   <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                     {rest.map((r) => <AggRow key={r.id} r={r} />)}
@@ -697,7 +700,7 @@ export default function Violations() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold truncate">{lang === 'ar' ? (selected.name_ar || selected.name_en) : (selected.name_en || selected.name_ar)}</div>
-                    <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{fmtSectionLabel(selected.sections, lang)}</div>
+                    <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{fmtSectionLabel(selected.sections, lang)}</div>
                   </div>
                   <button onClick={reset} className={`text-xs font-medium ${dark ? 'text-royal-light' : 'text-royal'}`}>{t.backToResults}</button>
                 </div>
@@ -773,7 +776,7 @@ export default function Violations() {
                                     className={`w-full flex items-center gap-2 px-3 py-2 text-start text-sm ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
                                   >
                                     <span className="flex-1 truncate">{affectedStudentName(s)}</span>
-                                    <span className={`text-[11px] shrink-0 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{s.sections ? fmtSectionLabel(s.sections, lang) : ''}</span>
+                                    <span className={`text-xs shrink-0 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{s.sections ? fmtSectionLabel(s.sections, lang) : ''}</span>
                                   </button>
                                 </li>
                               ))}
@@ -835,7 +838,7 @@ export default function Violations() {
                 {studentViolations === null ? (
                   <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
                 ) : studentViolations.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noViolations}</p>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noViolations}</p>
                 ) : (
                   <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                     {studentViolations.map((v) => (
@@ -845,11 +848,11 @@ export default function Violations() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium flex flex-wrap items-center gap-2">{t.violationTypeNames[v.violation_type] || v.violation_type}{statusChip(v.status)}{contactedViolationIds.has(v.id) && (
-                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500">
+                            <span className="inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500">
                               <Check size={11} /> {t.parentContactedBadge}
                             </span>
                           )}</div>
-                          <div className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
+                          <div className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                             {fmtDate(v.date)} · {dayName(v.date)}{v.period ? ' · ' + t.periodN.replace('{n}', v.period) : ''}{v.staff?.full_name ? ' · ' + t.recordedBy + ' ' + v.staff.full_name : ''}
                           </div>
                           {v.description && <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{v.description}</div>}

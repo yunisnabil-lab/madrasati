@@ -248,7 +248,7 @@ export default function DailyReport() {
             <div className={cardFloating(dark, 'p-5 space-y-3')}>{[...Array(5)].map((_, i) => <div key={i} className={skeleton(dark, 'h-11 w-full')} />)}</div>
           ) : rows === null ? (
             <div className={cardFloating(dark, 'p-10 text-center no-print')}>
-              <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noReportYet}</p>
+              <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noReportYet}</p>
             </div>
           ) : (
             <>
@@ -331,7 +331,7 @@ export default function DailyReport() {
 
                   <div className="flex items-center justify-between mb-3 no-print">
                     <div className="flex items-center gap-3">
-                      <button onClick={() => setFilter('all')} className={`text-xs font-medium ${filter === 'all' ? (dark ? 'text-royal-light' : 'text-royal') : (dark ? 'text-slate-200' : 'text-slate-400')}`}>
+                      <button onClick={() => setFilter('all')} className={`text-xs font-medium ${filter === 'all' ? (dark ? 'text-royal-light' : 'text-royal') : (dark ? 'text-slate-200' : 'text-slate-500')}`}>
                         {t.filterAll} ({rows.length})
                       </button>
                       {printSelection.size > 0 && (
@@ -354,7 +354,7 @@ export default function DailyReport() {
 
                   <div className={cardFloating(dark, 'overflow-hidden print-area')}>
                     {filtered.length === 0 ? (
-                      <div className="p-10 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noResultsForFilter}</p></div>
+                      <div className="p-10 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noResultsForFilter}</p></div>
                     ) : (
                       <table className="w-full text-sm">
                         <thead>

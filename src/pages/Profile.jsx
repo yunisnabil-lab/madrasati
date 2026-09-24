@@ -25,7 +25,7 @@ function relativeTime(iso, lang) {
   if (!iso) return null;
   const diffMs = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diffMs / 60000);
-  const rtf = new Intl.RelativeTimeFormat(lang === 'ar' ? 'ar' : 'en', { numeric: 'auto' });
+  const rtf = new Intl.RelativeTimeFormat(lang === 'ar' ? 'ar-u-nu-latn' : 'en', { numeric: 'auto' });
   if (mins < 1) return lang === 'ar' ? 'الآن' : 'just now';
   if (mins < 60) return rtf.format(-mins, 'minute');
   const hrs = Math.floor(mins / 60);
@@ -185,7 +185,7 @@ function AvatarCropperModal({ imageSrc, dark, t, onCancel, onConfirm, saving }) 
           />
           <span className={`text-xs ${dark ? 'text-slate-300' : 'text-slate-500'}`}>+</span>
         </div>
-        <p className={`text-[11px] mt-2 text-center ${dark ? 'text-slate-300' : 'text-slate-400'}`}>{t.cropAvatarHint}</p>
+        <p className={`text-xs mt-2 text-center ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{t.cropAvatarHint}</p>
         <div className="flex gap-2 mt-5">
           <button onClick={onCancel} className={`flex-1 text-sm font-medium px-4 py-2.5 rounded-lg transition-colors ${dark ? 'bg-white/10 text-slate-200 hover:bg-white/15' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
             {t.cancel}
@@ -311,7 +311,7 @@ export default function Profile() {
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
       <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
-        <main className="max-w-3xl mx-auto px-5 py-7">
+        <main className="max-w-4xl mx-auto px-5 py-7">
 
           {/* hero */}
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cardFloating(dark, 'overflow-hidden mb-5')}>
@@ -334,7 +334,7 @@ export default function Profile() {
                   </button>
                   <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarChange} />
                   {avatarMsg && (
-                    <p className="absolute top-full mt-1 text-[11px] whitespace-nowrap text-rose-500">{avatarMsg.text}</p>
+                    <p className="absolute top-full mt-1 text-xs whitespace-nowrap text-rose-500">{avatarMsg.text}</p>
                   )}
                 </div>
 
@@ -355,7 +355,7 @@ export default function Profile() {
                           <X size={13} />
                         </button>
                       </div>
-                      {nameMsg && <p className="text-[11px] mt-1 text-rose-500">{nameMsg.text}</p>}
+                      {nameMsg && <p className="text-xs mt-1 text-rose-500">{nameMsg.text}</p>}
                     </div>
                   ) : (
                     <div className="flex items-center gap-1.5">
@@ -398,7 +398,7 @@ export default function Profile() {
                   <div className="text-sm font-semibold">{shownSubjects(staff).length ? namesOf(shownSubjects(staff), t.subjectNames, lang) : '—'}</div>
                 </div>
               )}
-              <p className={`col-span-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.cycleSubjectLockedNote}</p>
+              <p className={`col-span-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.cycleSubjectLockedNote}</p>
             </div>
           )}
 
@@ -462,7 +462,7 @@ export default function Profile() {
                   placeholder={t.newPassword}
                   className={`w-full rounded-lg px-3 py-2.5 pe-10 text-sm outline-none border ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
                 />
-                <button type="button" onClick={() => setShowPw((v) => !v)} className={`absolute inset-y-0 end-0 flex items-center px-3 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
+                <button type="button" onClick={() => setShowPw((v) => !v)} className={`absolute inset-y-0 end-0 flex items-center px-3 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                   {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>

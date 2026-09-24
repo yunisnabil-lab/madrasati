@@ -1,4 +1,5 @@
-import { useState, useMemo, useEffect, Fragment } from 'react';
+import { useState, useMemo, useEffect, useRef, Fragment } from 'react';
+import { useLocation } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, ArrowRight, Flag, Printer, MessageCircle, Trash2, Loader2, Mail, RefreshCw, ChevronDown } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
@@ -22,7 +23,7 @@ function initials(name) {
 
 function dayName(dateStr, lang) {
   const d = new Date(`${dateStr}T00:00:00`);
-  return new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', { weekday: 'long' }).format(d);
+  return new Intl.DateTimeFormat(lang === 'ar' ? 'ar-u-nu-latn' : 'en', { weekday: 'long' }).format(d);
 }
 
 // group raw period-level attendance rows into one derived status per day,
@@ -60,6 +61,8 @@ export default function StudentLookup() {
   const [sectionRoster, setSectionRoster] = useState(null); // cached roster for the selected class
 
   const [sections, setSections] = useState([]);
+  const [sectionsLoaded, setSectionsLoaded] = useState(false);
+  const location = useLocation();
   const [grade, setGrade] = useState('');
   const [stream, setStream] = useState('');
   const [sectionSel, setSectionSel] = useState(''); // section_id or '__ALL__'
@@ -87,8 +90,22 @@ export default function StudentLookup() {
         list = list.filter((s) => allowed.has(s.id));
       }
       setSections(list);
+      setSectionsLoaded(true);
     })();
   }, [staff]);
+
+  // a search typed in the header box arrives here as location.state.q —
+  // run it once the sections are known, since a teacher's search is scoped
+  // to their own sections
+  const incomingQ = location.state?.q;
+  const ranIncomingRef = useRef(null);
+  useEffect(() => {
+    if (!incomingQ || !sectionsLoaded || ranIncomingRef.current === location.key) return;
+    ranIncomingRef.current = location.key;
+    setQuery(incomingQ);
+    runSearch(incomingQ);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [incomingQ, sectionsLoaded, location.key]);
 
   const activeSectionIds = useMemo(() => {
     if (!grade) return null;
@@ -123,8 +140,8 @@ export default function StudentLookup() {
     return globalMatches;
   }, [sectionRoster, globalMatches, query]);
 
-  const runSearch = async () => {
-    const q = query.trim();
+  const runSearch = async (override) => {
+    const q = (typeof override === 'string' ? override : query).trim();
     if (sectionRoster !== null) return; // already live-filtered above, nothing to fetch
     if (!q) { setGlobalMatches(null); return; }
     setSearching(true);
@@ -198,7 +215,7 @@ export default function StudentLookup() {
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
       <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
-        <main className="max-w-4xl mx-auto px-5 py-7">
+        <main className="max-w-5xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.lookupTitle}</h1>
           </motion.div>
@@ -263,7 +280,7 @@ export default function StudentLookup() {
                 <div className={cardFloating(dark, 'overflow-hidden')}>
                   {results.length === 0 ? (
                     <div className="p-10 text-center">
-                      <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.lookupNoResults}</p>
+                      <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.lookupNoResults}</p>
                     </div>
                   ) : (
                     <>
@@ -291,7 +308,7 @@ export default function StudentLookup() {
                                       </span>
                                     )}
                                   </div>
-                                  <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{lang === 'ar' ? 'رقم الطالب' : 'ID'}: {s.sis_no}</div>
+                                  <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{lang === 'ar' ? 'رقم الطالب' : 'ID'}: {s.sis_no}</div>
                                 </div>
                                 <span className={`text-xs px-2.5 py-1 rounded-full shrink-0 ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>
                                   {fmtSectionLabel(s.sections, lang)}
@@ -378,7 +395,7 @@ function StudentProfileCard({
               <div className="flex items-center gap-2">
                 <h2 className={`text-lg font-bold ${dark ? 'text-white' : 'text-navy'}`}>{name}</h2>
                 {flagged && (
-                  <span className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500">
+                  <span className="flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500">
                     <Flag size={11} /> {t.frequentAbsence}
                   </span>
                 )}
@@ -396,7 +413,7 @@ function StudentProfileCard({
             >
               {stats.rate == null ? '—' : `${stats.rate}%`}
             </div>
-            <div className={`text-[11px] mt-1 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.attendanceRate}</div>
+            <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.attendanceRate}</div>
           </div>
         </div>
 
@@ -466,7 +483,7 @@ function StudentProfileCard({
           <div className="p-5 space-y-3">{[...Array(4)].map((_, i) => <div key={i} className={skeleton(dark, 'h-10 w-full')} />)}</div>
         ) : history.length === 0 ? (
           <div className="p-10 text-center">
-            <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noAttendanceRecords}</p>
+            <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noAttendanceRecords}</p>
           </div>
         ) : (
           <table className="w-full text-sm">
@@ -494,7 +511,7 @@ function StudentProfileCard({
                           <Icon size={13} /> {t[meta.key]}
                         </span>
                         {hasNote && (
-                          <span className={`ms-2 text-[11px] ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
+                          <span className={`ms-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                             {t.periodNote
                               .replace('{absent}', r.absentCount || 0)
                               .replace('{late}', r.lateCount || 0)}
@@ -541,7 +558,7 @@ function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, d
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailMsg, setEmailMsg] = useState(null);
 
-  const dayName = (dateStr) => new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', { weekday: 'long' }).format(new Date(`${dateStr}T00:00:00`));
+  const dayName = (dateStr) => new Intl.DateTimeFormat(lang === 'ar' ? 'ar-u-nu-latn' : 'en', { weekday: 'long' }).format(new Date(`${dateStr}T00:00:00`));
   const rowIcon = (status) => (status === 'present' ? '✅' : status === 'absent' ? '❌' : status === 'late' ? '⏰' : status === 'excused' ? '📝' : '❔');
 
   const MAX_RECORD_LINES = 30;
@@ -702,7 +719,7 @@ function DeleteRecordsPanel({ student, t, lang, dark, inputCls, onDeleted }) {
 function InfoItem({ dark, label, value, valueColor }) {
   return (
     <div className="min-w-0">
-      <div className={`text-[11px] mb-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{label}</div>
+      <div className={`text-xs mb-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{label}</div>
       <div className="text-sm font-semibold break-words" style={valueColor ? { color: valueColor } : undefined}>{value}</div>
     </div>
   );

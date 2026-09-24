@@ -164,7 +164,7 @@ export default function SchoolDashboard() {
               ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-900/5'}`}>
               <div className="h-7 w-7 rounded-lg bg-gradient-to-br from-gold to-gold-light flex items-center justify-center text-white text-xs font-bold">م</div>
               <span className="hidden sm:block">{t.school}</span>
-              <ChevronDown size={14} className={dark ? 'text-slate-200' : 'text-slate-400'} />
+              <ChevronDown size={14} className={dark ? 'text-slate-200' : 'text-slate-500'} />
             </button>
 
             <div className={`flex-1 flex items-center gap-2 rounded-xl px-3 py-2 text-sm
@@ -212,7 +212,7 @@ export default function SchoolDashboard() {
             <button className="flex items-center gap-2 pe-1">
               <div className="text-end hidden md:block">
                 <div className="text-xs font-medium leading-tight">{t.profile}</div>
-                <div className={`text-[11px] leading-tight ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.role}</div>
+                <div className={`text-xs leading-tight ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.role}</div>
               </div>
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold ring-2 ring-white/10">
                 YN
@@ -241,7 +241,7 @@ export default function SchoolDashboard() {
             >
               <div className="mb-4">
                 <h2 className="text-sm font-semibold">{t.trendTitle}</h2>
-                <p className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.trendSub}</p>
+                <p className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.trendSub}</p>
               </div>
               <ResponsiveContainer width="100%" height={200}>
                 <AreaChart data={TREND_DATA} margin={{ left: -20, right: 10, top: 5 }}>
@@ -266,7 +266,7 @@ export default function SchoolDashboard() {
             >
               <div className="mb-4">
                 <h2 className="text-sm font-semibold">{t.gradeTitle}</h2>
-                <p className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.gradeSub}</p>
+                <p className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.gradeSub}</p>
               </div>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={GRADE_DATA} margin={{ left: -20, right: 10, top: 5 }}>
@@ -287,7 +287,7 @@ export default function SchoolDashboard() {
           >
             <div className="mb-4">
               <h2 className="text-sm font-semibold">{t.requestsTitle}</h2>
-              <p className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.requestsSub}</p>
+              <p className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.requestsSub}</p>
             </div>
 
             <table className="w-full text-sm">
@@ -337,7 +337,7 @@ export default function SchoolDashboard() {
             </table>
 
             {rows.length === 0 && (
-              <div className={`text-center py-8 text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
+              <div className={`text-center py-8 text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                 {lang === 'ar' ? 'لا توجد طلبات معلّقة حاليًا.' : 'No pending requests right now.'}
               </div>
             )}

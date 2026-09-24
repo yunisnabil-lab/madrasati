@@ -380,7 +380,7 @@ export default function Attendance() {
           {activeSectionIds.length === 0 || !period ? (
             <div className={cardFloating(dark, 'p-10 text-center')}>
               <Users size={28} className={`mx-auto mb-3 ${dark ? 'text-slate-200' : 'text-slate-300'}`} />
-              <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
+              <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                 {activeSectionIds.length === 0 ? t.chooseSectionPrompt : t.choosePeriodPrompt}
               </p>
             </div>
@@ -392,7 +392,7 @@ export default function Attendance() {
             </div>
           ) : students.length === 0 ? (
             <div className={cardFloating(dark, 'p-10 text-center')}>
-              <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noStudentsInSection}</p>
+              <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noStudentsInSection}</p>
             </div>
           ) : (
             <div className={cardFloating(dark, 'overflow-hidden')}>
@@ -411,13 +411,13 @@ export default function Attendance() {
                   const current = statusMap[s.id] || 'present';
                   return (
                     <li key={s.id} className="flex items-center gap-3 px-4 py-3">
-                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-[11px] font-semibold shrink-0">
+                      <div className="h-8 w-8 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold shrink-0">
                         {initials(name)}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium truncate">{name}</div>
                         {sectionSel === '__ALL__' && (
-                          <div className={`text-[11px] ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
+                          <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                             {sectionLabel(sectionMap[s.section_id], lang)}
                           </div>
                         )}

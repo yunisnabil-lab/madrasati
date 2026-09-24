@@ -16,7 +16,7 @@ export default function PeriodBreakdown({ periods, lang, dark }) {
           <span
             key={p}
             title={`${lang === 'ar' ? 'الحصة' : 'Period'} ${p}${meta ? ' — ' : ''}`}
-            className={`inline-flex items-center justify-center h-7 w-7 rounded-md text-[11px] font-semibold font-en border ${
+            className={`inline-flex items-center justify-center h-7 w-7 rounded-md text-xs font-semibold font-en border ${
               meta ? '' : (dark ? 'border-slate-700 text-slate-600' : 'border-slate-200 text-slate-300')
             }`}
             style={meta ? { backgroundColor: meta.color + '20', color: meta.color, borderColor: meta.color + '80' } : {}}

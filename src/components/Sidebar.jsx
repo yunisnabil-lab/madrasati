@@ -51,7 +51,7 @@ export function MobileNav() {
               `flex-1 min-w-[68px] flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium ${
                 isActive
                   ? dark ? 'text-royal-light' : 'text-royal'
-                  : dark ? 'text-slate-200' : 'text-slate-400'
+                  : dark ? 'text-slate-200' : 'text-slate-500'
               }`
             }
           >

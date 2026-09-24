@@ -82,7 +82,7 @@ export default function BulkContactModal({ students, contextType, defaultNote, s
               <li key={s.id} className="py-3">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-sm font-semibold truncate">{s.name}</span>
-                  <span className={`text-[11px] shrink-0 ${dark ? 'text-slate-300' : 'text-slate-400'}`}>{s.sectionLabel}</span>
+                  <span className={`text-xs shrink-0 ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{s.sectionLabel}</span>
                   {(r.wa || r.mail) && <Check size={14} className="text-emerald-500 shrink-0" />}
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">

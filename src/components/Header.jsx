@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Bell, LogOut, GraduationCap } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
@@ -20,7 +20,10 @@ export default function Header() {
   // does not manage staff, so this notification stays admin-only too.
   const isAdmin = staff && staff.role === 'admin';
   const now = useLiveNow();
-  const dateTimeStr = new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', {
+  const navigate = useNavigate();
+  // the header box searches students: Enter opens the lookup page with results
+  const [headerQuery, setHeaderQuery] = useState('');
+  const dateTimeStr = new Intl.DateTimeFormat(lang === 'ar' ? 'ar-u-nu-latn' : 'en', {
     day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',
   }).format(now);
 
@@ -71,7 +74,7 @@ export default function Header() {
         <div className="hidden sm:flex items-center gap-2.5">
           <div className="hidden md:block leading-tight">
             <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.school}</div>
-            <div className={`text-[11px] font-medium ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
+            <div className={`text-xs font-medium ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
           </div>
           <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${dark ? 'bg-royal/15' : 'bg-royal/10'}`}>
             {staff && staff.school_logo_url ? (
@@ -85,7 +88,18 @@ export default function Header() {
         {/* Search — widened further */}
         <div className={`flex-1 flex items-center gap-2 rounded-full px-4 py-2.5 text-sm max-w-xl border transition-colors focus-within:border-royal ${dark ? 'bg-white/5 border-transparent text-slate-400 focus-within:bg-white/10' : 'bg-slate-100 border-transparent text-slate-500 focus-within:bg-white focus-within:shadow-sm'}`}>
           <Search size={17} className={dark ? 'text-royal-light' : 'text-royal'} />
-          <input placeholder={t.search} className="bg-transparent outline-none placeholder:text-inherit w-full text-sm" />
+          <input
+            value={headerQuery}
+            onChange={(e) => setHeaderQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== 'Enter' || !headerQuery.trim()) return;
+              if (!confirmLeave()) return;
+              navigate('/lookup', { state: { q: headerQuery.trim() } });
+              setHeaderQuery('');
+            }}
+            placeholder={t.search}
+            className="bg-transparent outline-none placeholder:text-inherit w-full text-sm"
+          />
         </div>
 
         {/* Everything else, grouped at the far end of the header (the left
@@ -102,7 +116,7 @@ export default function Header() {
           <button
             onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
             title={lang === 'ar' ? 'Switch to English' : 'التبديل إلى العربية'}
-            className={`hidden sm:flex items-center justify-center h-10 w-10 rounded-full text-[11px] font-extrabold tracking-wide transition-colors ${dark ? 'bg-gold/15 text-gold-light hover:bg-gold/25' : 'bg-gold/10 text-gold hover:bg-gold/20'}`}
+            className={`hidden sm:flex items-center justify-center h-10 w-10 rounded-full text-xs font-extrabold tracking-wide transition-colors ${dark ? 'bg-gold/15 text-gold-light hover:bg-gold/25' : 'bg-gold/10 text-gold hover:bg-gold/20'}`}
           >
             {lang === 'ar' ? 'EN' : 'AR'}
           </button>
@@ -144,7 +158,7 @@ export default function Header() {
                       </div>
                     ))
                   ) : notifCount === 0 ? (
-                    <div className={`px-3.5 py-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noNotifications}</div>
+                    <div className={`px-3.5 py-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noNotifications}</div>
                   ) : null}
                 </motion.div>
               )}

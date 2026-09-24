@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Users2, Search } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
+import { useDialogs } from '../lib/Dialogs';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sortSections, sectionLabel as fmtSectionLabel, gradeLabel } from '../lib/sections';
@@ -10,6 +11,8 @@ import { staffCycles, shownSubjects, namesOf } from '../lib/staffInfo';
 
 export default function StaffAssignments() {
   const { t, lang, dark, staff } = useApp();
+  const { notify } = useDialogs();
+  const alertMsg = (m) => notify(m, 'error');
 
   const [teachers, setTeachers] = useState([]);
   const [sections, setSections] = useState([]);
@@ -103,7 +106,7 @@ export default function StaffAssignments() {
 
     setSaving(false);
     if (failed) {
-      window.alert(lang === 'ar' ? 'تعذّر حفظ بعض التعديلات، حاول مرة أخرى.' : 'Could not save some changes. Please try again.');
+      alertMsg(lang === 'ar' ? 'تعذّر حفظ بعض التعديلات، حاول مرة أخرى.' : 'Could not save some changes. Please try again.');
       loadAll();
       return;
     }
@@ -122,7 +125,7 @@ export default function StaffAssignments() {
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
       <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
-        <main className="max-w-3xl mx-auto px-5 py-7">
+        <main className="max-w-5xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.assignmentsTitle}</h1>
             <p className={`text-sm mt-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.assignmentsSub}</p>
@@ -163,12 +166,12 @@ export default function StaffAssignments() {
             ) : teachers.length === 0 ? (
               <div className="p-10 text-center">
                 <Users2 size={26} className={`mx-auto mb-3 ${dark ? 'text-slate-200' : 'text-slate-300'}`} />
-                <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noTeachersYet}</p>
+                <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noTeachersYet}</p>
               </div>
             ) : filteredTeachers.length === 0 ? (
               <div className="p-10 text-center">
                 <Search size={26} className={`mx-auto mb-3 ${dark ? 'text-slate-200' : 'text-slate-300'}`} />
-                <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noTeachersMatch}</p>
+                <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noTeachersMatch}</p>
               </div>
             ) : (
               <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
@@ -178,7 +181,7 @@ export default function StaffAssignments() {
                       <div className="text-sm font-semibold truncate">{tch.full_name}</div>
                       <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{tch.email}</div>
                       {(staffCycles(tch).length > 0 || shownSubjects(tch).length > 0) && (
-                        <div className={`text-[11px] mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
+                        <div className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                           {[namesOf(staffCycles(tch), t.cycleNames, lang), namesOf(shownSubjects(tch), t.subjectNames, lang)].filter(Boolean).join(' · ')}
                         </div>
                       )}

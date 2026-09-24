@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Pencil, Trash2, X, Loader2, FolderPlus, Users, Upload, PlusCircle, Trash } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
+import { useDialogs } from '../lib/Dialogs';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
@@ -25,6 +26,8 @@ const emptyForm = {
 
 export default function Students() {
   const { t, lang, dark, staff } = useApp();
+  const { notify } = useDialogs();
+  const alertMsg = (m) => notify(m, 'error');
   const isAdmin = staff && staff.role === 'admin';
   // "edari" staff can add/edit individual students (same as admin), but two
   // things stay admin-only because more than one person touching them
@@ -368,7 +371,7 @@ export default function Students() {
     setDeleting(false);
     if (error) {
       console.error('Deactivate student error:', error);
-      window.alert(lang === 'ar' ? 'تعذّر الحذف، حاول مرة أخرى.' : 'Could not delete. Please try again.');
+      alertMsg(lang === 'ar' ? 'تعذّر الحذف، حاول مرة أخرى.' : 'Could not delete. Please try again.');
       return;
     }
     setDeleteTarget(null);
@@ -380,7 +383,7 @@ export default function Students() {
     const { error } = await supabase.from('students').update({ is_active: true }).eq('id', student.id);
     if (error) {
       console.error('Restore student error:', error);
-      window.alert(lang === 'ar' ? 'تعذّر الاسترجاع، حاول مرة أخرى.' : 'Could not restore. Please try again.');
+      alertMsg(lang === 'ar' ? 'تعذّر الاسترجاع، حاول مرة أخرى.' : 'Could not restore. Please try again.');
       return;
     }
     loadAll();
@@ -502,7 +505,7 @@ export default function Students() {
               </div>
             ) : filtered.length === 0 ? (
               <div className="p-10 text-center">
-                <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noStudentsFound}</p>
+                <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noStudentsFound}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -702,7 +705,7 @@ export default function Students() {
                 </button>
                 <input ref={bulkFileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelUpload} />
               </div>
-              <p className={`text-[11px] mb-3 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.excelFormatHint}</p>
+              <p className={`text-xs mb-3 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.excelFormatHint}</p>
 
               <div className="flex-1 overflow-y-auto space-y-2 pe-1 mb-3">
                 {bulkRows.map((row, i) => (

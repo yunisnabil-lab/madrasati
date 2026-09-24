@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Users, GraduationCap, School as SchoolIcon, Clock, AlertTriangle, Loader2, ChevronDown, Layers } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useApp } from '../lib/AppContext';
+import { useDialogs } from '../lib/Dialogs';
 import { sectionLabel as fmtSectionLabel, sortSections } from '../lib/sections';
 import { supabase } from '../lib/supabase';
 import { STATUS_META } from '../lib/status';
@@ -39,6 +40,8 @@ function CustomTooltip({ active, payload, label, dark }) {
 
 export default function Dashboard() {
   const { t, lang, dark, staff } = useApp();
+  const { notify } = useDialogs();
+  const alertMsg = (m) => notify(m, 'error');
   const isAdmin = staff && staff.role === 'admin';
   // Staff management (approving registration requests, changing staff
   // roles) stays admin-only — "edari" (administrative) staff does NOT
@@ -112,7 +115,7 @@ export default function Dashboard() {
       });
     });
     const rows = days.map((d) => ({
-      name: new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', { weekday: 'short' }).format(new Date(`${d}T00:00:00`)),
+      name: new Intl.DateTimeFormat(lang === 'ar' ? 'ar-u-nu-latn' : 'en', { weekday: 'short' }).format(new Date(`${d}T00:00:00`)),
       v: byDay[d].total > 0 ? Math.round((byDay[d].absent / byDay[d].total) * 100) : 0,
     }));
     setGradeData(rows);
@@ -196,12 +199,12 @@ export default function Dashboard() {
         .eq('role', 'admin')
         .eq('status', 'approved');
       if (count > 0) {
-        window.alert(lang === 'ar' ? 'يوجد أدمن واحد بالفعل في هذه المدرسة. لا يمكن تعيين أدمن آخر.' : 'This school already has an admin. You cannot assign another one.');
+        alertMsg(lang === 'ar' ? 'يوجد أدمن واحد بالفعل في هذه المدرسة. لا يمكن تعيين أدمن آخر.' : 'This school already has an admin. You cannot assign another one.');
         return;
       }
     }
     const { error } = await supabase.from('staff').update({ status: 'approved', role }).eq('id', id);
-    if (error) { window.alert(lang === 'ar' ? 'تعذّرت الموافقة، حاول مرة أخرى.' : 'Could not approve. Please try again.'); return; }
+    if (error) { alertMsg(lang === 'ar' ? 'تعذّرت الموافقة، حاول مرة أخرى.' : 'Could not approve. Please try again.'); return; }
     // link the sections chosen while approving, so a teacher can start
     // recording attendance right away instead of a second trip to
     // "Staff assignments"
@@ -211,7 +214,7 @@ export default function Dashboard() {
         chosen.map((section_id) => ({ school_id: staff.school_id, staff_id: id, section_id }))
       );
       if (asgErr) {
-        window.alert(lang === 'ar'
+        alertMsg(lang === 'ar'
           ? 'تمت الموافقة، لكن تعذّر ربط الشعب. اربطها من صفحة "ربط المعلمين بالصفوف".'
           : 'Approved, but the sections could not be linked. Link them from "Staff assignments".');
       }
@@ -222,7 +225,7 @@ export default function Dashboard() {
 
   async function reject(id) {
     const { error } = await supabase.from('staff').delete().eq('id', id);
-    if (error) { window.alert(lang === 'ar' ? 'تعذّر الرفض، حاول مرة أخرى.' : 'Could not reject. Please try again.'); return; }
+    if (error) { alertMsg(lang === 'ar' ? 'تعذّر الرفض، حاول مرة أخرى.' : 'Could not reject. Please try again.'); return; }
     setRequests((r) => r.filter((row) => row.id !== id));
   }
 
@@ -265,7 +268,7 @@ export default function Dashboard() {
                       {item.value != null ? item.value.toLocaleString('en-US') : '—'}
                     </div>
                   )}
-                  <div className={`mt-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{item.hint}</div>
+                  <div className={`mt-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{item.hint}</div>
                 </motion.div>
               );
             })}
@@ -292,7 +295,7 @@ export default function Dashboard() {
               </div>
               <ChevronDown
                 size={18}
-                className={`shrink-0 transition-transform duration-200 ${overviewOpen ? 'rotate-180' : ''} ${dark ? 'text-slate-200' : 'text-slate-400'}`}
+                className={`shrink-0 transition-transform duration-200 ${overviewOpen ? 'rotate-180' : ''} ${dark ? 'text-slate-200' : 'text-slate-500'}`}
               />
             </button>
 
@@ -311,7 +314,7 @@ export default function Dashboard() {
                         breakdown, so we don't repeat them here, only the one number
                         that's genuinely new: the average class size. */}
                     <div className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 mb-4 mt-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
-                      <span className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
+                      <span className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                         {lang === 'ar' ? 'متوسط عدد الطلاب لكل صف' : 'Avg. students per section'}
                       </span>
                       <span className={`text-lg font-bold font-en ${dark ? 'text-white' : 'text-navy'}`}>
@@ -330,7 +333,7 @@ export default function Dashboard() {
                         {[...Array(6)].map((_, i) => <div key={i} className={skeleton(dark, 'h-10 w-full')} />)}
                       </div>
                     ) : sectionBreakdown.length === 0 ? (
-                      <div className={`text-sm py-4 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>—</div>
+                      <div className={`text-sm py-4 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>—</div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                         {sectionBreakdown.map((row) => (
@@ -412,7 +415,7 @@ export default function Dashboard() {
                   )}
                 </ResponsiveContainer>
               ) : (
-                <div className={`text-sm text-center py-16 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>—</div>
+                <div className={`text-sm text-center py-16 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>—</div>
               )}
             </motion.div>
 
@@ -445,7 +448,7 @@ export default function Dashboard() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className={`truncate font-medium ${dark ? 'text-slate-100' : 'text-slate-800'}`}>{lang === 'ar' ? s.name_ar : (s.name_en || s.name_ar)}</div>
-                            <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
+                            <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                               {s.sections ? fmtSectionLabel(s.sections, lang) : '—'} · {r.date}
                             </div>
                           </div>
@@ -455,7 +458,7 @@ export default function Dashboard() {
                         </div>
                       );
                     })}
-                    {recent.length === 0 && <div className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>—</div>}
+                    {recent.length === 0 && <div className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>—</div>}
                   </>
                 )}
               </div>
@@ -467,7 +470,7 @@ export default function Dashboard() {
               className={`${cardFloating(dark)} p-5`}>
               <div className="mb-4">
                 <h2 className={`text-sm font-semibold ${dark ? "text-white" : "text-slate-900"}`}>{t.requestsTitle}</h2>
-                <p className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.requestsSub}</p>
+                <p className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.requestsSub}</p>
               </div>
 
               <table className="w-full text-sm">
@@ -505,7 +508,7 @@ export default function Dashboard() {
                               <div className="min-w-0">
                                 <div className={`font-medium ${dark ? 'text-slate-100' : 'text-slate-800'}`}>{r.full_name}</div>
                                 {(staffCycles(r).length > 0 || staffSubjects(r).length > 0) && (
-                                  <div className={`text-[11px] mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
+                                  <div className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                                     {[namesOf(staffCycles(r), t.cycleNames, lang), namesOf(staffSubjects(r), t.subjectNames, lang)].filter(Boolean).join(' · ')}
                                   </div>
                                 )}
@@ -514,10 +517,10 @@ export default function Dashboard() {
                           </td>
                           <td className={`py-3.5 font-en hidden sm:table-cell ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{r.email}</td>
                           <td className={`py-3.5 font-en hidden md:table-cell ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
-                            {r.created_at ? new Date(r.created_at).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US') : '—'}
+                            {r.created_at ? new Date(r.created_at).toLocaleDateString(lang === 'ar' ? 'ar-u-nu-latn' : 'en-US') : '—'}
                           </td>
                           <td className="py-3.5 hidden lg:table-cell">
-                            <span className={`text-[11px] font-medium px-2.5 py-1 rounded-full ${dark ? 'bg-amber-400/10 text-amber-300' : 'bg-amber-50 text-amber-700'}`}>
+                            <span className={`text-xs font-medium px-2.5 py-1 rounded-full ${dark ? 'bg-amber-400/10 text-amber-300' : 'bg-amber-50 text-amber-700'}`}>
                               {lang === 'ar' ? 'قيد الانتظار' : 'Pending'}
                             </span>
                           </td>
@@ -562,7 +565,7 @@ export default function Dashboard() {
                 </tbody>
               </table>
               {!requestsLoading && requests.length === 0 && (
-                <div className={`text-center py-8 text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noRequests}</div>
+                <div className={`text-center py-8 text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noRequests}</div>
               )}
             </motion.div>
           )}
@@ -592,6 +595,8 @@ export default function Dashboard() {
 }
 
 function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
+  const { notify } = useDialogs();
+  const alertMsg = (m) => notify(m, 'error');
   const [staffList, setStaffList] = useState(null);
   const [savingId, setSavingId] = useState(null);
   const [confirmRevokeId, setConfirmRevokeId] = useState(null);
@@ -607,7 +612,7 @@ function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
 
   useEffect(() => { load(); }, [load]);
 
-  const staffSaveError = () => window.alert(lang === 'ar' ? 'تعذّر الحفظ، حاول مرة أخرى.' : 'Could not save. Please try again.');
+  const staffSaveError = () => alertMsg(lang === 'ar' ? 'تعذّر الحفظ، حاول مرة أخرى.' : 'Could not save. Please try again.');
 
   const changeRole = async (id, role) => {
     // the school may only ever have one admin account.
@@ -619,7 +624,7 @@ function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
         .eq('role', 'admin')
         .eq('status', 'approved');
       if (count > 0) {
-        window.alert(lang === 'ar' ? 'يوجد أدمن واحد بالفعل في هذه المدرسة. لا يمكن تعيين أدمن آخر.' : 'This school already has an admin. You cannot assign another one.');
+        alertMsg(lang === 'ar' ? 'يوجد أدمن واحد بالفعل في هذه المدرسة. لا يمكن تعيين أدمن آخر.' : 'This school already has an admin. You cannot assign another one.');
         return;
       }
     }
@@ -674,7 +679,7 @@ function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
       {staffList === null ? (
         <div className="space-y-2">{[...Array(3)].map((_, i) => <div key={i} className={skeleton(dark, 'h-11 w-full')} />)}</div>
       ) : staffList.length === 0 ? (
-        <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noStaffYet}</p>
+        <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noStaffYet}</p>
       ) : (
         <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
           {staffList.map((s) => (
@@ -689,7 +694,7 @@ function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500">{t.revokedBadge}</span>
                   )}
                 </div>
-                <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{s.email}</div>
+                <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{s.email}</div>
               </div>
 
               {s.status === 'approved' ? (

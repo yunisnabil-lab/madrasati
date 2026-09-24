@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, useApp } from './lib/AppContext';
+import { DialogsProvider } from './lib/Dialogs';
 import Login from './pages/Login';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
@@ -139,7 +140,9 @@ function Router() {
 export default function App() {
   return (
     <AppProvider>
-      <Router />
+      <DialogsProvider>
+        <Router />
+      </DialogsProvider>
     </AppProvider>
   );
 }

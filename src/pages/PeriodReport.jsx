@@ -228,7 +228,7 @@ export default function PeriodReport() {
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
       <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
-        <main className="max-w-5xl mx-auto px-5 py-7 print-area">
+        <main className="max-w-6xl mx-auto px-5 py-7 print-area">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 no-print">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.periodReportTitle}</h1>
           </motion.div>
@@ -273,7 +273,7 @@ export default function PeriodReport() {
             <div className={cardFloating(dark, 'p-5 space-y-3')}>{[...Array(6)].map((_, i) => <div key={i} className={skeleton(dark, 'h-11 w-full')} />)}</div>
           ) : rows === null ? (
             <div className={cardFloating(dark, 'p-10 text-center no-print')}>
-              <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noReportYet}</p>
+              <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noReportYet}</p>
             </div>
           ) : (
             <>
@@ -357,7 +357,7 @@ export default function PeriodReport() {
 
               <div className={cardFloating(dark, 'overflow-hidden')}>
                 {rows.length === 0 ? (
-                  <div className="p-10 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noResultsForFilter}</p></div>
+                  <div className="p-10 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noResultsForFilter}</p></div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
@@ -395,7 +395,7 @@ export default function PeriodReport() {
                             <td className="px-4 py-2.5 text-center font-semibold">{r.rate == null ? '—' : `${r.rate}%`}</td>
                             <td className="px-4 py-2.5 text-center">
                               {r.flagged && (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500">
+                                <span className="inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-500">
                                   <Flag size={10} /> {t.frequentAbsence}
                                 </span>
                               )}

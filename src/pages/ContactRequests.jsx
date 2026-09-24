@@ -73,7 +73,7 @@ export default function ContactRequests() {
     return (
       <li>
         <button onClick={() => setOpen((v) => !v)} className={`w-full flex items-center gap-2.5 py-2 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
-          <ChannelIcon size={13} className={dark ? 'text-slate-500' : 'text-slate-400'} />
+          <ChannelIcon size={13} className={r.channel === 'whatsapp' ? 'text-emerald-500' : (dark ? 'text-slate-500' : 'text-slate-400')} />
           <span className="text-xs font-medium truncate flex-1 min-w-0">{name}</span>
           <span className={`text-[11px] font-medium shrink-0 ${statusColor}`}>{statusLabel}</span>
           <span className={`text-[11px] shrink-0 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{fmtDateTime(r.reviewed_at)}</span>
@@ -98,10 +98,13 @@ export default function ContactRequests() {
     const s = r.students || {};
     const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
     const ChannelIcon = r.channel === 'whatsapp' ? MessageCircle : Mail;
+    const channelBadgeCls = r.channel === 'whatsapp'
+      ? (dark ? 'bg-emerald-500/15 text-emerald-400' : 'bg-emerald-500/10 text-emerald-600')
+      : (dark ? 'bg-royal/15 text-royal-light' : 'bg-royal/10 text-royal');
     return (
       <li className="py-4">
         <div className="flex items-start gap-3">
-          <div className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${dark ? 'bg-royal/15 text-royal-light' : 'bg-royal/10 text-royal'}`}>
+          <div className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${channelBadgeCls}`}>
             <ChannelIcon size={15} />
           </div>
           <div className="flex-1 min-w-0">

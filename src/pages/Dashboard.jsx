@@ -489,18 +489,17 @@ export default function Dashboard() {
                           <td className="py-3.5">
                             <div className="flex items-center gap-2 justify-end">
                               <select
-                                value={roleChoice[r.id] || 'viewer'}
+                                value={roleChoice[r.id] || 'recorder'}
                                 onChange={(e) => setRoleChoice((prev) => ({ ...prev, [r.id]: e.target.value }))}
                                 className={`text-xs rounded-full px-2.5 py-2 outline-none ${dark ? 'bg-navy border border-slate-700 text-slate-300' : 'bg-slate-50 border border-slate-200 text-slate-600'}`}
                               >
-                                <option value="viewer">{t.roleNames.viewer}</option>
                                 <option value="recorder">{t.roleNames.recorder}</option>
                                 <option value="supervisor">{t.roleNames.supervisor}</option>
                                 <option value="edari">{t.roleNames.edari}</option>
                                 <option value="admin">{t.roleNames.admin}</option>
                               </select>
                               <button
-                                onClick={() => approve(r.id, roleChoice[r.id] || 'viewer')}
+                                onClick={() => approve(r.id, roleChoice[r.id] || 'recorder')}
                                 className="rounded-full bg-amber-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 ease-in-out hover:bg-amber-600 hover:-translate-y-0.5"
                               >
                                 {t.accept}
@@ -640,7 +639,6 @@ function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
                     className={`text-xs rounded-lg px-2.5 py-2 border outline-none disabled:opacity-50 ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
                   >
                     <option value="recorder">{t.roleNames.recorder}</option>
-                    <option value="viewer">{t.roleNames.viewer}</option>
                     <option value="supervisor">{t.roleNames.supervisor}</option>
                     <option value="edari">{t.roleNames.edari}</option>
                     <option value="admin">{t.roleNames.admin}</option>

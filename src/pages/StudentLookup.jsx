@@ -322,7 +322,7 @@ function StudentProfileCard({
   fromDate, toDate, setFromDate, setToDate, inputCls, onBack, onOverrideSaved,
 }) {
   const name = lang === 'ar' ? (student.name_ar || student.name_en) : (student.name_en || student.name_ar);
-  const canOverride = staff && (staff.role === 'admin' || staff.role === 'viewer' || staff.role === 'edari');
+  const canOverride = staff && (staff.role === 'admin' || staff.role === 'edari');
   // deleting a date-ranged batch of attendance records for one student is a
   // targeted correction, not the same thing as the school-wide "reset
   // attendance" action — so "edari" gets this too, unlike reset attendance.

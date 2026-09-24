@@ -15,7 +15,6 @@ function initials(name) {
 
 const ROLE_STYLE = {
   admin: { bg: 'bg-gold/15', text: 'text-gold', dot: '#e8b923' },
-  viewer: { bg: 'bg-royal/15', text: 'text-royal', dot: '#3b5bdb' },
   recorder: { bg: 'bg-emerald-500/15', text: 'text-emerald-600', dot: '#05cd99' },
   supervisor: { bg: 'bg-violet-500/15', text: 'text-violet-600', dot: '#8b5cf6' },
   edari: { bg: 'bg-orange-500/15', text: 'text-orange-600', dot: '#f97316' },

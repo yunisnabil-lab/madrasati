@@ -4,6 +4,7 @@ import { Users, GraduationCap, School as SchoolIcon, Clock, AlertTriangle, Loade
 import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useApp } from '../lib/AppContext';
 import { useDialogs } from '../lib/Dialogs';
+import { sectionLabel as fmtSectionLabel } from '../lib/sections';
 import { supabase } from '../lib/supabase';
 import { STATUS_META } from '../lib/status';
 import { cardFloating, skeleton } from '../lib/theme';

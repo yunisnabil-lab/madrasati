@@ -1,10 +1,9 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, GraduationCap, School as SchoolIcon, Clock, AlertTriangle, Loader2, ChevronDown, Layers } from 'lucide-react';
+import { Users, GraduationCap, School as SchoolIcon, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { useApp } from '../lib/AppContext';
 import { useDialogs } from '../lib/Dialogs';
-import { sectionLabel as fmtSectionLabel, sortSections } from '../lib/sections';
 import { supabase } from '../lib/supabase';
 import { STATUS_META } from '../lib/status';
 import { cardFloating, skeleton } from '../lib/theme';
@@ -12,6 +11,7 @@ import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { CYCLE_KEYS, SUBJECT_KEYS } from '../lib/i18n';
 import { staffCycles, staffSubjects, shownSubjects, namesOf } from '../lib/staffInfo';
 import { fetchAllRows } from '../lib/fetchAll';
+import TodaySummary from '../components/TodaySummary';
 import BackupExport from '../components/BackupExport';
 import ChipMultiSelect from '../components/ChipMultiSelect';
 import SectionChecklistModal from '../components/SectionChecklistModal';
@@ -64,10 +64,6 @@ export default function Dashboard() {
   const [allSections, setAllSections] = useState([]);
   const [sectionChoice, setSectionChoice] = useState({}); // staff id -> [section ids]
   const [sectionModalFor, setSectionModalFor] = useState(null); // pending request row
-
-  const [overviewOpen, setOverviewOpen] = useState(false);
-  const [sectionBreakdown, setSectionBreakdown] = useState(null); // null = not loaded yet
-  const [sectionBreakdownLoading, setSectionBreakdownLoading] = useState(false);
 
   const loadStats = useCallback(async () => {
     setStatsLoading(true);
@@ -160,37 +156,6 @@ export default function Dashboard() {
     loadRequests();
   }, [loadStats, loadAbsenceRateChart, loadRecent, loadRequests]);
 
-  // lazy-loaded the first time the overview panel is expanded
-  const loadSectionBreakdown = useCallback(async () => {
-    if (sectionBreakdown !== null) return;
-    setSectionBreakdownLoading(true);
-    // paged: a school with more than 1000 active students was undercounted
-    const { data } = await fetchAllRows(() => supabase
-      .from('students')
-      .select('id, section_id, sections(id, grade_name, grade_name_en, section_name, stream, section_number, grade_order)')
-      .eq('is_active', true)
-      .order('id'));
-    const counts = new Map(); // section_id -> { section, count }
-    (data || []).forEach((s) => {
-      if (!s.section_id) return;
-      const existing = counts.get(s.section_id);
-      if (existing) { existing.count += 1; }
-      else counts.set(s.section_id, { section: s.sections, count: 1 });
-    });
-    const rows = sortSections([...counts.values()].map((v) => v.section).filter(Boolean))
-      .map((sec) => ({ section: sec, count: counts.get(sec.id)?.count || 0 }));
-    setSectionBreakdown(rows);
-    setSectionBreakdownLoading(false);
-  }, [sectionBreakdown]);
-
-  const toggleOverview = () => {
-    setOverviewOpen((v) => {
-      const next = !v;
-      if (next) loadSectionBreakdown();
-      return next;
-    });
-  };
-
   async function approve(id, role) {
     // the school may only ever have one admin account — block approving
     // someone as admin while another admin already exists, instead of
@@ -278,88 +243,7 @@ export default function Dashboard() {
             })}
           </div>
 
-          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}
-            className={`${cardFloating(dark)} mb-6 overflow-hidden`}>
-            <button
-              onClick={toggleOverview}
-              className={`w-full flex items-center justify-between px-5 py-4 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
-            >
-              <div className="flex items-center gap-2.5">
-                <div className={`h-9 w-9 rounded-full flex items-center justify-center ${dark ? 'bg-royal/15 text-royal-light' : 'bg-royal/10 text-royal'}`}>
-                  <Layers size={16} />
-                </div>
-                <div>
-                  <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>
-                    {lang === 'ar' ? 'نظرة عامة' : 'Overview'}
-                  </h2>
-                  <p className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
-                    {lang === 'ar' ? 'الإجمالي وأعداد الطلاب في كل صف' : 'Totals and student counts per section'}
-                  </p>
-                </div>
-              </div>
-              <ChevronDown
-                size={18}
-                className={`shrink-0 transition-transform duration-200 ${overviewOpen ? 'rotate-180' : ''} ${dark ? 'text-slate-200' : 'text-slate-500'}`}
-              />
-            </button>
-
-            <AnimatePresence initial={false}>
-              {overviewOpen && (
-                <motion.div
-                  initial={{ height: 0, opacity: 0 }}
-                  animate={{ height: 'auto', opacity: 1 }}
-                  exit={{ height: 0, opacity: 0 }}
-                  transition={{ duration: 0.22 }}
-                  className="overflow-hidden"
-                >
-                  <div className={`px-5 pb-5 pt-1 border-t ${dark ? 'border-slate-800' : 'border-slate-100'}`}>
-                    {/* the totals (students/staff/sections) already appear in the KPI
-                        cards above — this panel only adds the section-by-section
-                        breakdown, so we don't repeat them here, only the one number
-                        that's genuinely new: the average class size. */}
-                    <div className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 mb-4 mt-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
-                      <span className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
-                        {lang === 'ar' ? 'متوسط عدد الطلاب لكل صف' : 'Avg. students per section'}
-                      </span>
-                      <span className={`text-lg font-bold font-en ${dark ? 'text-white' : 'text-navy'}`}>
-                        {kpi.students != null && kpi.sections
-                          ? Math.round(kpi.students / kpi.sections).toLocaleString('en-US')
-                          : '—'}
-                      </span>
-                    </div>
-
-                    <h3 className={`text-xs font-semibold mb-2 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
-                      {lang === 'ar' ? 'أعضاء الصفوف' : 'Section membership'}
-                    </h3>
-
-                    {sectionBreakdownLoading || sectionBreakdown === null ? (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                        {[...Array(6)].map((_, i) => <div key={i} className={skeleton(dark, 'h-10 w-full')} />)}
-                      </div>
-                    ) : sectionBreakdown.length === 0 ? (
-                      <div className={`text-sm py-4 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>—</div>
-                    ) : (
-                      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
-                        {sectionBreakdown.map((row) => (
-                          <div
-                            key={row.section.id}
-                            className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm ${dark ? 'bg-black/20' : 'bg-slate-50'}`}
-                          >
-                            <span className={`truncate ${dark ? 'text-slate-300' : 'text-slate-700'}`}>
-                              {fmtSectionLabel(row.section, lang)}
-                            </span>
-                            <span className={`font-en font-semibold shrink-0 ms-2 ${dark ? 'text-royal-light' : 'text-royal'}`}>
-                              {row.count}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </motion.div>
+          {(isAdmin || staff?.role === 'edari') && <TodaySummary t={t} lang={lang} dark={dark} />}
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-4 mb-6">
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 }}

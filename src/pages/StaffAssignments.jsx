@@ -124,7 +124,7 @@ export default function StaffAssignments() {
         <main className="max-w-3xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.assignmentsTitle}</h1>
-            <p className={`text-sm mt-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.assignmentsSub}</p>
+            <p className={`text-sm mt-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.assignmentsSub}</p>
           </motion.div>
 
           {!loading && teachers.length > 0 && (
@@ -161,13 +161,13 @@ export default function StaffAssignments() {
               <div className="p-5 space-y-3">{[...Array(4)].map((_, i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
             ) : teachers.length === 0 ? (
               <div className="p-10 text-center">
-                <Users2 size={26} className={`mx-auto mb-3 ${dark ? 'text-slate-600' : 'text-slate-300'}`} />
-                <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noTeachersYet}</p>
+                <Users2 size={26} className={`mx-auto mb-3 ${dark ? 'text-slate-200' : 'text-slate-300'}`} />
+                <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noTeachersYet}</p>
               </div>
             ) : filteredTeachers.length === 0 ? (
               <div className="p-10 text-center">
-                <Search size={26} className={`mx-auto mb-3 ${dark ? 'text-slate-600' : 'text-slate-300'}`} />
-                <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noTeachersMatch}</p>
+                <Search size={26} className={`mx-auto mb-3 ${dark ? 'text-slate-200' : 'text-slate-300'}`} />
+                <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noTeachersMatch}</p>
               </div>
             ) : (
               <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
@@ -175,7 +175,7 @@ export default function StaffAssignments() {
                   <li key={tch.id} className="flex items-center justify-between gap-3 px-4 py-3.5">
                     <div className="min-w-0">
                       <div className="text-sm font-semibold truncate">{tch.full_name}</div>
-                      <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{tch.email}</div>
+                      <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{tch.email}</div>
                     </div>
                     <button
                       onClick={() => openEdit(tch)}
@@ -204,12 +204,12 @@ export default function StaffAssignments() {
                   <X size={15} />
                 </button>
               </div>
-              <p className={`text-xs mb-3 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.assignSectionsHint}</p>
+              <p className={`text-xs mb-3 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.assignSectionsHint}</p>
 
               <div className="flex-1 overflow-y-auto space-y-4 pe-1">
                 {grouped.map((g) => (
                   <div key={g.grade_name}>
-                    <div className={`text-xs font-semibold mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{g.grade_name}</div>
+                    <div className={`text-xs font-semibold mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{g.grade_name}</div>
                     <div className="flex flex-wrap gap-1.5">
                       {g.items.map((s) => {
                         const active = checked.has(s.id);

@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, Fragment } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, ArrowRight, Flag, Printer, ShieldCheck, MessageCircle, Trash2, Loader2, Mail, RefreshCw, ChevronDown } from 'lucide-react';
+import { Search, ArrowRight, Flag, Printer, MessageCircle, Trash2, Loader2, Mail, RefreshCw, ChevronDown } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -262,7 +262,7 @@ export default function StudentLookup() {
                 <div className={cardFloating(dark, 'overflow-hidden')}>
                   {results.length === 0 ? (
                     <div className="p-10 text-center">
-                      <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.lookupNoResults}</p>
+                      <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.lookupNoResults}</p>
                     </div>
                   ) : (
                     <>
@@ -290,7 +290,7 @@ export default function StudentLookup() {
                                       </span>
                                     )}
                                   </div>
-                                  <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{lang === 'ar' ? 'رقم الطالب' : 'ID'}: {s.sis_no}</div>
+                                  <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{lang === 'ar' ? 'رقم الطالب' : 'ID'}: {s.sis_no}</div>
                                 </div>
                                 <span className={`text-xs px-2.5 py-1 rounded-full shrink-0 ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>
                                   {fmtSectionLabel(s.sections, lang)}
@@ -318,7 +318,7 @@ export default function StudentLookup() {
               setFromDate={setFromDate} setToDate={setToDate}
               inputCls={inputCls}
               onBack={() => setSelected(null)}
-              onOverrideSaved={() => openProfile(selected)}
+              onRefresh={() => openProfile(selected)}
             />
           )}
         </main>
@@ -329,10 +329,9 @@ export default function StudentLookup() {
 
 function StudentProfileCard({
   student, t, lang, dark, staff, history, historyLoading, stats, rateColor, flagged,
-  fromDate, toDate, setFromDate, setToDate, inputCls, onBack, onOverrideSaved,
+  fromDate, toDate, setFromDate, setToDate, inputCls, onBack, onRefresh,
 }) {
   const name = lang === 'ar' ? (student.name_ar || student.name_en) : (student.name_en || student.name_ar);
-  const canOverride = staff && (staff.role === 'admin' || staff.role === 'edari');
   // deleting a date-ranged batch of attendance records for one student is a
   // targeted correction, not the same thing as the school-wide "reset
   // attendance" action — so "edari" gets this too, unlike reset attendance.
@@ -358,7 +357,7 @@ function StudentProfileCard({
 
   return (
     <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-      <button onClick={onBack} className={`flex items-center gap-1.5 text-xs font-medium mb-4 no-print ${dark ? 'text-slate-400 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'}`}>
+      <button onClick={onBack} className={`flex items-center gap-1.5 text-xs font-medium mb-4 no-print ${dark ? 'text-slate-200 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'}`}>
         <ArrowRight size={14} className={lang === 'ar' ? '' : 'rotate-180'} /> {t.backToResults}
       </button>
 
@@ -383,7 +382,7 @@ function StudentProfileCard({
                   </span>
                 )}
               </div>
-              <div className={`text-xs mt-0.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <div className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                 {fmtSectionLabel(student.sections, lang)}
               </div>
             </div>
@@ -396,7 +395,7 @@ function StudentProfileCard({
             >
               {stats.rate == null ? '—' : `${stats.rate}%`}
             </div>
-            <div className={`text-[11px] mt-1 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.attendanceRate}</div>
+            <div className={`text-[11px] mt-1 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.attendanceRate}</div>
           </div>
         </div>
 
@@ -412,28 +411,22 @@ function StudentProfileCard({
         </div>
       </div>
 
-      {canOverride && (
-        <div className="no-print">
-          <OverridePanel student={student} staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls} onSaved={onOverrideSaved} />
-        </div>
-      )}
-
       {/* period filter */}
       <div className={cardFloating(dark, 'p-4 mb-5 flex flex-col sm:flex-row gap-3 sm:items-end no-print')}>
         <div className="flex-1">
-          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.fromDate}</label>
+          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.fromDate}</label>
           <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={inputCls} />
         </div>
         <div className="flex-1">
-          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.toDate}</label>
+          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.toDate}</label>
           <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputCls} />
         </div>
         {(fromDate || toDate) && (
-          <button onClick={() => { setFromDate(''); setToDate(''); onOverrideSaved && onOverrideSaved(); }} className={`text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+          <button onClick={() => { setFromDate(''); setToDate(''); onRefresh && onRefresh(); }} className={`text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
             {t.showAll}
           </button>
         )}
-        <button onClick={() => onOverrideSaved && onOverrideSaved()} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+        <button onClick={() => onRefresh && onRefresh()} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
           <RefreshCw size={14} /> {t.refresh}
         </button>
         <button onClick={() => printWithTitle(`${name} - ${student.sis_no} - ${dateRangeLabel}`)} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
@@ -462,7 +455,7 @@ function StudentProfileCard({
 
       {canDeleteRecords && (
         <div className="no-print">
-          <DeleteRecordsPanel student={student} t={t} lang={lang} dark={dark} inputCls={inputCls} onDeleted={onOverrideSaved} />
+          <DeleteRecordsPanel student={student} t={t} lang={lang} dark={dark} inputCls={inputCls} onDeleted={onRefresh} />
         </div>
       )}
 
@@ -472,7 +465,7 @@ function StudentProfileCard({
           <div className="p-5 space-y-3">{[...Array(4)].map((_, i) => <div key={i} className={skeleton(dark, 'h-10 w-full')} />)}</div>
         ) : history.length === 0 ? (
           <div className="p-10 text-center">
-            <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noAttendanceRecords}</p>
+            <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noAttendanceRecords}</p>
           </div>
         ) : (
           <table className="w-full text-sm">
@@ -500,7 +493,7 @@ function StudentProfileCard({
                           <Icon size={13} /> {t[meta.key]}
                         </span>
                         {hasNote && (
-                          <span className={`ms-2 text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                          <span className={`ms-2 text-[11px] ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
                             {t.periodNote
                               .replace('{absent}', r.absentCount || 0)
                               .replace('{late}', r.lateCount || 0)}
@@ -539,119 +532,6 @@ function todayStr() {
   const d = new Date();
   const pad = (n) => String(n).padStart(2, '0');
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function OverridePanel({ student, staff, t, lang, dark, inputCls, onSaved }) {
-  const [date, setDate] = useState(todayStr());
-  const [saving, setSaving] = useState(false);
-  const [msg, setMsg] = useState(null);
-  const [existingOverride, setExistingOverride] = useState(undefined); // undefined = unchecked, null = none, object = found
-
-  useEffect(() => {
-    let cancelled = false;
-    setExistingOverride(undefined);
-    (async () => {
-      const { data } = await supabase
-        .from('attendance_records')
-        .select('id, status')
-        .eq('student_id', student.id)
-        .eq('date', date)
-        .is('period', null)
-        .maybeSingle();
-      if (!cancelled) setExistingOverride(data || null);
-    })();
-    return () => { cancelled = true; };
-  }, [student.id, date]);
-
-  const setFinal = async (status) => {
-    setSaving(true);
-    setMsg(null);
-
-    let error;
-    if (existingOverride) {
-      ({ error } = await supabase.from('attendance_records').update({ status }).eq('id', existingOverride.id));
-    } else {
-      ({ error } = await supabase.from('attendance_records').insert({
-        school_id: staff.school_id,
-        student_id: student.id,
-        date,
-        period: null,
-        status,
-        recorded_by: staff.id,
-      }));
-    }
-
-    setSaving(false);
-    if (error) {
-      console.error('Override/record save error:', error); setMsg({ type: 'err', text: 'DEBUG: ' + error.message + ' (code: ' + (error.code || '—') + ')' });
-    } else {
-      setMsg({ type: 'ok', text: t.overrideSaved });
-      setExistingOverride({ status });
-      onSaved && onSaved();
-    }
-  };
-
-  const removeOverride = async () => {
-    if (!existingOverride) return;
-    setSaving(true);
-    setMsg(null);
-    const { error } = await supabase.from('attendance_records').delete().eq('id', existingOverride.id);
-    setSaving(false);
-    if (error) {
-      console.error('Override/record save error:', error); setMsg({ type: 'err', text: 'DEBUG: ' + error.message + ' (code: ' + (error.code || '—') + ')' });
-    } else {
-      setMsg({ type: 'ok', text: t.overrideRemoved });
-      setExistingOverride(null);
-      onSaved && onSaved();
-    }
-  };
-
-  return (
-    <div className={cardFloating(dark, 'p-4 mb-5 border-2 border-dashed')}>
-      <div className="flex items-center gap-2 mb-1">
-        <ShieldCheck size={15} className={dark ? 'text-gold' : 'text-amber-600'} />
-        <h3 className="text-sm font-semibold">{t.overrideTitle}</h3>
-      </div>
-      <p className={`text-xs mb-3 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.overrideSub}</p>
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-        <div className="sm:w-48">
-          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.dateLabel}</label>
-          <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls} />
-        </div>
-        <button
-          onClick={() => setFinal('absent')}
-          disabled={saving}
-          className="text-sm font-medium px-4 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white transition-colors disabled:opacity-60"
-        >
-          {t.markFinalAbsent}
-        </button>
-        <button
-          onClick={() => setFinal('present')}
-          disabled={saving}
-          className="text-sm font-medium px-4 py-2.5 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white transition-colors disabled:opacity-60"
-        >
-          {t.markFinalPresent}
-        </button>
-        {existingOverride && (
-          <button
-            onClick={removeOverride}
-            disabled={saving}
-            className={`text-sm font-medium px-4 py-2.5 rounded-lg border transition-colors disabled:opacity-60 ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
-          >
-            {t.removeOverride}
-          </button>
-        )}
-      </div>
-      {existingOverride && (
-        <p className={`text-xs mt-2 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
-          {t.currentOverrideIs} <strong>{t[STATUS_META[existingOverride.status]?.key]}</strong>
-        </p>
-      )}
-      {msg && (
-        <p className={`text-xs mt-2 ${msg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{msg.text}</p>
-      )}
-    </div>
-  );
 }
 
 function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, dark, inputCls }) {
@@ -696,7 +576,7 @@ function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, d
     <div className={cardFloating(dark, 'p-4 mb-5 space-y-4')}>
       <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
         <div className="flex-1">
-          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.parentPhone}</label>
+          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.parentPhone}</label>
           <input
             type="tel"
             value={phone}
@@ -721,7 +601,7 @@ function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, d
 
       <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
         <div className="flex-1">
-          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.parentEmail}</label>
+          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.parentEmail}</label>
           <input
             type="email"
             value={email}
@@ -774,16 +654,16 @@ function DeleteRecordsPanel({ student, t, lang, dark, inputCls, onDeleted }) {
         <Trash2 size={15} className="text-rose-500" />
         <h3 className="text-sm font-semibold text-rose-500">{t.deleteRecordsTitle}</h3>
       </div>
-      <p className={`text-xs mb-3 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.deleteRecordsSub}</p>
+      <p className={`text-xs mb-3 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.deleteRecordsSub}</p>
 
       {!confirming ? (
         <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
           <div className="flex-1">
-            <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.fromDate} ({t.showAll})</label>
+            <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.fromDate} ({t.showAll})</label>
             <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={`${inputCls} font-en`} />
           </div>
           <div className="flex-1">
-            <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.toDate} ({t.showAll})</label>
+            <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.toDate} ({t.showAll})</label>
             <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={`${inputCls} font-en`} />
           </div>
           <button
@@ -816,7 +696,7 @@ function DeleteRecordsPanel({ student, t, lang, dark, inputCls, onDeleted }) {
 function InfoItem({ dark, label, value, valueColor }) {
   return (
     <div className="min-w-0">
-      <div className={`text-[11px] mb-0.5 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{label}</div>
+      <div className={`text-[11px] mb-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{label}</div>
       <div className="text-sm font-semibold break-words" style={valueColor ? { color: valueColor } : undefined}>{value}</div>
     </div>
   );

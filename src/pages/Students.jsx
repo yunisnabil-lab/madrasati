@@ -389,7 +389,7 @@ export default function Students() {
   const inputCls = `w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${
     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
   }`;
-  const labelCls = `block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`;
+  const labelCls = `block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`;
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
@@ -457,7 +457,7 @@ export default function Students() {
               inputCls={inputCls}
             />
             {canDeactivate && (
-              <label className={`flex items-center gap-2 text-xs font-medium w-fit cursor-pointer ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <label className={`flex items-center gap-2 text-xs font-medium w-fit cursor-pointer ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                 <input type="checkbox" checked={showInactive} onChange={(e) => { setShowInactive(e.target.checked); clearSelection(); }} className="accent-royal" />
                 {t.showInactiveStudents}
               </label>
@@ -502,7 +502,7 @@ export default function Students() {
               </div>
             ) : filtered.length === 0 ? (
               <div className="p-10 text-center">
-                <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noStudentsFound}</p>
+                <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noStudentsFound}</p>
               </div>
             ) : (
               <div className="overflow-x-auto">
@@ -531,7 +531,7 @@ export default function Students() {
                         )}
                         <td className="px-4 py-3 font-en">{s.sis_no || '—'}</td>
                         <td className="px-4 py-3 font-medium">{lang === 'ar' ? s.name_ar : (s.name_en || s.name_ar)}</td>
-                        <td className={`px-4 py-3 hidden sm:table-cell ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{fmtSectionLabel(sectionMap[s.section_id], lang)}</td>
+                        <td className={`px-4 py-3 hidden sm:table-cell ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{fmtSectionLabel(sectionMap[s.section_id], lang)}</td>
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1 justify-end">
                             {showInactive ? (
@@ -678,7 +678,7 @@ export default function Students() {
                   <X size={15} />
                 </button>
               </div>
-              <p className={`text-xs mb-4 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.bulkAddHint}</p>
+              <p className={`text-xs mb-4 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.bulkAddHint}</p>
 
               <div className="mb-4">
                 <label className={labelCls}>{t.section} ({lang === 'ar' ? 'للدفعة كلها' : 'for the whole batch'})</label>
@@ -693,7 +693,7 @@ export default function Students() {
               </div>
 
               <div className="flex items-center justify-between mb-2">
-                <span className={`text-xs font-medium ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.bulkRowsLabel}</span>
+                <span className={`text-xs font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.bulkRowsLabel}</span>
                 <button
                   onClick={() => bulkFileRef.current && bulkFileRef.current.click()}
                   className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
@@ -702,7 +702,7 @@ export default function Students() {
                 </button>
                 <input ref={bulkFileRef} type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelUpload} />
               </div>
-              <p className={`text-[11px] mb-3 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.excelFormatHint}</p>
+              <p className={`text-[11px] mb-3 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.excelFormatHint}</p>
 
               <div className="flex-1 overflow-y-auto space-y-2 pe-1 mb-3">
                 {bulkRows.map((row, i) => (

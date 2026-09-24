@@ -203,11 +203,11 @@ export default function SupervisorReport() {
           <div className={cardFloating(dark, 'p-4 mb-5 no-print')}>
             <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
               <div className="flex-1">
-                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.fromDate}</label>
+                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.fromDate}</label>
                 <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={`${inputCls} font-en`} />
               </div>
               <div className="flex-1">
-                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.toDate}</label>
+                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.toDate}</label>
                 <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={`${inputCls} font-en`} />
               </div>
               <button
@@ -225,7 +225,7 @@ export default function SupervisorReport() {
             <div className={cardFloating(dark, 'p-5 space-y-3')}>{[...Array(6)].map((_, i) => <div key={i} className={skeleton(dark, 'h-11 w-full')} />)}</div>
           ) : incidents === null ? (
             <div className={cardFloating(dark, 'p-10 text-center no-print')}>
-              <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noReportYet}</p>
+              <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noReportYet}</p>
             </div>
           ) : (
             <>
@@ -239,7 +239,7 @@ export default function SupervisorReport() {
                       className={`${cardFloating(dark)} p-5`}
                     >
                       <div className="flex items-center justify-between">
-                        <span className={`text-[13px] font-medium ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{item.label}</span>
+                        <span className={`text-[13px] font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{item.label}</span>
                         <div className={`h-9 w-9 rounded-full flex items-center justify-center shrink-0 ${item.accent}`}>
                           <Icon size={16} />
                         </div>
@@ -247,7 +247,7 @@ export default function SupervisorReport() {
                       <div className={`mt-2.5 ${item.small ? 'text-lg' : 'text-3xl font-en'} font-bold tracking-tight ${dark ? 'text-white' : 'text-navy'}`}>
                         {item.value}
                         {item.label === t.kpiTopViolationType && topViolationType && (
-                          <span className={`ms-1.5 text-xs font-medium font-en ${dark ? 'text-slate-500' : 'text-slate-400'}`}>({topViolationType.count})</span>
+                          <span className={`ms-1.5 text-xs font-medium font-en ${dark ? 'text-slate-200' : 'text-slate-400'}`}>({topViolationType.count})</span>
                         )}
                       </div>
                     </motion.div>
@@ -261,7 +261,7 @@ export default function SupervisorReport() {
                 // unwanted extra page.
                 <div className={cardFloating(dark, 'p-5 mb-5 no-print')}>
                   <div className="flex items-center gap-2 mb-3">
-                    <PieIcon size={15} className={dark ? 'text-slate-400' : 'text-slate-500'} />
+                    <PieIcon size={15} className={dark ? 'text-slate-200' : 'text-slate-500'} />
                     <h3 className="text-sm font-semibold">{t.violationTypeBreakdownTitle}</h3>
                   </div>
                   <ResponsiveContainer width="100%" height={220}>
@@ -287,7 +287,7 @@ export default function SupervisorReport() {
                   <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>{t.repeatOffendersTitle}</h2>
                 </div>
                 {repeatOffenders.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noRepeatOffenders}</p>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noRepeatOffenders}</p>
                 ) : (
                   <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                     {repeatOffenders.map((r) => {
@@ -300,13 +300,13 @@ export default function SupervisorReport() {
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="text-sm font-medium truncate">{name}</div>
-                            <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                            <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
                               {s.sections ? fmtSectionLabel(s.sections, lang) : '—'}
                             </div>
                           </div>
                           <div className="text-end shrink-0">
                             <div className="text-sm font-bold font-en text-rose-500">{r.count}</div>
-                            <div className={`text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.lastLateDate}: {fmtDate(r.lastDate)}</div>
+                            <div className={`text-[11px] ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.lastLateDate}: {fmtDate(r.lastDate)}</div>
                           </div>
                         </li>
                       );
@@ -344,10 +344,10 @@ export default function SupervisorReport() {
               <div className={cardFloating(dark, 'overflow-hidden')}>
                 <div className="px-4 pt-4 pb-1 flex items-center justify-between">
                   <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>{t.allIncidentsTitle}</h2>
-                  <span className={`text-xs font-en ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.totalIncidentsCount.replace('{n}', filteredIncidents.length)}</span>
+                  <span className={`text-xs font-en ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.totalIncidentsCount.replace('{n}', filteredIncidents.length)}</span>
                 </div>
                 {filteredIncidents.length === 0 ? (
-                  <div className="p-10 text-center"><p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noIncidentsInRange}</p></div>
+                  <div className="p-10 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noIncidentsInRange}</p></div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">

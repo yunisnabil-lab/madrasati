@@ -297,13 +297,13 @@ export default function Violations() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium truncate">{name}</div>
-            <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+            <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
               {s.sections ? fmtSectionLabel(s.sections, lang) : '—'}{r.lastType ? ' · ' + (t.violationTypeNames[r.lastType] || r.lastType) : ''}
             </div>
           </div>
           <div className="text-end shrink-0">
             <div className="text-sm font-bold font-en" style={{ color: r.count >= REPEAT_THRESHOLD ? '#ee5d50' : undefined }}>{r.count}</div>
-            <div className={`text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.lastLateDate}: {fmtDate(r.lastDate)}</div>
+            <div className={`text-[11px] ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.lastLateDate}: {fmtDate(r.lastDate)}</div>
           </div>
         </button>
       </li>
@@ -322,11 +322,11 @@ export default function Violations() {
             <>
               <div className={cardFloating(dark, 'p-4 mb-5 flex flex-col sm:flex-row gap-3 sm:items-end')}>
                 <div className="flex-1">
-                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.fromDate}</label>
+                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.fromDate}</label>
                   <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={inputCls + ' font-en'} />
                 </div>
                 <div className="flex-1">
-                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.toDate}</label>
+                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.toDate}</label>
                   <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputCls + ' font-en'} />
                 </div>
                 {(fromDate || toDate) && (
@@ -373,7 +373,7 @@ export default function Violations() {
               {results !== null && (
                 <div className={cardFloating(dark, 'overflow-hidden mb-5')}>
                   {results.length === 0 ? (
-                    <div className="p-8 text-center"><p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.lookupNoResults}</p></div>
+                    <div className="p-8 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.lookupNoResults}</p></div>
                   ) : (
                     <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                       {results.map((s) => {
@@ -384,7 +384,7 @@ export default function Violations() {
                               <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials(name)}</div>
                               <div className="flex-1 min-w-0">
                                 <div className="text-sm font-semibold truncate">{name}</div>
-                                <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.sisNo}: {s.sis_no}</div>
+                                <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.sisNo}: {s.sis_no}</div>
                               </div>
                               <span className={`text-xs px-2.5 py-1 rounded-full shrink-0 ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>{fmtSectionLabel(s.sections, lang)}</span>
                             </button>
@@ -404,7 +404,7 @@ export default function Violations() {
                 {aggLoading ? (
                   <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
                 ) : repeated.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noViolationsInPeriod}</p>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noViolationsInPeriod}</p>
                 ) : (
                   <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                     {repeated.map((r) => <AggRow key={r.id} r={r} />)}
@@ -417,9 +417,9 @@ export default function Violations() {
                 {aggLoading ? (
                   <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
                 ) : rest.length === 0 && repeated.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noViolationsInPeriod}</p>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noViolationsInPeriod}</p>
                 ) : rest.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>—</p>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>—</p>
                 ) : (
                   <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                     {rest.map((r) => <AggRow key={r.id} r={r} />)}
@@ -436,7 +436,7 @@ export default function Violations() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold truncate">{lang === 'ar' ? (selected.name_ar || selected.name_en) : (selected.name_en || selected.name_ar)}</div>
-                    <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{fmtSectionLabel(selected.sections, lang)}</div>
+                    <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{fmtSectionLabel(selected.sections, lang)}</div>
                   </div>
                   <button onClick={reset} className={`text-xs font-medium ${dark ? 'text-royal-light' : 'text-royal'}`}>{t.backToResults}</button>
                 </div>
@@ -453,18 +453,18 @@ export default function Violations() {
 
                     <div className="grid sm:grid-cols-3 gap-3">
                       <div>
-                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.violationType}</label>
+                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.violationType}</label>
                         <select value={violationType} onChange={(e) => setViolationType(e.target.value)} className={inputCls}>
                           <option value="">{t.chooseViolationType}</option>
                           {VIOLATION_TYPE_KEYS.map((k) => <option key={k} value={k}>{t.violationTypeNames[k]}</option>)}
                         </select>
                       </div>
                       <div>
-                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.violationDate}</label>
+                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.violationDate}</label>
                         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls + ' font-en'} />
                       </div>
                       <div>
-                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.violationPeriodOptionalLabel}</label>
+                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.violationPeriodOptionalLabel}</label>
                         <select value={period} onChange={(e) => setPeriod(e.target.value)} className={inputCls + ' font-en'}>
                           <option value="">{t.choosePeriod}</option>
                           {[1, 2, 3, 4, 5, 6, 7, 8].map((p) => (
@@ -475,7 +475,7 @@ export default function Violations() {
                     </div>
 
                     <div>
-                      <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.affectedStudentLabel}</label>
+                      <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.affectedStudentLabel}</label>
                       {affectedStudent ? (
                         <div className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm border ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}>
                           <span className="flex-1 truncate">{affectedStudentName(affectedStudent)}</span>
@@ -500,7 +500,7 @@ export default function Violations() {
                                     className={`w-full flex items-center gap-2 px-3 py-2 text-start text-sm ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
                                   >
                                     <span className="flex-1 truncate">{affectedStudentName(s)}</span>
-                                    <span className={`text-[11px] shrink-0 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{s.sections ? fmtSectionLabel(s.sections, lang) : ''}</span>
+                                    <span className={`text-[11px] shrink-0 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{s.sections ? fmtSectionLabel(s.sections, lang) : ''}</span>
                                   </button>
                                 </li>
                               ))}
@@ -511,17 +511,17 @@ export default function Violations() {
                     </div>
 
                     <div>
-                      <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.violationDescription}</label>
+                      <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.violationDescription}</label>
                       <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder={t.violationDescriptionPlaceholder} className={inputCls} />
                     </div>
 
                     <div className="grid sm:grid-cols-2 gap-3">
                       <div>
-                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.teacherActionLabel}</label>
+                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.teacherActionLabel}</label>
                         <textarea value={teacherAction} onChange={(e) => setTeacherAction(e.target.value)} rows={2} placeholder={t.teacherActionPlaceholder} className={inputCls} />
                       </div>
                       <div>
-                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.supervisorActionLabel}</label>
+                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.supervisorActionLabel}</label>
                         <textarea value={supervisorAction} onChange={(e) => setSupervisorAction(e.target.value)} rows={2} placeholder={t.supervisorActionPlaceholder} className={inputCls} />
                       </div>
                     </div>
@@ -552,7 +552,7 @@ export default function Violations() {
                 {studentViolations === null ? (
                   <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
                 ) : studentViolations.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noViolations}</p>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noViolations}</p>
                 ) : (
                   <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                     {studentViolations.map((v) => (
@@ -562,22 +562,22 @@ export default function Violations() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium">{t.violationTypeNames[v.violation_type] || v.violation_type}</div>
-                          <div className={`text-xs mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                          <div className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
                             {fmtDate(v.date)} · {dayName(v.date)}{v.period ? ' · ' + t.periodN.replace('{n}', v.period) : ''}{v.staff?.full_name ? ' · ' + t.recordedBy + ' ' + v.staff.full_name : ''}
                           </div>
-                          {v.description && <div className={`text-xs mt-1 ${dark ? 'text-slate-400' : 'text-slate-600'}`}>{v.description}</div>}
+                          {v.description && <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{v.description}</div>}
                           {v.affected_student && (
-                            <div className={`text-xs mt-1 ${dark ? 'text-slate-400' : 'text-slate-600'}`}>
+                            <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>
                               {t.affectedStudentDisplayLabel}: {affectedStudentName(v.affected_student)}
                             </div>
                           )}
                           {v.teacher_action && (
-                            <div className={`text-xs mt-1 ${dark ? 'text-slate-400' : 'text-slate-600'}`}>
+                            <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>
                               {t.teacherActionDisplayLabel}: {v.teacher_action}
                             </div>
                           )}
                           {v.supervisor_action && (
-                            <div className={`text-xs mt-1 ${dark ? 'text-slate-400' : 'text-slate-600'}`}>
+                            <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>
                               {t.supervisorActionDisplayLabel}: {v.supervisor_action}
                             </div>
                           )}

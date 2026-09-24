@@ -176,7 +176,7 @@ export default function RecorderDashboard() {
                   className={`${cardFloating(dark)} p-6`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className={`text-[15px] font-medium ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{item.label}</span>
+                    <span className={`text-[15px] font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{item.label}</span>
                     <div className={`h-11 w-11 rounded-full flex items-center justify-center ${item.accent}`}>
                       <Icon size={19} />
                     </div>
@@ -215,7 +215,7 @@ export default function RecorderDashboard() {
             ) : sections.length === 0 ? (
               <div className="text-center py-8">
                 <p className={`text-sm font-medium ${dark ? 'text-slate-300' : 'text-slate-600'}`}>{t.noSectionsAssignedTitle}</p>
-                <p className={`text-xs mt-1 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noSectionsAssignedBody}</p>
+                <p className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noSectionsAssignedBody}</p>
               </div>
             ) : (
               <div className="grid sm:grid-cols-2 gap-2.5">
@@ -226,7 +226,7 @@ export default function RecorderDashboard() {
                     <div key={sec.id} className={`flex items-center justify-between gap-3 rounded-xl px-4 py-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
                       <div className="min-w-0">
                         <div className={`text-sm font-medium truncate ${dark ? 'text-slate-200' : 'text-slate-700'}`}>{fmtSectionLabel(sec, lang)}</div>
-                        <div className={`text-[11px] mt-0.5 font-medium ${complete ? 'text-emerald-500' : (dark ? 'text-slate-500' : 'text-slate-400')}`}>
+                        <div className={`text-[11px] mt-0.5 font-medium ${complete ? 'text-emerald-500' : (dark ? 'text-slate-200' : 'text-slate-400')}`}>
                           {complete ? t.recordedTodayBadge : t.notRecordedTodayBadge.replace('{n}', st.recorded).replace('{total}', st.total)}
                         </div>
                       </div>
@@ -259,7 +259,7 @@ export default function RecorderDashboard() {
                     </div>
                   ))
                 ) : recentMine.length === 0 ? (
-                  <div className={`text-sm py-4 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noRecentEntries}</div>
+                  <div className={`text-sm py-4 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noRecentEntries}</div>
                 ) : (
                   recentMine.map((r, i) => {
                     const s = r.students || {};
@@ -272,7 +272,7 @@ export default function RecorderDashboard() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className={`truncate font-medium ${dark ? 'text-slate-100' : 'text-slate-800'}`}>{lang === 'ar' ? s.name_ar : (s.name_en || s.name_ar)}</div>
-                          <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{s.sections ? fmtSectionLabel(s.sections, lang) : '—'} · {r.date}</div>
+                          <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{s.sections ? fmtSectionLabel(s.sections, lang) : '—'} · {r.date}</div>
                         </div>
                         <span className="inline-flex items-center gap-1 text-xs font-medium shrink-0" style={{ color: meta.color }}>
                           <Icon size={13} /> {t[meta.key]}
@@ -287,11 +287,11 @@ export default function RecorderDashboard() {
             {/* needs attention */}
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className={`${cardFloating(dark)} p-5`}>
               <h2 className={`text-sm font-semibold mb-1 ${dark ? 'text-white' : 'text-slate-900'}`}>{t.needsAttentionTitle}</h2>
-              <p className={`text-xs mb-4 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.needsAttentionSub}</p>
+              <p className={`text-xs mb-4 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.needsAttentionSub}</p>
               {loading ? (
                 <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className={skeleton(dark, 'h-11 w-full')} />)}</div>
               ) : needsAttention.length === 0 ? (
-                <div className={`text-sm py-4 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noNeedsAttention}</div>
+                <div className={`text-sm py-4 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noNeedsAttention}</div>
               ) : (
                 <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                   {needsAttention.map((s) => (

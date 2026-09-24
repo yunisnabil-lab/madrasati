@@ -67,15 +67,11 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`no-print hidden md:block w-56 shrink-0 fixed top-0 start-0 h-screen z-40 border-e transition-colors duration-300 ${
+      className={`no-print hidden md:flex flex-col w-56 shrink-0 fixed top-0 start-0 h-screen z-40 overflow-y-auto border-e transition-colors duration-300 ${
         dark ? 'bg-navy border-slate-800' : 'bg-white border-slate-200/60'
       }`}
     >
-      {/* Capped so the nav list can never grow into the centered account
-          card below it (that was silently hiding "المخالفات السلوكية" behind
-          the card on shorter screens) — it just scrolls internally once it
-          would reach that halfway point instead. */}
-      <nav className="overflow-y-auto px-3 pt-5 pb-4 space-y-1" style={{ maxHeight: 'calc(50% - 60px)' }}>
+      <nav className="px-3 pt-5 space-y-1">
         {items.map((item) => {
           const Icon = item.icon;
           return (
@@ -102,14 +98,11 @@ export default function Sidebar() {
         })}
       </nav>
 
-      {/* Account — pinned to the exact vertical middle of the sidebar itself
-          (not the leftover space below the nav, which shrinks toward the
-          bottom as nav items are added/hidden per role — that's what kept
-          pushing this back down). Positioned absolutely against the <aside>
-          so its placement never depends on how tall the nav list is, with a
-          solid background so it always reads cleanly on top of the nav.
+      {/* Account — sits directly below the nav with a clear separator, not
+          forced into any exact position. Simple and predictable: never
+          overlaps the nav, never needs its own scroll area.
           dir="ltr" is intentional: the photo stays to the left of the name in both Arabic and English. */}
-      <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 px-3 py-4 z-10 ${dark ? 'bg-navy' : 'bg-white'}`}>
+      <div className={`mt-6 mx-3 pt-4 border-t ${dark ? 'border-slate-800' : 'border-slate-200/60'}`}>
         <Link
           to="/profile"
           dir="ltr"

@@ -246,6 +246,7 @@ export const TEXT = {
     confirmDeleteAll: 'تحذير: التواريخ فارغة — سيتم حذف كل سجل حضور هذا الطالب نهائياً بلا استثناء. هل أنت متأكد؟',
     confirmYesDelete: 'نعم، احذف',
     recordsDeleted: 'تم حذف السجلات بنجاح',
+    noRecordsDeleted: 'لم يتم حذف أي سجل — لا توجد سجلات في هذه الفترة، أو ليست لديك صلاحية الحذف.',
     // staff profile
     viewProfile: 'الملف الشخصي',
     totalRecorded: 'إجمالي مرات التسجيل',
@@ -640,6 +641,7 @@ export const TEXT = {
     confirmDeleteAll: "Warning: no dates set — this student's ENTIRE attendance record will be permanently deleted. Are you sure?",
     confirmYesDelete: 'Yes, delete',
     recordsDeleted: 'Records deleted successfully',
+    noRecordsDeleted: "Nothing was deleted — there are no records in this range, or you don't have permission to delete them.",
     // staff profile
     viewProfile: 'View profile',
     totalRecorded: 'Total records',

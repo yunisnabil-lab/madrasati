@@ -332,10 +332,10 @@ function StudentProfileCard({
   fromDate, toDate, setFromDate, setToDate, inputCls, onBack, onRefresh,
 }) {
   const name = lang === 'ar' ? (student.name_ar || student.name_en) : (student.name_en || student.name_ar);
-  // deleting a date-ranged batch of attendance records for one student is a
-  // targeted correction, not the same thing as the school-wide "reset
-  // attendance" action — so "edari" gets this too, unlike reset attendance.
-  const canDeleteRecords = staff && (staff.role === 'admin' || staff.role === 'edari');
+  // Deleting attendance is permanent and there's no audit log yet, so it's
+  // admin-only (the database only allows admins to delete attendance anyway).
+  // "edari" corrects a wrong mark by editing its status instead.
+  const canDeleteRecords = staff && staff.role === 'admin';
 
   // The print title/filename used to always say today's date, even when a
   // from/to filter was applied — so a report printed for, say, last month
@@ -637,11 +637,16 @@ function DeleteRecordsPanel({ student, t, lang, dark, inputCls, onDeleted }) {
     let query = supabase.from('attendance_records').delete().eq('student_id', student.id);
     if (fromDate) query = query.gte('date', fromDate);
     if (toDate) query = query.lte('date', toDate);
-    const { error } = await query;
+    // .select() returns the rows actually deleted — a delete the database
+    // refuses (row-level security) comes back with no error and 0 rows, and
+    // used to be reported as a success
+    const { data: deleted, error } = await query.select('id');
     setDeleting(false);
     setConfirming(false);
     if (error) {
       setMsg({ type: 'err', text: t.saveError });
+    } else if (!deleted || deleted.length === 0) {
+      setMsg({ type: 'err', text: t.noRecordsDeleted });
     } else {
       setMsg({ type: 'ok', text: t.recordsDeleted });
       onDeleted && onDeleted();

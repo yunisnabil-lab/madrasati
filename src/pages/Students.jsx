@@ -26,9 +26,11 @@ const emptyForm = {
 export default function Students() {
   const { t, lang, dark, staff } = useApp();
   const isAdmin = staff && staff.role === 'admin';
-  // "edari" staff can add/edit students and sections (same as admin), but
-  // deactivating/reactivating a student — individually or in bulk — stays an
-  // admin-only action, per the explicit exclusion.
+  // "edari" staff can add/edit individual students (same as admin), but two
+  // things stay admin-only because more than one person touching them
+  // causes real confusion: deactivating/reactivating students, and adding a
+  // new grade/section (school structure) — same reasoning as resetting
+  // attendance and linking staff to sections staying admin-only.
   const canManageStudents = staff && (staff.role === 'admin' || staff.role === 'edari');
   const canDeactivate = isAdmin;
 
@@ -321,7 +323,7 @@ export default function Students() {
   };
 
   const handleAddSection = async () => {
-    if (!canManageStudents) return;
+    if (!isAdmin) return;
     if (!sectionForm.grade_name.trim() || !sectionForm.section_number) {
       setSectionError(t.requiredFieldsMsg);
       return;
@@ -398,16 +400,18 @@ export default function Students() {
               <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.studentsTitle}</h1>
             </div>
             <div className="flex gap-2">
+              {isAdmin && (
+                <button
+                  onClick={() => setSectionModalOpen(true)}
+                  className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg border transition-colors ${
+                    dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'
+                  }`}
+                >
+                  <FolderPlus size={16} /> {t.addSection}
+                </button>
+              )}
               {canManageStudents && (
                 <>
-                  <button
-                    onClick={() => setSectionModalOpen(true)}
-                    className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg border transition-colors ${
-                      dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'
-                    }`}
-                  >
-                    <FolderPlus size={16} /> {t.addSection}
-                  </button>
                   <button
                     onClick={() => setBulkModalOpen(true)}
                     className={`flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg border transition-colors ${

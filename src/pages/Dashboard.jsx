@@ -36,9 +36,11 @@ function CustomTooltip({ active, payload, label, dark }) {
 export default function Dashboard() {
   const { t, lang, dark, staff } = useApp();
   const isAdmin = staff && staff.role === 'admin';
-  // "edari" (administrative) staff manage staff and approve registration
-  // requests same as admin — only resetting attendance stays admin-only.
-  const canManageStaff = staff && (staff.role === 'admin' || staff.role === 'edari');
+  // Staff management (approving registration requests, changing staff
+  // roles) stays admin-only — "edari" (administrative) staff does NOT
+  // inherit this, same as resetting attendance and linking staff to
+  // sections (/staff-assignments).
+  const canManageStaff = isAdmin;
 
   const [kpi, setKpi] = useState({ students: null, staffCount: null, sections: null });
   const [gradeData, setGradeData] = useState([]);

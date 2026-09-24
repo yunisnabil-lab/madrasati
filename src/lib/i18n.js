@@ -204,6 +204,8 @@ export const TEXT = {
     confirmNewPassword: 'تأكيد كلمة المرور الجديدة',
     updatePassword: 'تحديث كلمة المرور',
     passwordUpdated: 'تم تحديث كلمة المرور بنجاح. جارٍ تحويلك لتسجيل الدخول...',
+    cropAvatarTitle: 'اختر الجزء الظاهر من الصورة',
+    cropAvatarHint: 'اسحب الصورة لتحريكها واستخدم الشريط للتكبير',
     // student lookup / profile
     navLookup: 'استعلام عن طالب',
     lookupTitle: 'استعلام عن طالب',
@@ -595,6 +597,8 @@ export const TEXT = {
     confirmNewPassword: 'Confirm new password',
     updatePassword: 'Update password',
     passwordUpdated: 'Password updated successfully. Redirecting to sign in...',
+    cropAvatarTitle: 'Choose the visible part of the photo',
+    cropAvatarHint: 'Drag the photo to reposition it, and use the slider to zoom',
     // student lookup / profile
     navLookup: 'Search Students',
     lookupTitle: 'Student Lookup',

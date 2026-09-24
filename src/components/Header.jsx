@@ -15,9 +15,9 @@ function useLiveNow() {
 
 export default function Header() {
   const { t, lang, setLang, dark, staff, signOut } = useApp();
-  // "edari" staff manage staff/registration requests the same as admin, so
-  // they see this notification too.
-  const isAdmin = staff && (staff.role === 'admin' || staff.role === 'edari');
+  // Staff/registration-request management is admin-only — "edari" staff
+  // does not manage staff, so this notification stays admin-only too.
+  const isAdmin = staff && staff.role === 'admin';
   const now = useLiveNow();
   const dateTimeStr = new Intl.DateTimeFormat(lang === 'ar' ? 'ar' : 'en', {
     day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit',

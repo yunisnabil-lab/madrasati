@@ -6,7 +6,7 @@ import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionLabel as fmtSectionLabel, sectionsFor, streamLabel } from '../lib/sections';
-import { fetchAllRows } from '../lib/fetchAll';
+import { fetchAllRowsByIds } from '../lib/fetchAll';
 import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { exportXlsx } from '../lib/exportXlsx';
 import { printWithTitle } from '../lib/print';
@@ -104,12 +104,13 @@ export default function PeriodReport() {
     if (list.length === 0) { setRows([]); setLoading(false); return; }
 
     const ids = list.map((s) => s.id);
-    const { data: records } = await fetchAllRows(() => supabase
+    const { data: records } = await fetchAllRowsByIds(ids, (chunk) => supabase
       .from('attendance_records')
-      .select('student_id, date, status, period')
+      .select('id, student_id, date, status, period')
       .gte('date', fromDate)
       .lte('date', toDate)
-      .in('student_id', ids));
+      .in('student_id', chunk)
+      .order('id'));
 
     const derived = deriveByStudentAndDate(records || []);
     const schoolDays = schoolDaysInRange(fromDate, toDate);

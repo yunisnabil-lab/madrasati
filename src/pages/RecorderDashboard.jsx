@@ -8,6 +8,7 @@ import { sectionLabel as fmtSectionLabel, sortSections } from '../lib/sections';
 import { STATUS_META } from '../lib/status';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { deriveByStudentAndDate } from '../lib/attendanceDerive';
+import { fetchAllRowsByIds } from '../lib/fetchAll';
 
 const NEEDS_ATTENTION_WINDOW_DAYS = 14;
 const NEEDS_ATTENTION_MIN_ABSENCES = 3;
@@ -75,14 +76,14 @@ export default function RecorderDashboard() {
     const studentIds = list.map((s) => s.id);
     const today = todayStr();
 
+    // 14 days × up to 8 periods per student is far past the 1000-row cap,
+    // so both of these page through all rows instead of a single request
     const [{ data: todayRecs }, { data: rangeRecs }] = await Promise.all([
-      studentIds.length
-        ? supabase.from('attendance_records').select('student_id, date, status, period').eq('date', today).in('student_id', studentIds)
-        : Promise.resolve({ data: [] }),
-      studentIds.length
-        ? supabase.from('attendance_records').select('student_id, date, status, period')
-            .gte('date', daysAgoStr(NEEDS_ATTENTION_WINDOW_DAYS - 1)).lte('date', today).in('student_id', studentIds)
-        : Promise.resolve({ data: [] }),
+      fetchAllRowsByIds(studentIds, (chunk) => supabase.from('attendance_records')
+        .select('id, student_id, date, status, period').eq('date', today).in('student_id', chunk).order('id')),
+      fetchAllRowsByIds(studentIds, (chunk) => supabase.from('attendance_records')
+        .select('id, student_id, date, status, period')
+        .gte('date', daysAgoStr(NEEDS_ATTENTION_WINDOW_DAYS - 1)).lte('date', today).in('student_id', chunk).order('id')),
     ]);
 
     // today's per-section completion + overall rate

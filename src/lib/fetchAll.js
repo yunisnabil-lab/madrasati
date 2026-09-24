@@ -18,3 +18,22 @@ export async function fetchAllRows(queryFactory, pageSize = 1000) {
   }
   return { data: all, error: null };
 }
+
+// Same as fetchAllRows, but for a query filtered with .in(column, ids) over a
+// list of ids that can be long (e.g. every student in a whole grade). A few
+// hundred UUIDs in one .in() filter makes the request URL too long, so the ids
+// are split into chunks and each chunk is paged through fetchAllRows.
+//
+// Usage: fetchAllRowsByIds(studentIds, (chunk) => supabase.from('attendance_records')
+//          .select('...').eq('date', date).in('student_id', chunk).order('id'))
+// The factory must add a unique .order() so paging never skips or repeats rows.
+export async function fetchAllRowsByIds(ids, queryForChunk, chunkSize = 150) {
+  let all = [];
+  for (let i = 0; i < ids.length; i += chunkSize) {
+    const chunk = ids.slice(i, i + chunkSize);
+    const { data, error } = await fetchAllRows(() => queryForChunk(chunk));
+    if (error) return { data: all, error };
+    all = all.concat(data);
+  }
+  return { data: all, error: null };
+}

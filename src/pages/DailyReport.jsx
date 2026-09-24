@@ -10,6 +10,7 @@ import { deriveByStudentAndDate, PERIODS_PER_DAY } from '../lib/attendanceDerive
 import { STATUS_META, STATUS_LIST } from '../lib/status';
 import { exportXlsx } from '../lib/exportXlsx';
 import { printWithTitle } from '../lib/print';
+import { fetchAllRowsByIds } from '../lib/fetchAll';
 import SectionPicker from '../components/SectionPicker';
 
 function todayStr() {
@@ -80,11 +81,14 @@ export default function DailyReport() {
     if (list.length === 0) { setRows([]); setLoading(false); return; }
 
     const ids = list.map((s) => s.id);
-    const { data: records } = await supabase
+    // up to 8 rows per student per day — a whole grade easily passes the
+    // 1000-row response cap, so page through it instead of a single request
+    const { data: records } = await fetchAllRowsByIds(ids, (chunk) => supabase
       .from('attendance_records')
-      .select('student_id, date, status, period')
+      .select('id, student_id, date, status, period')
       .eq('date', date)
-      .in('student_id', ids);
+      .in('student_id', chunk)
+      .order('id'));
 
     const derived = deriveByStudentAndDate(records || []);
 

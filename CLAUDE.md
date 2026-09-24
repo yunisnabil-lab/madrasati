@@ -22,6 +22,6 @@ Full detail: `PROJECT_DOCUMENTATION.md`. The old "madrasati-school-system" skill
 ## Rules that matter
 - Roles: admin, edari (إداري), supervisor (مشرف), recorder (معلم). Edari: everything except attendance delete, reset attendance, staff management/assignments, contact-request approval. Supervisor/admin approve teacher violation reports and parent-contact requests. Teachers/supervisors are scoped to `staff_sections`.
 - Supabase returns max 1000 rows: page with `fetchAllRows` (+ unique `.order('id')`) and chunk long `.in()` lists (`fetchAllRowsByIds`).
-- Attendance: 8 periods/day; absent if ≥3 absent periods; present only if all 8 recorded; else undecided.
+- Attendance: 8 periods/day; the day is present if attended (present/late/excused) x 8 >= 5 x recorded periods, else absent (5 of 8, proportional when fewer recorded); fewer than 3 recorded = undecided (`attendanceDerive.js`).
 - Pages keep `min-h-screen`, `max-w-5xl` (lists/forms) / `6xl` (reports) / `7xl` (dashboards) containers, cards via `cardFloating(dark)`. Dark-mode text uses slate-200/300, never slate-400.
 - Dates: use `ar-u-nu-latn` (Arabic words, Latin digits) everywhere.

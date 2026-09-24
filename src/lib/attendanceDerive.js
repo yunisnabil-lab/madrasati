@@ -9,32 +9,20 @@
 // (periods keeps each period's raw status untouched either way).
 //
 // Late and excused periods both count as attendance (the same as a normal
-// present period) — a student who was late or had an approved excuse for a
-// period was still there in the way that matters for the day's overall
-// verdict. So the ONLY thing that can make a day read as anything other
-// than "attended" is real absence: the day is "absent" as soon as at least
-// ABSENT_THRESHOLD recorded periods were absent — decided the moment that
-// threshold is hit, regardless of how many periods are still unrecorded
-// (e.g. period 1 recorded absent, periods 2-8 not recorded yet still only
-// needs 3 total absences to call the day "absent"). Short of that
-// threshold, the day is only ever called "present" once ALL
-// PERIODS_PER_DAY periods have actually been recorded — a single period
-// (or any number short of the full day) marked present/late/excused must
-// NOT make the whole day read "present" while the rest of the day was
-// simply never recorded. Short of both, the day has no status at all
-// (status: null, the same "not recorded" state as a day with zero periods
-// recorded) rather than guessing — a report should show the day's
-// individual periods instead of a misleading total. A legacy row (period
-// is null — includes admin/management "final" overrides) is used as-is
-// for that day, bypassing all of the above entirely.
+// present period). The day is decided by proportion: the student needs at
+// least 5 of the 8 periods as attendance, otherwise the day is "absent";
+// when fewer periods were recorded, 5/8 of the recorded periods (6 recorded
+// -> at least 4). Fewer than 3 recorded periods gives no verdict
+// (status: null) — a report should show the individual periods instead. A
+// legacy row (period is null — includes admin/management "final" overrides)
+// is used as-is for that day, bypassing all of the above entirely.
 //
 // lateCount/excusedCount are still tallied and returned per day (reports
-// use them to show, say, "days with a late period" the same way they
-// already do for lateness) — they just no longer produce their own
-// day-level verdict, matching how "late" already worked.
+// use them to show, say, "days with a late period").
 
 export const PERIODS_PER_DAY = 8;
-const ABSENT_THRESHOLD = 3;
+const REQUIRED_PERIODS = 5; // periods (of 8) a student must attend for the day to count as attended
+const MIN_PERIODS_TO_DECIDE = 3; // fewer recorded periods than this -> no day verdict yet
 
 function deriveDayFromRows(rows) {
   const legacy = rows.find((r) => r.period == null);
@@ -55,18 +43,23 @@ function deriveDayFromRows(rows) {
   const excusedCount = unique.filter((r) => r.status === 'excused').length;
   const recordedCount = presentCount + absentCount + lateCount + excusedCount;
 
+  // The school's rule: a student needs at least 5 of the 8 periods as
+  // attendance (present / late / excused), otherwise the day is "absent".
+  // When fewer than 8 periods were recorded the same rule is applied in
+  // proportion — 5/8 of the periods recorded (e.g. 6 recorded -> at least
+  // 4, because 6 x 5/8 = 3.75). Compared as attended x 8 >= 5 x recorded so
+  // there's no rounding.
+  const attendedCount = presentCount + lateCount + excusedCount;
   let status;
-  if (absentCount >= ABSENT_THRESHOLD) {
-    status = 'absent';
-  } else if (recordedCount < PERIODS_PER_DAY) {
-    // Not enough absences to call it yet, and the day isn't fully
-    // recorded — too early to call it "present" just because the periods
-    // recorded so far happen to be clean.
+  if (recordedCount < MIN_PERIODS_TO_DECIDE) {
+    // one or two periods say too little about the whole day (a teacher may
+    // only have recorded period 1 so far) — no verdict yet rather than a
+    // misleading "absent"
     status = null;
-  } else {
-    // All 8 periods recorded and fewer than 3 absent: present, late and
-    // excused periods all count as attendance, so this is "present".
+  } else if (attendedCount * PERIODS_PER_DAY >= REQUIRED_PERIODS * recordedCount) {
     status = 'present';
+  } else {
+    status = 'absent';
   }
 
   return { status, presentCount, absentCount, lateCount, excusedCount, periods };

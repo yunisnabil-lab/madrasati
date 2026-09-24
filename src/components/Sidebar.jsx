@@ -105,7 +105,7 @@ export default function Sidebar() {
           so its placement never depends on how tall the nav list is, with a
           solid background so it always reads cleanly on top of the nav.
           dir="ltr" is intentional: the photo stays to the left of the name in both Arabic and English. */}
-      <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 px-3 ${dark ? 'bg-navy' : 'bg-white'}`}>
+      <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 px-3 py-4 ${dark ? 'bg-navy' : 'bg-white'}`}>
         <Link
           to="/profile"
           dir="ltr"

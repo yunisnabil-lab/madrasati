@@ -3,6 +3,7 @@ import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Check, X, Clock3, FileWarning, Users, Loader2 } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
+import { useDialogs } from '../lib/Dialogs';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionsFor, sectionLabel } from '../lib/sections';
@@ -36,6 +37,7 @@ function initials(name) {
 
 export default function Attendance() {
   const { t, lang, dark, staff, setHasUnsaved } = useApp();
+  const { confirm } = useDialogs();
   const location = useLocation();
   // Coming from the recorder dashboard's "my sections" card (a specific
   // section's "Record attendance" button) hands us that section directly, so
@@ -196,9 +198,9 @@ export default function Attendance() {
   // unsaved marks — ask first instead of losing them silently. Once the user
   // agrees, the edits are treated as discarded, so a follow-up automatic
   // change (the picker auto-selecting a grade's only stream) doesn't ask twice.
-  const guarded = (fn) => (...args) => {
+  const guarded = (fn) => async (...args) => {
     if (isDirty) {
-      if (!window.confirm(t.unsavedLeaveConfirm)) return;
+      if (!(await confirm(t.unsavedLeaveConfirm))) return;
       setSavedStatusMap(statusMap);
       setHasUnsaved(false);
     }
@@ -315,7 +317,7 @@ export default function Attendance() {
                 </label>
                 <select
                   value={period}
-                  onChange={guarded((e) => setPeriod(e.target.value))}
+                  onChange={(e) => guarded(setPeriod)(e.target.value)}
                   className={`w-full rounded-lg px-3 py-2.5 text-sm outline-none border font-en ${
                     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
                   }`}
@@ -334,7 +336,7 @@ export default function Attendance() {
                 <input
                   type="date"
                   value={date}
-                  onChange={guarded((e) => setDate(e.target.value))}
+                  onChange={(e) => guarded(setDate)(e.target.value)}
                   className={`w-full rounded-lg px-3 py-2.5 text-sm outline-none border font-en ${
                     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
                   }`}

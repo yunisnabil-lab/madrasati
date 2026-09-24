@@ -88,11 +88,14 @@ export default function Dashboard() {
       d.setDate(d.getDate() - i);
       days.push(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
     }
-    const { data: recs } = await supabase
+    // 7 days x up to 8 periods x every student is far past the 1000-row
+    // response cap, so page through all rows instead of one request
+    const { data: recs } = await fetchAllRows(() => supabase
       .from('attendance_records')
       .select('student_id, date, status, period')
       .gte('date', days[0])
-      .lte('date', days[days.length - 1]);
+      .lte('date', days[days.length - 1])
+      .order('id'));
 
     // derive one status per student per day (see lib/attendanceDerive:
     // absent once 3+ periods are absent, present once all 8 periods are

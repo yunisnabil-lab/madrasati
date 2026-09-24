@@ -41,12 +41,18 @@ function deriveDayFromRows(rows) {
   if (legacy) {
     return { status: legacy.status, presentCount: 0, absentCount: 0, lateCount: 0, excusedCount: 0, periods: {} };
   }
+  // one row per period: if the same period was saved twice for a student
+  // (a double save), the later row wins instead of counting twice and
+  // pushing a student over the 3-absence threshold by mistake
+  const byPeriod = new Map();
+  rows.forEach((r) => { if (r.period != null) byPeriod.set(r.period, r); });
+  const unique = [...byPeriod.values()];
   const periods = {};
-  rows.forEach((r) => { if (r.period != null) periods[r.period] = r.status; });
-  const presentCount = rows.filter((r) => r.status === 'present').length;
-  const absentCount = rows.filter((r) => r.status === 'absent').length;
-  const lateCount = rows.filter((r) => r.status === 'late').length;
-  const excusedCount = rows.filter((r) => r.status === 'excused').length;
+  unique.forEach((r) => { periods[r.period] = r.status; });
+  const presentCount = unique.filter((r) => r.status === 'present').length;
+  const absentCount = unique.filter((r) => r.status === 'absent').length;
+  const lateCount = unique.filter((r) => r.status === 'late').length;
+  const excusedCount = unique.filter((r) => r.status === 'excused').length;
   const recordedCount = presentCount + absentCount + lateCount + excusedCount;
 
   let status;

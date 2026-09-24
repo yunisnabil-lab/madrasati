@@ -13,6 +13,7 @@ import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { printWithTitle, reportName, rangeLabel } from '../lib/print';
 import { PrintSheet, PrintTable, StatusPill } from '../components/PrintSheet';
 import { sheetToPdfBase64 } from '../lib/pdfReport';
+import { emailErrorText } from '../lib/emailErrors';
 import { STATUS_META } from '../lib/status';
 import SectionPicker from '../components/SectionPicker';
 import PeriodBreakdown from '../components/PeriodBreakdown';
@@ -643,7 +644,7 @@ function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, d
     });
     setSendingEmail(false);
     if (error || (data && data.error)) {
-      setEmailMsg({ type: 'err', text: t.emailSendError });
+      setEmailMsg({ type: 'err', text: emailErrorText(data, t) });
     } else {
       setEmailMsg({ type: 'ok', text: t.emailSent });
     }

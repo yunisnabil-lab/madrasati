@@ -116,7 +116,7 @@ export default function Header() {
             and the logo on the name's far side. */}
         <div className="hidden sm:flex items-center gap-2.5">
           <div className="hidden md:block leading-tight">
-            <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.school}</div>
+            <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.school} — {t.schoolSub}</div>
             <div className={`text-xs font-medium ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
           </div>
           <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${dark ? 'bg-royal/15' : 'bg-royal/10'}`}>

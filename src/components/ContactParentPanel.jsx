@@ -3,6 +3,8 @@ import { MessageCircle, Mail, Loader2, Send, Clock3 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { cardFloating } from '../lib/theme';
 import { buildWhatsAppLink } from '../lib/whatsapp';
+import { buildNoticePdf } from '../lib/noticePdf';
+import { emailErrorText } from '../lib/emailErrors';
 
 export function buildDefaultMessage({ name, sectionLabel, note, lang, t }) {
   return lang === 'ar'
@@ -26,6 +28,9 @@ export default function ContactParentPanel({ student, name, sectionLabel, defaul
   const [sendingEmail, setSendingEmail] = useState(false);
   const [waMsg, setWaMsg] = useState(null);
   const [emailMsg, setEmailMsg] = useState(null);
+  // behaviour / lateness messages can carry a PDF listing the recorded cases
+  const canAttach = !isRequest && (contextType === 'violation' || contextType === 'lateness');
+  const [attachPdf, setAttachPdf] = useState(true);
 
   const link = buildWhatsAppLink(phone, message);
 
@@ -83,12 +88,22 @@ export default function ContactParentPanel({ student, name, sectionLabel, defaul
     }
     setSendingEmail(true);
     setEmailMsg(null);
+    let attachment;
+    if (canAttach && attachPdf) {
+      try {
+        attachment = await buildNoticePdf({ kind: contextType, studentId: student.id, name, sisNo: student.sis_no, sectionLabel, t, lang });
+      } catch {
+        setSendingEmail(false);
+        setEmailMsg({ type: 'err', text: t.emailPdfError });
+        return;
+      }
+    }
     const { data, error } = await supabase.functions.invoke('send-report-email', {
-      body: { studentId: student.id, to: email.trim(), message },
+      body: { studentId: student.id, to: email.trim(), message: attachment ? `${message}\n\n${t.noticePdfLine}` : message, attachment },
     });
     setSendingEmail(false);
     if (error || (data && data.error)) {
-      setEmailMsg({ type: 'err', text: t.emailSendError });
+      setEmailMsg({ type: 'err', text: emailErrorText(data, t) });
     } else {
       setEmailMsg({ type: 'ok', text: t.emailSent });
       logSent('email', email.trim());
@@ -150,6 +165,12 @@ export default function ContactParentPanel({ student, name, sectionLabel, defaul
           {sendingEmail ? <Loader2 size={15} className="animate-spin" /> : <Mail size={15} />} {isRequest ? t.requestViaEmail : t.sendEmail}
         </button>
       </div>
+      {canAttach && (
+        <label className={`flex items-center gap-2 text-xs cursor-pointer ${dark ? 'text-slate-200' : 'text-slate-600'}`}>
+          <input type="checkbox" checked={attachPdf} onChange={(e) => setAttachPdf(e.target.checked)} className="h-4 w-4 accent-royal" />
+          {t.attachNoticePdf}
+        </label>
+      )}
       {emailMsg && <p className={`text-xs ${emailMsg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{emailMsg.text}</p>}
     </div>
   );

@@ -21,6 +21,11 @@ const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
 const MAX_MESSAGE_CHARS = 4000;
 const MAX_ATTACHMENT_BASE64_CHARS = 4_000_000; // about 3 MB of PDF
 
+// Emails one staff member may send in any 24 hours (counted in email_send_log,
+// see supabase/email_limit.sql). The admin gets a higher allowance.
+const DAILY_LIMIT = 150;
+const ADMIN_DAILY_LIMIT = 500;
+
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
@@ -120,6 +125,31 @@ Deno.serve(async (req) => {
     return json({ error: 'Student lookup failed', detail: String(err instanceof Error ? err.message : err) }, 500);
   }
 
+  // Daily allowance per staff member
+  const { data: userData } = await supabase.auth.getUser(authHeader.replace(/^Bearer\s+/i, ''));
+  const uid = userData?.user?.id;
+  if (!uid) {
+    return json({ error: 'Not signed in' }, 401);
+  }
+  try {
+    const { data: me } = await supabase.from('staff').select('role').eq('id', uid).maybeSingle();
+    const limit = me?.role === 'admin' ? ADMIN_DAILY_LIMIT : DAILY_LIMIT;
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { count, error: countErr } = await supabase
+      .from('email_send_log')
+      .select('id', { count: 'exact', head: true })
+      .eq('staff_id', uid)
+      .gte('sent_at', since);
+    if (countErr) {
+      // e.g. the table has not been created yet — keep sending, but say so in the log
+      console.error('send-report-email: limit check failed', countErr);
+    } else if ((count ?? 0) >= limit) {
+      return json({ error: 'daily_limit', limit });
+    }
+  } catch (err) {
+    console.error('send-report-email: limit check threw', err);
+  }
+
   try {
     const res = await fetch('https://api.sendgrid.com/v3/mail/send', {
       method: 'POST',
@@ -173,6 +203,10 @@ Deno.serve(async (req) => {
       console.error('send-report-email: SendGrid API error', res.status, errText);
       return json({ error: 'SendGrid API error', status: res.status, detail: errText }, 502);
     }
+
+    // count this send towards today's allowance (best effort)
+    const { error: logErr } = await supabase.from('email_send_log').insert({ staff_id: uid });
+    if (logErr) console.error('send-report-email: could not log send', logErr);
 
     return json({ sent: true });
   } catch (err) {

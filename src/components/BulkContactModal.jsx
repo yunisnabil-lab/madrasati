@@ -3,6 +3,8 @@ import { MessageCircle, Mail, Loader2, X, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { buildWhatsAppLink } from '../lib/whatsapp';
 import { buildDefaultMessage } from './ContactParentPanel';
+import { buildNoticePdf } from '../lib/noticePdf';
+import { emailErrorText } from '../lib/emailErrors';
 
 // Contact the parents of several students in one pass. WhatsApp can't send to
 // many people at once, so each student gets their own row (phone + send
@@ -11,9 +13,12 @@ import { buildDefaultMessage } from './ContactParentPanel';
 // parent_contacts, so the "parent contacted" marks appear afterwards.
 export default function BulkContactModal({ students, contextType, defaultNote, staff, t, lang, dark, inputCls, onClose, onSent }) {
   const [note, setNote] = useState(defaultNote);
+  // behaviour / lateness messages can carry a PDF listing the recorded cases
+  const canAttach = contextType === 'violation' || contextType === 'lateness';
+  const [attachPdf, setAttachPdf] = useState(true);
   const [rows, setRows] = useState(() => {
     const r = {};
-    students.forEach((s) => { r[s.id] = { phone: '', email: '', wa: false, mail: false, sending: false, err: false }; });
+    students.forEach((s) => { r[s.id] = { phone: '', email: '', wa: false, mail: false, sending: false, err: null }; });
     return r;
   });
 
@@ -21,11 +26,11 @@ export default function BulkContactModal({ students, contextType, defaultNote, s
   useEffect(() => {
     let cancelled = false;
     (async () => {
-      const { data } = await supabase.from('students').select('id, parent_email').in('id', students.map((s) => s.id));
+      const { data } = await supabase.from('students').select('id, parent_email, sis_no').in('id', students.map((s) => s.id));
       if (cancelled || !data) return;
       setRows((prev) => {
         const next = { ...prev };
-        data.forEach((d) => { if (next[d.id] && !next[d.id].email) next[d.id] = { ...next[d.id], email: d.parent_email || '' }; });
+        data.forEach((d) => { if (next[d.id]) next[d.id] = { ...next[d.id], email: next[d.id].email || d.parent_email || '', sis: d.sis_no || '' }; });
         return next;
       });
     })();
@@ -51,11 +56,21 @@ export default function BulkContactModal({ students, contextType, defaultNote, s
   const sendEmail = async (s) => {
     const email = rows[s.id].email.trim();
     if (!email) return;
-    patch(s.id, { sending: true, err: false });
+    patch(s.id, { sending: true, err: null });
+    let attachment;
+    if (canAttach && attachPdf) {
+      try {
+        attachment = await buildNoticePdf({ kind: contextType, studentId: s.id, name: s.name, sisNo: rows[s.id].sis, sectionLabel: s.sectionLabel, t, lang });
+      } catch {
+        patch(s.id, { sending: false, err: t.emailPdfError });
+        return;
+      }
+    }
+    const message = attachment ? `${messageFor(s)}\n\n${t.noticePdfLine}` : messageFor(s);
     const { data, error } = await supabase.functions.invoke('send-report-email', {
-      body: { studentId: s.id, to: email, message: messageFor(s) },
+      body: { studentId: s.id, to: email, message, attachment },
     });
-    if (error || (data && data.error)) { patch(s.id, { sending: false, err: true }); return; }
+    if (error || (data && data.error)) { patch(s.id, { sending: false, err: emailErrorText(data, t) }); return; }
     patch(s.id, { sending: false, mail: true });
     log(s, 'email', email);
   };
@@ -72,6 +87,12 @@ export default function BulkContactModal({ students, contextType, defaultNote, s
         <div className="px-5 mb-3">
           <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.bulkContactNote}</label>
           <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={3000} rows={3} className={inputCls} />
+          {canAttach && (
+            <label className={`flex items-center gap-2 text-xs mt-2 cursor-pointer ${dark ? 'text-slate-200' : 'text-slate-600'}`}>
+              <input type="checkbox" checked={attachPdf} onChange={(e) => setAttachPdf(e.target.checked)} className="h-4 w-4 accent-royal" />
+              {t.attachNoticePdf}
+            </label>
+          )}
         </div>
 
         <ul className={`flex-1 overflow-y-auto px-5 pb-2 divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
@@ -109,7 +130,7 @@ export default function BulkContactModal({ students, contextType, defaultNote, s
                     </button>
                   </div>
                 </div>
-                {r.err && <p className="text-xs text-rose-500 mt-1">{t.emailSendError}</p>}
+                {r.err && <p className="text-xs text-rose-500 mt-1">{r.err}</p>}
               </li>
             );
           })}

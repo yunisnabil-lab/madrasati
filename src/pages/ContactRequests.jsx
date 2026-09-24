@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { MessageCircle, Mail, Check, X, Loader2, Inbox, History, ChevronDown, Trash2 } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { useDialogs } from '../lib/Dialogs';
+import { emailErrorText } from '../lib/emailErrors';
 import EmptyState from '../components/EmptyState';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -63,7 +64,7 @@ export default function ContactRequests() {
     });
     if (error || (data && data.error)) {
       setActingId(null);
-      setRowErrors((m) => ({ ...m, [row.id]: t.emailSendError }));
+      setRowErrors((m) => ({ ...m, [row.id]: emailErrorText(data, t) }));
       return;
     }
     await supabase.from('contact_requests').update(markApproved()).eq('id', row.id);

@@ -47,6 +47,10 @@ export default function Violations() {
   const [reviewingId, setReviewingId] = useState(null);
   const [myReports, setMyReports] = useState(null); // recorder: what I reported
   const [approvedViolation, setApprovedViolation] = useState(null); // just approved -> prefill parent message
+  // admin/supervisor land on the contact panel first; the "report a
+  // violation" form stays folded behind a button unless they ask for it.
+  // A recorder came here specifically to report, so it starts open for them.
+  const [showReportForm, setShowReportForm] = useState(false);
   const [editingActionId, setEditingActionId] = useState(null);
   const [actionDraft, setActionDraft] = useState('');
   const [savingAction, setSavingAction] = useState(false);
@@ -300,6 +304,7 @@ export default function Violations() {
     setAffectedStudent(null);
     setTeacherAction('');
     setSupervisorAction('');
+    setShowReportForm(isRecorder);
   };
 
   const selectFromAgg = (r) => {
@@ -649,7 +654,16 @@ export default function Violations() {
                   <button onClick={reset} className={`text-xs font-medium ${dark ? 'text-royal-light' : 'text-royal'}`}>{t.backToResults}</button>
                 </div>
 
-                {canReport && (
+                {canReport && !isRecorder && !showReportForm && (
+                  <button
+                    onClick={() => setShowReportForm(true)}
+                    className={`text-xs font-medium px-3 py-2 rounded-lg border mb-2 ${dark ? 'border-slate-700 text-slate-200 hover:bg-white/5' : 'border-slate-200 text-slate-600 hover:bg-slate-50'}`}
+                  >
+                    {t.addViolationDetailsBtn}
+                  </button>
+                )}
+
+                {canReport && showReportForm && (
                   <div className="space-y-3 mb-2">
                     {isRecorder && (
                       <p className={`text-xs rounded-lg px-3 py-2 ${dark ? 'bg-amber-500/10 text-amber-200' : 'bg-amber-50 text-amber-800'}`}>{t.reportGoesToSupervisor}</p>

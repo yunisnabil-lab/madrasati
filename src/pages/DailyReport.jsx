@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Printer, Download, BarChart3, X } from 'lucide-react';
-import { BarChart, Bar, XAxis, YAxis, Cell, LabelList, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarList } from '../components/Charts';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -417,23 +417,7 @@ export default function DailyReport() {
                         <BarChart3 size={15} className={dark ? 'text-slate-200' : 'text-slate-500'} />
                         <h3 className="text-sm font-semibold">{t.chartTitle}</h3>
                       </div>
-                      <ResponsiveContainer width="100%" height={200}>
-                        <BarChart data={chartData} layout="vertical" margin={{ top: 0, right: 24, bottom: 0, left: 0 }}>
-                          <XAxis type="number" hide />
-                          <YAxis
-                            type="category" dataKey="name" width={80} tickLine={false} axisLine={false}
-                            tick={{ fontSize: 12, fill: dark ? '#94a3b8' : '#64748b' }}
-                          />
-                          <Tooltip
-                            contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                            formatter={(value) => [value, '']}
-                          />
-                          <Bar dataKey="value" radius={[4, 4, 4, 4]} barSize={18}>
-                            {chartData.map((d) => <Cell key={d.key} fill={d.color} />)}
-                            <LabelList dataKey="value" position="right" style={{ fontSize: 12, fontWeight: 600, fill: dark ? '#e2e8f0' : '#334155' }} />
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
+                      <BarList data={chartData} dark={dark} />
                     </div>
                   </div>
                 )}

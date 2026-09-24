@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, GraduationCap, School as SchoolIcon, Clock, AlertTriangle, Loader2 } from 'lucide-react';
-import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
+import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, LabelList } from 'recharts';
 import { useApp } from '../lib/AppContext';
 import { useDialogs } from '../lib/Dialogs';
 import { sectionLabel as fmtSectionLabel } from '../lib/sections';
@@ -272,37 +272,43 @@ export default function Dashboard() {
               {chartLoading ? (
                 <div className={skeleton(dark, 'h-[280px] w-full')} />
               ) : gradeData.length > 0 ? (
-                <ResponsiveContainer width="100%" height={280}>
-                  {chartType === 'bar' ? (
-                    <BarChart data={gradeData} margin={{ left: -20, right: 10, top: 5 }}>
-                      <defs>
-                        <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#2563EB" />
-                          <stop offset="100%" stopColor="#BFDBFE" />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke={dark ? '#33415560' : '#EEF2F7'} vertical={false} />
-                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: dark ? '#64748B' : '#94A3B8' }} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0, 100]} tickFormatter={(v) => v + '%'} tick={{ fontSize: 11, fill: dark ? '#64748B' : '#94A3B8' }} axisLine={false} tickLine={false} width={32} />
-                      <Tooltip content={<CustomTooltip dark={dark} />} cursor={{ fill: dark ? '#ffffff08' : '#00000005' }} />
-                      <Bar dataKey="v" fill="url(#barGradient)" radius={[8, 8, 0, 0]} maxBarSize={46} />
-                    </BarChart>
-                  ) : (
-                    <AreaChart data={gradeData} margin={{ left: -20, right: 10, top: 5 }}>
-                      <defs>
-                        <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#2563EB" stopOpacity={0.35} />
-                          <stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke={dark ? '#33415560' : '#EEF2F7'} vertical={false} />
-                      <XAxis dataKey="name" tick={{ fontSize: 11, fill: dark ? '#64748B' : '#94A3B8' }} axisLine={false} tickLine={false} />
-                      <YAxis domain={[0, 100]} tickFormatter={(v) => v + '%'} tick={{ fontSize: 11, fill: dark ? '#64748B' : '#94A3B8' }} axisLine={false} tickLine={false} width={32} />
-                      <Tooltip content={<CustomTooltip dark={dark} />} />
-                      <Area type="monotone" dataKey="v" stroke="#2563EB" strokeWidth={2.5} fill="url(#areaGradient)" />
-                    </AreaChart>
-                  )}
-                </ResponsiveContainer>
+                <div dir="ltr">
+                  <ResponsiveContainer width="100%" height={300}>
+                    {chartType === 'bar' ? (
+                      <BarChart data={gradeData} margin={{ left: 0, right: 8, top: 26, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#2563EB" />
+                            <stop offset="100%" stopColor="#93C5FD" />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke={dark ? '#47556980' : '#E2E8F0'} vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 12, fill: dark ? '#CBD5E1' : '#475569' }} axisLine={false} tickLine={false} />
+                        <YAxis domain={[0, (max) => Math.max(10, Math.ceil((max * 1.3) / 5) * 5)]} allowDecimals={false} tickFormatter={(v) => v + '%'} tick={{ fontSize: 12, fill: dark ? '#CBD5E1' : '#475569' }} axisLine={false} tickLine={false} width={44} />
+                        <Tooltip content={<CustomTooltip dark={dark} />} cursor={{ fill: dark ? '#ffffff10' : '#0000000a' }} />
+                        <Bar dataKey="v" fill="url(#barGradient)" radius={[8, 8, 0, 0]} maxBarSize={48}>
+                          <LabelList dataKey="v" position="top" formatter={(v) => v + '%'} style={{ fontSize: 13, fontWeight: 700, fill: dark ? '#F1F5F9' : '#0F172A' }} />
+                        </Bar>
+                      </BarChart>
+                    ) : (
+                      <AreaChart data={gradeData} margin={{ left: 0, right: 16, top: 26, bottom: 0 }}>
+                        <defs>
+                          <linearGradient id="areaGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#2563EB" stopOpacity={0.35} />
+                            <stop offset="100%" stopColor="#2563EB" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke={dark ? '#47556980' : '#E2E8F0'} vertical={false} />
+                        <XAxis dataKey="name" tick={{ fontSize: 12, fill: dark ? '#CBD5E1' : '#475569' }} axisLine={false} tickLine={false} />
+                        <YAxis domain={[0, (max) => Math.max(10, Math.ceil((max * 1.3) / 5) * 5)]} allowDecimals={false} tickFormatter={(v) => v + '%'} tick={{ fontSize: 12, fill: dark ? '#CBD5E1' : '#475569' }} axisLine={false} tickLine={false} width={44} />
+                        <Tooltip content={<CustomTooltip dark={dark} />} />
+                        <Area type="monotone" dataKey="v" stroke="#2563EB" strokeWidth={2.5} fill="url(#areaGradient)" dot={{ r: 4, fill: '#2563EB', strokeWidth: 0 }} activeDot={{ r: 6 }}>
+                          <LabelList dataKey="v" position="top" offset={10} formatter={(v) => v + '%'} style={{ fontSize: 13, fontWeight: 700, fill: dark ? '#F1F5F9' : '#0F172A' }} />
+                        </Area>
+                      </AreaChart>
+                    )}
+                  </ResponsiveContainer>
+                </div>
               ) : (
                 <div className={`text-sm text-center py-16 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>—</div>
               )}

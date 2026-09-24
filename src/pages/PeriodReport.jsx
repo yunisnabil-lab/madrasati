@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Printer, Download, Flag, PieChart as PieIcon } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { DonutChart } from '../components/Charts';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -286,30 +286,16 @@ export default function PeriodReport() {
                     <PieIcon size={15} className={dark ? 'text-slate-200' : 'text-slate-500'} />
                     <h3 className="text-sm font-semibold">{t.chartTitle}</h3>
                   </div>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie
-                        data={[
-                          { name: t.statusPresent, value: rows.reduce((s, r) => s + r.present, 0), color: '#05cd99' },
-                          { name: t.statusAbsent, value: rows.reduce((s, r) => s + r.absent, 0), color: '#ee5d50' },
-                          { name: t.statusLate, value: rows.reduce((s, r) => s + r.lateDays, 0), color: '#ffb800' },
-                          { name: t.statusExcused, value: rows.reduce((s, r) => s + r.excused, 0), color: '#8b5cf6' },
-                        ].filter((d) => d.value > 0)}
-                        dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2}
-                        label={({ name, value }) => `${name}: ${value}`}
-                        labelLine={false}
-                      >
-                        {[
-                          { name: t.statusPresent, value: rows.reduce((s, r) => s + r.present, 0), color: '#05cd99' },
-                          { name: t.statusAbsent, value: rows.reduce((s, r) => s + r.absent, 0), color: '#ee5d50' },
-                          { name: t.statusLate, value: rows.reduce((s, r) => s + r.lateDays, 0), color: '#ffb800' },
-                          { name: t.statusExcused, value: rows.reduce((s, r) => s + r.excused, 0), color: '#8b5cf6' },
-                        ].filter((d) => d.value > 0).map((d) => <Cell key={d.name} fill={d.color} />)}
-                      </Pie>
-                      <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <DonutChart
+                    dark={dark}
+                    totalLabel={t.chartTotal}
+                    data={[
+                      { name: t.statusPresent, value: rows.reduce((n, r) => n + r.present, 0), color: '#05cd99' },
+                      { name: t.statusAbsent, value: rows.reduce((n, r) => n + r.absent, 0), color: '#ee5d50' },
+                      { name: t.statusLate, value: rows.reduce((n, r) => n + r.lateDays, 0), color: '#ffb800' },
+                      { name: t.statusExcused, value: rows.reduce((n, r) => n + r.excused, 0), color: '#8b5cf6' },
+                    ]}
+                  />
                 </div>
               )}
 

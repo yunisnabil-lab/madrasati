@@ -1,7 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { Printer, Download, Flag, PieChart as PieIcon, AlertTriangle, Clock3, Layers, Users } from 'lucide-react';
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { DonutChart } from '../components/Charts';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -267,20 +267,7 @@ export default function SupervisorReport() {
                     <PieIcon size={15} className={dark ? 'text-slate-200' : 'text-slate-500'} />
                     <h3 className="text-sm font-semibold">{t.violationTypeBreakdownTitle}</h3>
                   </div>
-                  <ResponsiveContainer width="100%" height={220}>
-                    <PieChart>
-                      <Pie
-                        data={pieData}
-                        dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={2}
-                        label={({ name, value }) => `${name}: ${value}`}
-                        labelLine={false}
-                      >
-                        {pieData.map((d) => <Cell key={d.name} fill={d.color} />)}
-                      </Pie>
-                      <Tooltip />
-                      <Legend wrapperStyle={{ fontSize: 12 }} />
-                    </PieChart>
-                  </ResponsiveContainer>
+                  <DonutChart data={pieData} dark={dark} totalLabel={t.chartTotal} />
                 </div>
               )}
 

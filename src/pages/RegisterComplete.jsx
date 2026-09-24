@@ -33,6 +33,7 @@ export default function RegisterComplete() {
       const { data: school } = await supabase.from('schools').select('id').limit(1).maybeSingle();
       if (!school) { if (!cancelled) setStatus('error'); return; }
 
+      const meta = user.user_metadata || {};
       const { error } = await supabase.from('staff').insert({
         id: user.id,
         school_id: school.id,
@@ -40,8 +41,12 @@ export default function RegisterComplete() {
         email: user.email,
         status: 'pending',
         role: null,
-        cycle: (user.user_metadata && user.user_metadata.cycle) || null,
-        subject: (user.user_metadata && user.user_metadata.subject) || null,
+        // lists — a teacher can pick several cycles and several subjects;
+        // the single columns keep the first one for older code paths
+        cycles: meta.cycles || (meta.cycle ? [meta.cycle] : []),
+        subjects: meta.subjects || (meta.subject ? [meta.subject] : []),
+        cycle: (meta.cycles && meta.cycles[0]) || meta.cycle || null,
+        subject: (meta.subjects && meta.subjects[0]) || meta.subject || null,
       });
 
       if (!error) await fetchStaff(user.id);

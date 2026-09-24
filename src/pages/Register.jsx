@@ -6,6 +6,7 @@ import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { CYCLE_KEYS, SUBJECT_KEYS } from '../lib/i18n';
 import AuthShell from '../components/AuthShell';
+import ChipMultiSelect from '../components/ChipMultiSelect';
 
 export default function Register() {
   const { t } = useApp();
@@ -13,8 +14,11 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [cycle, setCycle] = useState('');
-  const [subject, setSubject] = useState('');
+  // teachers pick one or more cycles and one or more subjects; supervisors /
+  // administrative staff only pick cycles — they don't teach a subject
+  const [isTeacher, setIsTeacher] = useState(true);
+  const [cycles, setCycles] = useState([]);
+  const [subjects, setSubjects] = useState([]);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -24,7 +28,7 @@ export default function Register() {
     e.preventDefault();
     setError('');
 
-    if (!fullName.trim() || !email.trim() || !password || !cycle || !subject) { setError(t.errRequired); return; }
+    if (!fullName.trim() || !email.trim() || !password || cycles.length === 0 || (isTeacher && subjects.length === 0)) { setError(t.errRequired); return; }
     if (password.length < 8) { setError(t.errPasswordShort); return; }
     if (password !== confirmPassword) { setError(t.errPasswordMismatch); return; }
 
@@ -33,7 +37,7 @@ export default function Register() {
       email: email.trim(),
       password,
       options: {
-        data: { full_name: fullName.trim(), cycle, subject },
+        data: { full_name: fullName.trim(), cycles, subjects: isTeacher ? subjects : [] },
         emailRedirectTo: window.location.origin + '/register-complete',
       },
     });
@@ -117,30 +121,42 @@ export default function Register() {
                 className="w-full rounded-lg border border-slate-300 px-3.5 py-3 text-sm outline-none focus:border-royal focus:ring-4 focus:ring-royal/10 transition"
               />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label htmlFor="regCycle" className="block text-sm font-medium text-slate-700 mb-2">{t.cycle}</label>
-                <select
-                  id="regCycle"
-                  value={cycle} onChange={(e) => setCycle(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3.5 py-3 text-sm outline-none focus:border-royal focus:ring-4 focus:ring-royal/10 transition bg-white"
-                >
-                  <option value="">{t.chooseCycle}</option>
-                  {CYCLE_KEYS.map((k) => <option key={k} value={k}>{t.cycleNames[k]}</option>)}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="regSubject" className="block text-sm font-medium text-slate-700 mb-2">{t.subject}</label>
-                <select
-                  id="regSubject"
-                  value={subject} onChange={(e) => setSubject(e.target.value)}
-                  className="w-full rounded-lg border border-slate-300 px-3.5 py-3 text-sm outline-none focus:border-royal focus:ring-4 focus:ring-royal/10 transition bg-white"
-                >
-                  <option value="">{t.chooseSubject}</option>
-                  {SUBJECT_KEYS.map((k) => <option key={k} value={k}>{t.subjectNames[k]}</option>)}
-                </select>
+            <div>
+              <span className="block text-sm font-medium text-slate-700 mb-2">{t.workTypeLabel}</span>
+              <div className="grid grid-cols-2 gap-2">
+                {[true, false].map((teacher) => (
+                  <button
+                    key={String(teacher)}
+                    type="button"
+                    aria-pressed={isTeacher === teacher}
+                    onClick={() => setIsTeacher(teacher)}
+                    className={`rounded-lg border px-3 py-2.5 text-sm font-medium transition ${
+                      isTeacher === teacher ? 'border-royal bg-royal/5 text-royal' : 'border-slate-300 text-slate-600 hover:bg-slate-50'
+                    }`}
+                  >
+                    {teacher ? t.workTypeTeacher : t.workTypeOther}
+                  </button>
+                ))}
               </div>
             </div>
+            <div>
+              <span className="block text-sm font-medium text-slate-700 mb-2">{t.cyclesLabel}</span>
+              <ChipMultiSelect
+                options={CYCLE_KEYS.map((k) => ({ value: k, label: t.cycleNames[k] }))}
+                value={cycles}
+                onChange={setCycles}
+              />
+            </div>
+            {isTeacher && (
+              <div>
+                <span className="block text-sm font-medium text-slate-700 mb-2">{t.subjectsLabel}</span>
+                <ChipMultiSelect
+                  options={SUBJECT_KEYS.map((k) => ({ value: k, label: t.subjectNames[k] }))}
+                  value={subjects}
+                  onChange={setSubjects}
+                />
+              </div>
+            )}
             <p className="text-xs text-slate-400 -mt-2">{t.cycleSubjectLockedNote}</p>
             <button
               type="submit" disabled={loading}

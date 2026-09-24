@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sortSections, sectionLabel as fmtSectionLabel } from '../lib/sections';
 import { normalizeArabic } from '../lib/search';
+import { staffCycles, shownSubjects, namesOf } from '../lib/staffInfo';
 
 export default function StaffAssignments() {
   const { t, lang, dark, staff } = useApp();
@@ -32,7 +33,7 @@ export default function StaffAssignments() {
       // supervisors are now assignable to sections too — they take
       // attendance/view reports scoped to their assigned sections, same as
       // a recorder (teacher).
-      supabase.from('staff').select('id, full_name, email, cycle, subject').in('role', ['recorder', 'supervisor']).eq('status', 'approved').order('full_name'),
+      supabase.from('staff').select('*').in('role', ['recorder', 'supervisor']).eq('status', 'approved').order('full_name'),
       supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number'),
       supabase.from('staff_sections').select('staff_id, section_id'),
     ]);
@@ -46,8 +47,8 @@ export default function StaffAssignments() {
 
   const sectionCountFor = (teacherId) => assignments.filter((a) => a.staff_id === teacherId).length;
 
-  const subjectsInUse = useMemo(() => [...new Set(teachers.map((tc) => tc.subject).filter(Boolean))], [teachers]);
-  const cyclesInUse = useMemo(() => [...new Set(teachers.map((tc) => tc.cycle).filter(Boolean))], [teachers]);
+  const subjectsInUse = useMemo(() => [...new Set(teachers.flatMap((tc) => shownSubjects(tc)))], [teachers]);
+  const cyclesInUse = useMemo(() => [...new Set(teachers.flatMap((tc) => staffCycles(tc)))], [teachers]);
 
   const filteredTeachers = useMemo(() => {
     const q = normalizeArabic(query.trim().toLowerCase());
@@ -56,8 +57,8 @@ export default function StaffAssignments() {
         const hay = normalizeArabic(`${tc.full_name || ''} ${tc.email || ''}`.toLowerCase());
         if (!hay.includes(q)) return false;
       }
-      if (subjectFilter && tc.subject !== subjectFilter) return false;
-      if (cycleFilter && tc.cycle !== cycleFilter) return false;
+      if (subjectFilter && !shownSubjects(tc).includes(subjectFilter)) return false;
+      if (cycleFilter && !staffCycles(tc).includes(cycleFilter)) return false;
       if (sectionFilter) {
         const has = assignments.some((a) => a.staff_id === tc.id && a.section_id === sectionFilter);
         if (!has) return false;
@@ -175,7 +176,12 @@ export default function StaffAssignments() {
                   <li key={tch.id} className="flex items-center justify-between gap-3 px-4 py-3.5">
                     <div className="min-w-0">
                       <div className="text-sm font-semibold truncate">{tch.full_name}</div>
-                      <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{tch.email}</div>
+                      <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{tch.email}</div>
+                      {(staffCycles(tch).length > 0 || shownSubjects(tch).length > 0) && (
+                        <div className={`text-[11px] mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
+                          {[namesOf(staffCycles(tch), t.cycleNames, lang), namesOf(shownSubjects(tch), t.subjectNames, lang)].filter(Boolean).join(' · ')}
+                        </div>
+                      )}
                     </div>
                     <button
                       onClick={() => openEdit(tch)}

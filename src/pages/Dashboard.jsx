@@ -9,6 +9,10 @@ import { STATUS_META } from '../lib/status';
 import { cardFloating, skeleton } from '../lib/theme';
 import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { CYCLE_KEYS, SUBJECT_KEYS } from '../lib/i18n';
+import { staffCycles, staffSubjects, shownSubjects, namesOf } from '../lib/staffInfo';
+import { fetchAllRows } from '../lib/fetchAll';
+import ChipMultiSelect from '../components/ChipMultiSelect';
+import SectionChecklistModal from '../components/SectionChecklistModal';
 
 function initials(name) {
   const parts = (name || '').trim().split(/\s+/);
@@ -52,6 +56,10 @@ export default function Dashboard() {
   const [requestsLoading, setRequestsLoading] = useState(true);
   const [chartType, setChartType] = useState('bar');
   const [roleChoice, setRoleChoice] = useState({});
+  // sections picked for a pending teacher/supervisor while approving them
+  const [allSections, setAllSections] = useState([]);
+  const [sectionChoice, setSectionChoice] = useState({}); // staff id -> [section ids]
+  const [sectionModalFor, setSectionModalFor] = useState(null); // pending request row
 
   const [overviewOpen, setOverviewOpen] = useState(false);
   const [sectionBreakdown, setSectionBreakdown] = useState(null); // null = not loaded yet
@@ -125,12 +133,16 @@ export default function Dashboard() {
   const loadRequests = useCallback(async () => {
     if (!canManageStaff) { setRequestsLoading(false); return; }
     setRequestsLoading(true);
-    const { data } = await supabase
-      .from('staff')
-      .select('id, full_name, email, created_at, cycle, subject')
-      .eq('status', 'pending')
-      .order('created_at', { ascending: false });
+    const [{ data }, { data: secs }] = await Promise.all([
+      supabase
+        .from('staff')
+        .select('*')
+        .eq('status', 'pending')
+        .order('created_at', { ascending: false }),
+      supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number'),
+    ]);
     setRequests(data || []);
+    setAllSections(secs || []);
     setRequestsLoading(false);
   }, [canManageStaff]);
 
@@ -145,10 +157,12 @@ export default function Dashboard() {
   const loadSectionBreakdown = useCallback(async () => {
     if (sectionBreakdown !== null) return;
     setSectionBreakdownLoading(true);
-    const { data } = await supabase
+    // paged: a school with more than 1000 active students was undercounted
+    const { data } = await fetchAllRows(() => supabase
       .from('students')
-      .select('section_id, sections(id, grade_name, grade_name_en, section_name, stream, section_number, grade_order)')
-      .eq('is_active', true);
+      .select('id, section_id, sections(id, grade_name, grade_name_en, section_name, stream, section_number, grade_order)')
+      .eq('is_active', true)
+      .order('id'));
     const counts = new Map(); // section_id -> { section, count }
     (data || []).forEach((s) => {
       if (!s.section_id) return;
@@ -188,6 +202,20 @@ export default function Dashboard() {
     }
     const { error } = await supabase.from('staff').update({ status: 'approved', role }).eq('id', id);
     if (error) { window.alert(lang === 'ar' ? 'تعذّرت الموافقة، حاول مرة أخرى.' : 'Could not approve. Please try again.'); return; }
+    // link the sections chosen while approving, so a teacher can start
+    // recording attendance right away instead of a second trip to
+    // "Staff assignments"
+    const chosen = sectionChoice[id] || [];
+    if ((role === 'recorder' || role === 'supervisor') && chosen.length) {
+      const { error: asgErr } = await supabase.from('staff_sections').insert(
+        chosen.map((section_id) => ({ school_id: staff.school_id, staff_id: id, section_id }))
+      );
+      if (asgErr) {
+        window.alert(lang === 'ar'
+          ? 'تمت الموافقة، لكن تعذّر ربط الشعب. اربطها من صفحة "ربط المعلمين بالصفوف".'
+          : 'Approved, but the sections could not be linked. Link them from "Staff assignments".');
+      }
+    }
     setRequests((r) => r.filter((row) => row.id !== id));
     loadStats();
   }
@@ -476,9 +504,9 @@ export default function Dashboard() {
                               </div>
                               <div className="min-w-0">
                                 <div className={`font-medium ${dark ? 'text-slate-100' : 'text-slate-800'}`}>{r.full_name}</div>
-                                {(r.cycle || r.subject) && (
-                                  <div className={`text-[11px] mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
-                                    {[r.cycle && t.cycleNames[r.cycle], r.subject && t.subjectNames[r.subject]].filter(Boolean).join(' · ')}
+                                {(staffCycles(r).length > 0 || staffSubjects(r).length > 0) && (
+                                  <div className={`text-[11px] mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
+                                    {[namesOf(staffCycles(r), t.cycleNames, lang), namesOf(staffSubjects(r), t.subjectNames, lang)].filter(Boolean).join(' · ')}
                                   </div>
                                 )}
                               </div>
@@ -494,7 +522,7 @@ export default function Dashboard() {
                             </span>
                           </td>
                           <td className="py-3.5">
-                            <div className="flex items-center gap-2 justify-end">
+                            <div className="flex flex-wrap items-center gap-2 justify-end">
                               <select
                                 value={roleChoice[r.id] || 'recorder'}
                                 onChange={(e) => setRoleChoice((prev) => ({ ...prev, [r.id]: e.target.value }))}
@@ -505,6 +533,14 @@ export default function Dashboard() {
                                 <option value="edari">{t.roleNames.edari}</option>
                                 <option value="admin">{t.roleNames.admin}</option>
                               </select>
+                              {['recorder', 'supervisor'].includes(roleChoice[r.id] || 'recorder') && (
+                                <button
+                                  onClick={() => setSectionModalFor(r)}
+                                  className={`rounded-full px-3.5 py-2 text-xs font-semibold border whitespace-nowrap ${dark ? 'border-slate-700 text-slate-200 hover:bg-white/5' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}
+                                >
+                                  {t.chooseSectionsBtn.replace('{n}', (sectionChoice[r.id] || []).length)}
+                                </button>
+                              )}
                               <button
                                 onClick={() => approve(r.id, roleChoice[r.id] || 'recorder')}
                                 className="rounded-full bg-amber-500 px-5 py-2 text-sm font-semibold text-white shadow-sm transition-all duration-200 ease-in-out hover:bg-amber-600 hover:-translate-y-0.5"
@@ -531,6 +567,20 @@ export default function Dashboard() {
             </motion.div>
           )}
 
+          {sectionModalFor && (
+            <SectionChecklistModal
+              title={sectionModalFor.full_name}
+              hint={t.approveSectionsHint}
+              sections={allSections}
+              initial={sectionChoice[sectionModalFor.id] || []}
+              cycles={staffCycles(sectionModalFor)}
+              t={t}
+              dark={dark}
+              onClose={() => setSectionModalFor(null)}
+              onDone={(ids) => { setSectionChoice((m) => ({ ...m, [sectionModalFor.id]: ids })); setSectionModalFor(null); }}
+            />
+          )}
+
           {canManageStaff && <StaffManagement t={t} lang={lang} dark={dark} currentStaffId={staff.id} schoolId={staff.school_id} />}
 
           {isAdmin && <ResetAttendanceZone t={t} lang={lang} dark={dark} school_id={staff.school_id} />}
@@ -548,7 +598,7 @@ function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
   const load = useCallback(async () => {
     const { data } = await supabase
       .from('staff')
-      .select('id, full_name, email, role, status, cycle, subject')
+      .select('*')
       .in('status', ['approved', 'revoked'])
       .order('full_name', { ascending: true });
     setStaffList(data || []);
@@ -579,19 +629,23 @@ function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
     load();
   };
 
-  const changeCycle = async (id, cycle) => {
-    setSavingId(id);
-    const { error } = await supabase.from('staff').update({ cycle: cycle || null }).eq('id', id);
-    setSavingId(null);
-    if (error) { console.error('changeCycle error:', error); staffSaveError(); return; }
-    load();
-  };
+  // cycles/subjects editor for one staff member (lists — a teacher can have
+  // several of each). Subjects are only edited for teachers; for other roles
+  // they're kept untouched (hidden) in case the person goes back to teaching.
+  const [editing, setEditing] = useState(null); // { id, role, cycles, subjects }
 
-  const changeSubject = async (id, subject) => {
-    setSavingId(id);
-    const { error } = await supabase.from('staff').update({ subject: subject || null }).eq('id', id);
+  const saveCyclesSubjects = async () => {
+    if (!editing) return;
+    setSavingId(editing.id);
+    const payload = { cycles: editing.cycles, cycle: editing.cycles[0] || null };
+    if (editing.role === 'recorder') {
+      payload.subjects = editing.subjects;
+      payload.subject = editing.subjects[0] || null;
+    }
+    const { error } = await supabase.from('staff').update(payload).eq('id', editing.id);
     setSavingId(null);
-    if (error) { console.error('changeSubject error:', error); staffSaveError(); return; }
+    if (error) { console.error('saveCyclesSubjects error:', error); staffSaveError(); return; }
+    setEditing(null);
     load();
   };
 
@@ -651,25 +705,16 @@ function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
                     <option value="admin">{t.roleNames.admin}</option>
                   </select>
 
-                  <select
-                    value={s.cycle || ''}
-                    onChange={(e) => changeCycle(s.id, e.target.value)}
+                  <button
+                    onClick={() => setEditing({ id: s.id, name: s.full_name, role: s.role, cycles: staffCycles(s), subjects: staffSubjects(s) })}
                     disabled={savingId === s.id}
-                    className={`text-xs rounded-lg px-2.5 py-2 border outline-none disabled:opacity-50 ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
+                    className={`text-xs rounded-lg px-2.5 py-2 border text-start max-w-[260px] disabled:opacity-50 ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
                   >
-                    <option value="">{t.chooseCycle}</option>
-                    {CYCLE_KEYS.map((k) => <option key={k} value={k}>{t.cycleNames[k]}</option>)}
-                  </select>
-
-                  <select
-                    value={s.subject || ''}
-                    onChange={(e) => changeSubject(s.id, e.target.value)}
-                    disabled={savingId === s.id}
-                    className={`text-xs rounded-lg px-2.5 py-2 border outline-none disabled:opacity-50 ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
-                  >
-                    <option value="">{t.chooseSubject}</option>
-                    {SUBJECT_KEYS.map((k) => <option key={k} value={k}>{t.subjectNames[k]}</option>)}
-                  </select>
+                    {[
+                      staffCycles(s).length ? namesOf(staffCycles(s), t.cycleNames, lang) : t.noCyclesChosen,
+                      shownSubjects(s).length ? namesOf(shownSubjects(s), t.subjectNames, lang) : null,
+                    ].filter(Boolean).join(' · ')}
+                  </button>
 
                   {s.id !== currentStaffId && (
                     confirmRevokeId === s.id ? (
@@ -703,6 +748,42 @@ function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
             </li>
           ))}
         </ul>
+      )}
+
+      {editing && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <div className={`w-full max-w-md rounded-2xl p-5 space-y-4 ${dark ? 'bg-navy-soft border border-slate-700' : 'bg-white border border-slate-100'}`}>
+            <h3 className="text-base font-semibold">{editing.name} — {t.editCyclesSubjects}</h3>
+            <div>
+              <div className={`text-xs font-medium mb-2 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{t.cyclesShort}</div>
+              <ChipMultiSelect
+                dark={dark}
+                options={CYCLE_KEYS.map((k) => ({ value: k, label: t.cycleNames[k] }))}
+                value={editing.cycles}
+                onChange={(v) => setEditing((e) => ({ ...e, cycles: v }))}
+              />
+            </div>
+            {editing.role === 'recorder' && (
+              <div>
+                <div className={`text-xs font-medium mb-2 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{t.subjectsShort}</div>
+                <ChipMultiSelect
+                  dark={dark}
+                  options={SUBJECT_KEYS.map((k) => ({ value: k, label: t.subjectNames[k] }))}
+                  value={editing.subjects}
+                  onChange={(v) => setEditing((e) => ({ ...e, subjects: v }))}
+                />
+              </div>
+            )}
+            <div className="flex justify-end gap-2 pt-1">
+              <button onClick={() => setEditing(null)} className={`text-sm font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                {t.cancel}
+              </button>
+              <button onClick={saveCyclesSubjects} disabled={savingId === editing.id} className="flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-lg bg-royal hover:bg-royal-light text-white disabled:opacity-60">
+                {savingId === editing.id && <Loader2 size={14} className="animate-spin" />} {t.save}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

@@ -8,6 +8,7 @@ import { matchesStudentSearch } from '../lib/search';
 import { fetchAllRows } from '../lib/fetchAll';
 import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
 import { VIOLATION_TYPE_KEYS } from '../lib/i18n';
+import { shownSubjects, namesOf } from '../lib/staffInfo';
 import SectionPicker from '../components/SectionPicker';
 import ContactParentPanel from '../components/ContactParentPanel';
 
@@ -655,8 +656,8 @@ export default function Violations() {
                     )}
                     <div className={`text-xs rounded-lg px-3 py-2 flex flex-wrap gap-x-4 gap-y-1 ${dark ? 'bg-white/5 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
                       <span>{t.violationTeacherNameLabel}: <span className="font-medium">{staff.full_name}</span></span>
-                      {staff.subject && (
-                        <span>{t.subject}: <span className="font-medium">{t.subjectNames[staff.subject] || staff.subject}</span></span>
+                      {shownSubjects(staff).length > 0 && (
+                        <span>{t.subjectsShort}: <span className="font-medium">{namesOf(shownSubjects(staff), t.subjectNames, lang)}</span></span>
                       )}
                       <span>{t.violationDayLabel}: <span className="font-medium">{dayName(date)}</span></span>
                     </div>

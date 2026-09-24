@@ -49,7 +49,9 @@ export function AppProvider({ children }) {
     setStaffLoading(true);
     const { data } = await supabase
       .from('staff')
-      .select('id, full_name, role, status, school_id, avatar_url, email, cycle, subject')
+      // '*' so newer columns (cycles, subjects) load when present without
+      // breaking sign-in on a database that doesn't have them yet
+      .select('*')
       .eq('id', userId)
       .maybeSingle();
     setStaff(data || null);

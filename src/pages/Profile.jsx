@@ -7,6 +7,7 @@ import {
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
+import { staffCycles, shownSubjects, namesOf } from '../lib/staffInfo';
 
 function initials(name) {
   const parts = (name || '').trim().split(/\s+/);
@@ -385,16 +386,18 @@ export default function Profile() {
             </div>
           </div>
 
-          {(staff.cycle || staff.subject) && (
+          {(staffCycles(staff).length > 0 || shownSubjects(staff).length > 0) && (
             <div className={cardFloating(dark, 'p-5 mb-5 grid grid-cols-2 gap-4')}>
               <div>
-                <div className={`text-xs mb-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.cycle}</div>
-                <div className="text-sm font-semibold">{staff.cycle ? (t.cycleNames[staff.cycle] || staff.cycle) : '—'}</div>
+                <div className={`text-xs mb-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.cyclesShort}</div>
+                <div className="text-sm font-semibold">{staffCycles(staff).length ? namesOf(staffCycles(staff), t.cycleNames, lang) : '—'}</div>
               </div>
-              <div>
-                <div className={`text-xs mb-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.subject}</div>
-                <div className="text-sm font-semibold">{staff.subject ? (t.subjectNames[staff.subject] || staff.subject) : '—'}</div>
-              </div>
+              {staff.role === 'recorder' && (
+                <div>
+                  <div className={`text-xs mb-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.subjectsShort}</div>
+                  <div className="text-sm font-semibold">{shownSubjects(staff).length ? namesOf(shownSubjects(staff), t.subjectNames, lang) : '—'}</div>
+                </div>
+              )}
               <p className={`col-span-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.cycleSubjectLockedNote}</p>
             </div>
           )}

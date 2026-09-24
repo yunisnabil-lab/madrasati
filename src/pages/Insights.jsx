@@ -1,12 +1,14 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Check, MessageCircle, Download, ShieldAlert, Loader2 } from 'lucide-react';
+import { Check, MessageCircle, Download, ShieldAlert, Loader2, Printer } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { fetchAllRows } from '../lib/fetchAll';
 import { sortSections, sectionLabel as fmtSectionLabel } from '../lib/sections';
 import { exportXlsx } from '../lib/exportXlsx';
+import { printWithTitle, reportName, rangeLabel } from '../lib/print';
+import { PrintSheet, PrintHeading, PrintTable } from '../components/PrintSheet';
 import EmptyState from '../components/EmptyState';
 import BulkContactModal from '../components/BulkContactModal';
 
@@ -174,6 +176,81 @@ export default function Insights() {
     exportXlsx(`madrasati-monthly-${month}.xlsx`, rows, { lang, sheetName: month });
   };
 
+  // printed / PDF versions (components/PrintSheet.jsx)
+  const monthTitle = new Date(`${month}-01T00:00:00`).toLocaleDateString(lang === 'ar' ? 'ar-u-nu-latn' : 'en-GB', { month: 'long', year: 'numeric' });
+  const printTitle = tab === 'monthly'
+    ? reportName(t.monthlyReportTitle, monthTitle)
+    : reportName(t.warnTitle, rangeLabel(lang, from, to));
+  const nameOf = (s) => (lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar));
+  const printSheet = loading || missing ? null : tab === 'monthly' ? (
+    monthly.rows.length === 0 ? null : (
+      <PrintSheet
+        t={t} lang={lang}
+        title={`${t.monthlyReportTitle} — ${monthTitle}`}
+        stats={[
+          { label: t.mStudents, value: monthly.total.count, color: '#0f1b3c' },
+          { label: t.mAttendanceRate, value: monthly.total.rate == null ? '—' : `${monthly.total.rate.toFixed(1)}%`, color: '#05cd99' },
+          { label: t.mAbsentDays, value: monthly.total.absent, color: '#ee5d50' },
+          { label: t.mViolations, value: monthly.total.vio, color: '#ffb800' },
+          { label: t.mLateness, value: monthly.total.lat, color: '#8b5cf6' },
+        ]}
+        signatures={[t.signPreparedBy, t.signApprovedBy]}
+      >
+        <PrintHeading>{t.mBySection}</PrintHeading>
+        <PrintTable
+          columns={[
+            { label: t.colGradeSection, render: (r) => fmtSectionLabel(r.sec, lang) },
+            { label: t.mStudents, align: 'center', width: '52px', render: (r) => r.count },
+            { label: t.mAttendanceRate, align: 'center', width: '64px', render: (r) => (r.rate == null ? '—' : `${r.rate.toFixed(1)}%`) },
+            { label: t.mAbsentDays, align: 'center', width: '58px', render: (r) => r.absent },
+            { label: t.mLatePeriods, align: 'center', width: '58px', render: (r) => r.latePeriods },
+            { label: t.mViolations, align: 'center', width: '58px', render: (r) => r.vio },
+            { label: t.mLateness, align: 'center', width: '64px', render: (r) => r.lat },
+          ]}
+          groups={[{ rows: monthly.rows.map((r) => ({ ...r, id: r.sec.id })) }]}
+        />
+        {byType.length > 0 && (
+          <>
+            <PrintHeading>{t.mByType}</PrintHeading>
+            <PrintTable
+              columns={[
+                { label: t.colIncidentType, render: (r) => t.violationTypeNames[r.type] || r.type },
+                { label: t.mViolations, align: 'center', width: '80px', render: (r) => r.n },
+              ]}
+              groups={[{ rows: byType.map(([type, n]) => ({ id: type, type, n })) }]}
+            />
+          </>
+        )}
+      </PrintSheet>
+    )
+  ) : (
+    warnList.length === 0 ? null : (
+      <PrintSheet
+        t={t} lang={lang}
+        title={t.warnTitle}
+        meta={[[t.fromDate, from], [t.toDate, to], [t.warnThreshold, String(Math.max(1, Number(threshold) || 1))]]}
+        stats={[
+          { label: t.statStudentsCount, value: warnList.length, color: '#0f1b3c' },
+          { label: t.warnAbsent, value: warnList.reduce((n, s) => n + s.absent, 0), color: '#ee5d50' },
+          { label: t.warnViolations, value: warnList.reduce((n, s) => n + s.vio, 0), color: '#ffb800' },
+          { label: t.warnLate, value: warnList.reduce((n, s) => n + s.late, 0), color: '#8b5cf6' },
+        ]}
+        signatures={[t.signPreparedBy, t.signApprovedBy]}
+      >
+        <PrintTable
+          columns={[
+            { label: t.colStudentName, render: (s) => nameOf(s) },
+            { label: t.colSection, render: (s) => (sectionMap[s.section_id] ? fmtSectionLabel(sectionMap[s.section_id], lang) : '—') },
+            { label: t.warnAbsent, align: 'center', width: '56px', render: (s) => s.absent },
+            { label: t.warnViolations, align: 'center', width: '56px', render: (s) => s.vio },
+            { label: t.warnLate, align: 'center', width: '56px', render: (s) => s.late },
+          ]}
+          groups={[{ rows: warnList }]}
+        />
+      </PrintSheet>
+    )
+  );
+
   const inputCls = `w-full rounded-lg px-3 py-2.5 text-sm outline-none border font-en ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`;
   const lbl = `block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`;
   const muted = dark ? 'text-slate-300' : 'text-slate-500';
@@ -190,7 +267,7 @@ export default function Insights() {
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
-      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
+      <div className={`print:hidden min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-5xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-5">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.insightsTitle}</h1>
@@ -232,6 +309,13 @@ export default function Insights() {
                   >
                     <Download size={15} /> {t.monthExport}
                   </button>
+                  <button
+                    onClick={() => printWithTitle(printTitle)}
+                    disabled={loading || monthly.rows.length === 0}
+                    className={`ms-2 inline-flex items-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg border disabled:opacity-60 ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
+                  >
+                    <Printer size={15} /> {t.printThisTab}
+                  </button>
                 </div>
               </>
             )}
@@ -248,6 +332,15 @@ export default function Insights() {
                   <ShieldAlert size={16} className="text-amber-500" /> {t.warnTitle}
                   {!loading && <span className={`text-xs font-normal ${muted}`}>({warnList.length})</span>}
                 </h2>
+                <div className="flex items-center gap-2">
+                {warnList.length > 0 && (
+                  <button
+                    onClick={() => printWithTitle(printTitle)}
+                    className={`flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
+                  >
+                    <Printer size={13} /> {t.printThisTab}
+                  </button>
+                )}
                 {canContact && warnList.length > 0 && (
                   <button
                     onClick={() => setPicked(allPicked ? new Set() : new Set(warnList.map((s) => s.id)))}
@@ -256,6 +349,7 @@ export default function Insights() {
                     {allPicked ? t.recClearAll : t.recSelectAll}
                   </button>
                 )}
+                </div>
               </div>
               <p className={`text-xs mb-3 ${muted}`}>{t.warnHint.replace('{n}', Math.max(1, Number(threshold) || 1))}</p>
               {loading ? (
@@ -372,6 +466,8 @@ export default function Insights() {
           )}
         </main>
       </div>
+
+      {printSheet}
 
       {tab === 'warning' && canContact && picked.size > 0 && (
         <div className="no-print fixed bottom-16 md:bottom-4 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">

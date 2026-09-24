@@ -10,7 +10,8 @@ import { isSchoolDay } from '../lib/schoolCalendar';
 import { fetchAllRowsByIds } from '../lib/fetchAll';
 import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { exportXlsx } from '../lib/exportXlsx';
-import { printWithTitle } from '../lib/print';
+import { printWithTitle, reportName, rangeLabel, groupRowsBySection } from '../lib/print';
+import { PrintSheet, PrintTable, StatusPill } from '../components/PrintSheet';
 import SectionPicker from '../components/SectionPicker';
 
 function todayStr() {
@@ -215,11 +216,55 @@ export default function PeriodReport() {
     return stream ? `${gradeDisplay} — ${streamLabel(stream, lang)}` : gradeDisplay;
   }, [grade, stream, sectionSel, sections, lang]);
 
+  const fileTitle = reportName(t.periodReportTitle, scopeLabel, rangeLabel(lang, fromDate, toDate));
+
   const exportCsv = () => {
     const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGradeSection, t.colPresentDays, t.colAbsentDays, t.colLateDays, t.colExcusedDays, t.colNotRecordedDays, t.colRate, t.colFlag];
     const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.section_label, r.present, r.absent, r.lateDays, r.excused, r.notRecorded, r.rate == null ? '—' : `${r.rate}%`, r.flagged ? t.frequentAbsence : '']);
-    exportXlsx(`period-report-${scopeLabel}-${fromDate}-to-${toDate}.xlsx`, [header, ...body], { lang });
+    exportXlsx(`${fileTitle}.xlsx`, [header, ...body], { lang });
   };
+
+  // printed / PDF version (components/PrintSheet.jsx): grouped by section
+  const printSheet = (rows && printRows.length > 0) ? (() => {
+    const rated = printRows.filter((r) => r.rate != null);
+    const avg = rated.length ? Math.round(rated.reduce((n, r) => n + r.rate, 0) / rated.length) : null;
+    const sum = (k) => printRows.reduce((n, r) => n + r[k], 0);
+    return (
+      <PrintSheet
+        t={t} lang={lang}
+        title={`${t.periodReportTitle}${scopeLabel ? ' — ' + scopeLabel : ''}`}
+        meta={[
+          [t.fromDate, fromDate],
+          [t.toDate, toDate],
+          ...(printSelection.size > 0 ? [[t.printScopeLabel, t.selectedForPrint.replace('{n}', printSelection.size)]] : []),
+        ]}
+        stats={[
+          { label: t.statStudentsCount, value: printRows.length, color: '#0f1b3c' },
+          { label: t.statAvgRate, value: avg == null ? '—' : `${avg}%`, color: '#0f1b3c' },
+          { label: t.colPresentDays, value: sum('present'), color: '#05cd99' },
+          { label: t.colAbsentDays, value: sum('absent'), color: '#ee5d50' },
+          { label: t.colLateDays, value: sum('lateDays'), color: '#ffb800' },
+          { label: t.frequentAbsence, value: printRows.filter((r) => r.flagged).length, color: '#8b5cf6' },
+        ]}
+        signatures={[t.signPreparedBy, t.signApprovedBy]}
+      >
+        <PrintTable
+          columns={[
+            { label: t.colStudentNo, key: 'sis_no', width: '88px', className: 'font-en' },
+            { label: t.colStudentName, key: 'name' },
+            { label: t.colPresentDays, align: 'center', width: '46px', render: (r) => r.present },
+            { label: t.colAbsentDays, align: 'center', width: '46px', render: (r) => r.absent },
+            { label: t.colLateDays, align: 'center', width: '46px', render: (r) => r.lateDays },
+            { label: t.colExcusedDays, align: 'center', width: '46px', render: (r) => r.excused },
+            { label: t.colNotRecordedDays, align: 'center', width: '52px', render: (r) => r.notRecorded },
+            { label: t.colRate, align: 'center', width: '52px', render: (r) => (r.rate == null ? '—' : `${r.rate}%`) },
+            { label: t.colFlag, align: 'center', width: '84px', render: (r) => (r.flagged ? <StatusPill label={t.frequentAbsence} color="#ee5d50" /> : '') },
+          ]}
+          groups={groupRowsBySection(printRows, sections, (r) => r.section_id, (id, rs) => `${rs[0].section_label} (${rs.length})`)}
+        />
+      </PrintSheet>
+    );
+  })() : null;
 
   const inputCls = `w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${
     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
@@ -227,17 +272,11 @@ export default function PeriodReport() {
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
-      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
+      <div className={`print:hidden min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-6xl mx-auto px-5 py-7 print-area">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 no-print">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.periodReportTitle}</h1>
           </motion.div>
-
-          <div className="print-only mb-4 text-black">
-            <h1 className="text-lg font-bold">{t.school} — {t.schoolSub}</h1>
-            <h2 className="text-base font-semibold mt-0.5">{t.periodReportTitle}{scopeLabel ? ` — ${scopeLabel}` : ''}</h2>
-            <p className="text-sm mt-1">{t.fromDate}: {fromDate} — {t.toDate}: {toDate}{printSelection.size > 0 ? ` — ${t.selectedForPrint.replace('{n}', printSelection.size)}` : ''}</p>
-          </div>
 
           <div className={cardFloating(dark, 'p-4 mb-5 space-y-3 no-print')}>
             <SectionPicker
@@ -335,7 +374,7 @@ export default function PeriodReport() {
                   <button onClick={exportCsv} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                     <Download size={13} /> {t.exportCsv}
                   </button>
-                  <button onClick={() => printWithTitle(`${t.periodReportTitle} - ${scopeLabel} - ${fromDate} - ${toDate}`)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <button onClick={() => printWithTitle(fileTitle)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                     <Printer size={13} /> {printSelection.size > 0 ? t.printSelectedBtn.replace('{n}', printSelection.size) : t.printReport}
                   </button>
                 </div>
@@ -397,6 +436,8 @@ export default function PeriodReport() {
           )}
         </main>
       </div>
+
+      {printSheet}
     </div>
   );
 }

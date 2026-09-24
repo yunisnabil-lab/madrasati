@@ -8,7 +8,8 @@ import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionLabel as fmtSectionLabel } from '../lib/sections';
 import { fetchAllRows } from '../lib/fetchAll';
 import { exportXlsx } from '../lib/exportXlsx';
-import { printWithTitle } from '../lib/print';
+import { printWithTitle, reportName, rangeLabel } from '../lib/print';
+import { PrintSheet, PrintHeading, PrintTable, StatusPill } from '../components/PrintSheet';
 import { VIOLATION_TYPE_KEYS } from '../lib/i18n';
 
 const REPEAT_THRESHOLD = 3;
@@ -155,6 +156,8 @@ export default function SupervisorReport() {
   // filename so a filtered export isn't mistaken for the full report later.
   const typeFilterLabel = typeFilter === 'violation' ? t.incidentTypeViolation : typeFilter === 'lateness' ? t.incidentTypeLateness : t.filterAll;
 
+  const fileTitle = reportName(t.supervisorReportTitle, typeFilter === 'all' ? '' : typeFilterLabel, rangeLabel(lang, fromDate, toDate));
+
   const exportCsv = () => {
     const header = [t.colNo, t.colStudentName, t.colSection, 'Date', t.colIncidentType, t.colDetail, t.recordedBy];
     const body = filteredIncidents.map((r, i) => {
@@ -170,10 +173,60 @@ export default function SupervisorReport() {
         r.staffName || '—',
       ];
     });
-    exportXlsx(`supervisor-report-${typeFilterLabel}-${fromDate}-to-${toDate}.xlsx`, [header, ...body], { lang });
+    exportXlsx(`${fileTitle}.xlsx`, [header, ...body], { lang });
   };
 
   const fmtDate = (d) => (d ? new Date(d + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-u-nu-latn' : 'en-US') : '—');
+
+  // printed / PDF version (components/PrintSheet.jsx)
+  const nameOf = (s) => (s ? (lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar)) : '') || '—';
+  const printSheet = incidents ? (
+    <PrintSheet
+      t={t} lang={lang}
+      title={`${t.supervisorReportTitle} — ${typeFilterLabel}`}
+      meta={[[t.fromDate, fromDate], [t.toDate, toDate]]}
+      stats={[
+        { label: t.kpiTotalIncidents, value: incidents.length, color: '#0f1b3c' },
+        { label: t.kpiTotalViolations, value: violations.length, color: '#ee5d50' },
+        { label: t.kpiTotalLateness, value: lateness.length, color: '#ffb800' },
+        { label: t.kpiFlaggedStudents, value: repeatOffenders.length, color: '#8b5cf6' },
+      ]}
+      signatures={[t.signPreparedBy, t.signApprovedBy]}
+    >
+      {repeatOffenders.length > 0 && (
+        <>
+          <PrintHeading>{t.repeatOffendersTitle}</PrintHeading>
+          <PrintTable
+            columns={[
+              { label: t.colStudentName, render: (r) => nameOf(r.student) },
+              { label: t.colSection, render: (r) => (r.student.sections ? fmtSectionLabel(r.student.sections, lang) : '—') },
+              { label: t.kpiTotalIncidents, align: 'center', width: '70px', render: (r) => r.count },
+              { label: t.lastLateDate, width: '90px', className: 'font-en', render: (r) => r.lastDate },
+            ]}
+            groups={[{ rows: repeatOffenders }]}
+          />
+        </>
+      )}
+      <PrintHeading>{t.allIncidentsTitle} ({filteredIncidents.length})</PrintHeading>
+      {filteredIncidents.length === 0 ? (
+        <p>{t.noIncidentsInRange}</p>
+      ) : (
+        <PrintTable
+          columns={[
+            { label: t.violationDate, width: '72px', className: 'font-en', render: (r) => r.date },
+            { label: t.colStudentName, render: (r) => nameOf(r.student) },
+            { label: t.colSection, render: (r) => (r.student?.sections ? fmtSectionLabel(r.student.sections, lang) : '—') },
+            { label: t.colIncidentType, width: '66px', align: 'center', render: (r) => (
+              <StatusPill label={r.type === 'violation' ? t.incidentTypeViolation : t.incidentTypeLateness} color={r.type === 'violation' ? '#ee5d50' : '#ffb800'} />
+            ) },
+            { label: t.colDetail, render: (r) => (r.type === 'violation' ? `${r.detail}${r.description ? ' — ' + r.description : ''}` : (r.description || '—')) },
+            { label: t.recordedBy, render: (r) => r.staffName || '—' },
+          ]}
+          groups={[{ rows: filteredIncidents }]}
+        />
+      )}
+    </PrintSheet>
+  ) : null;
 
   const inputCls = `w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${
     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
@@ -191,17 +244,11 @@ export default function SupervisorReport() {
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
-      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
+      <div className={`print:hidden min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-6xl mx-auto px-5 py-7 print-area">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 no-print">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.supervisorReportTitle}</h1>
           </motion.div>
-
-          <div className="print-only mb-4 text-black">
-            <h1 className="text-lg font-bold">{t.school} — {t.schoolSub}</h1>
-            <h2 className="text-base font-semibold mt-0.5">{t.supervisorReportTitle} — {typeFilterLabel}</h2>
-            <p className="text-sm mt-1">{t.fromDate}: {fromDate} — {t.toDate}: {toDate}</p>
-          </div>
 
           <div className={cardFloating(dark, 'p-4 mb-5 no-print')}>
             <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
@@ -325,7 +372,7 @@ export default function SupervisorReport() {
                   <button onClick={exportCsv} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                     <Download size={13} /> {t.exportCsv}
                   </button>
-                  <button onClick={() => printWithTitle(`${t.supervisorReportTitle} - ${typeFilterLabel} - ${fromDate} - ${toDate}`)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                  <button onClick={() => printWithTitle(fileTitle)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                     <Printer size={13} /> {t.printReport}
                   </button>
                 </div>
@@ -385,6 +432,8 @@ export default function SupervisorReport() {
           )}
         </main>
       </div>
+
+      {printSheet}
     </div>
   );
 }

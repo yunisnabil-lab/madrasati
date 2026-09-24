@@ -9,7 +9,8 @@ import { sectionsFor, sectionLabel as fmtSectionLabel, streamLabel, gradeLabel }
 import { deriveByStudentAndDate, periodsForDate } from '../lib/attendanceDerive';
 import { STATUS_META, STATUS_LIST } from '../lib/status';
 import { exportXlsx } from '../lib/exportXlsx';
-import { printWithTitle } from '../lib/print';
+import { printWithTitle, reportName, weekdayName, groupRowsBySection } from '../lib/print';
+import { PrintSheet, PrintTable, StatusPill } from '../components/PrintSheet';
 import { fetchAllRowsByIds } from '../lib/fetchAll';
 import SectionPicker from '../components/SectionPicker';
 
@@ -192,11 +193,56 @@ export default function DailyReport() {
   // the wrong period's data later.
   const periodOrDayLabel = view === 'day' ? t.dayTotalTab : t.periodN.replace('{n}', view);
 
+  const fileTitle = reportName(t.dailyReportTitle, scopeLabel, `${weekdayName(date, lang)} ${date}`, view === 'day' ? '' : periodOrDayLabel);
+
   const exportCsv = () => {
     const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGrade, t.colStatus];
     const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.grade, t[STATUS_META[statusFor(r, view)].key]]);
-    exportXlsx(`daily-report-${scopeLabel}-${date}-${periodOrDayLabel}.xlsx`, [header, ...body], { lang });
+    exportXlsx(`${fileTitle}.xlsx`, [header, ...body], { lang });
   };
+
+  // printed / PDF version (components/PrintSheet.jsx): grouped by section,
+  // the whole-day view also lists which periods were missed or late
+  const printSheet = (rows && printRows.length > 0) ? (() => {
+    const cnt = { present: 0, absent: 0, late: 0, excused: 0, not_recorded: 0 };
+    printRows.forEach((r) => { cnt[statusFor(r, view)]++; });
+    const periodList = (r, st) => Object.keys(r.periods).filter((p) => r.periods[p] === st).sort((a, b) => a - b).join('، ');
+    const noteOf = (r) => {
+      const parts = [];
+      if (periodList(r, 'absent')) parts.push(`${t.statusAbsent}: ${periodList(r, 'absent')}`);
+      if (periodList(r, 'late')) parts.push(`${t.statusLate}: ${periodList(r, 'late')}`);
+      return parts.join(' · ');
+    };
+    return (
+      <PrintSheet
+        t={t} lang={lang}
+        title={`${t.dailyReportTitle} — ${weekdayName(date, lang)} ${date}`}
+        meta={[
+          [t.colGradeSection, scopeLabel],
+          [t.colStatus, view === 'day' ? t.dayTotalTab : periodOrDayLabel],
+          ...(filter !== 'all' ? [[t.printFilterLabel, t[STATUS_META[filter].key]]] : []),
+          ...(printSelection.size > 0 ? [[t.printScopeLabel, t.selectedForPrint.replace('{n}', printSelection.size)]] : []),
+        ]}
+        stats={[
+          { label: t.statTotalRecords, value: printRows.length, color: '#0f1b3c' },
+          ...['present', 'absent', 'late', 'excused', 'not_recorded']
+            .filter((k) => ['present', 'absent', 'late'].includes(k) || cnt[k] > 0)
+            .map((k) => ({ label: t[STATUS_META[k].key], value: cnt[k], color: STATUS_META[k].color })),
+        ]}
+        signatures={[t.signPreparedBy, t.signApprovedBy]}
+      >
+        <PrintTable
+          columns={[
+            { label: t.colStudentNo, key: 'sis_no', width: '92px', className: 'font-en' },
+            { label: t.colStudentName, key: 'name' },
+            { label: t.colStatus, width: '70px', align: 'center', render: (r) => { const st = statusFor(r, view); return <StatusPill label={t[STATUS_META[st].key]} color={STATUS_META[st].color} />; } },
+            ...(view === 'day' ? [{ label: t.printNotes, render: noteOf }] : []),
+          ]}
+          groups={groupRowsBySection(printRows, sections, (r) => r.section_id, (id, rs) => `${rs[0].section_label} (${rs.length})`)}
+        />
+      </PrintSheet>
+    );
+  })() : null;
 
   const inputCls = `w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${
     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
@@ -204,19 +250,11 @@ export default function DailyReport() {
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
-      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
+      <div className={`print:hidden min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-6xl mx-auto px-5 py-7 print-area">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6 no-print">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.dailyReportTitle}</h1>
           </motion.div>
-
-          {/* print-only header: school name, report title, and the active filters,
-              since the on-screen controls above are hidden when printing */}
-          <div className="print-only mb-4 text-black">
-            <h1 className="text-lg font-bold">{t.school} — {t.schoolSub}</h1>
-            <h2 className="text-base font-semibold mt-0.5">{t.dailyReportTitle}{scopeLabel ? ` — ${scopeLabel}` : ''}</h2>
-            <p className="text-sm mt-1">{t.dateLabel}: {date} — {periodOrDayLabel}{printSelection.size > 0 ? ` — ${t.selectedForPrint.replace('{n}', printSelection.size)}` : ''}</p>
-          </div>
 
           {/* controls */}
           <div className={cardFloating(dark, 'p-4 mb-5 space-y-3 no-print')}>
@@ -346,7 +384,7 @@ export default function DailyReport() {
                       <button onClick={exportCsv} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                         <Download size={13} /> {t.exportCsv}
                       </button>
-                      <button onClick={() => printWithTitle(`${t.dailyReportTitle} - ${scopeLabel} - ${date} - ${periodOrDayLabel}`)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                      <button onClick={() => printWithTitle(fileTitle)} className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
                         <Printer size={13} /> {printSelection.size > 0 ? t.printSelectedBtn.replace('{n}', printSelection.size) : t.printReport}
                       </button>
                     </div>
@@ -426,6 +464,8 @@ export default function DailyReport() {
           )}
         </main>
       </div>
+
+      {printSheet}
     </div>
   );
 }

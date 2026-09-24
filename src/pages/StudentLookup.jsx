@@ -10,7 +10,8 @@ import { fetchAllRows } from '../lib/fetchAll';
 import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
 import { buildWhatsAppLink } from '../lib/whatsapp';
 import { deriveByStudentAndDate } from '../lib/attendanceDerive';
-import { printWithTitle } from '../lib/print';
+import { printWithTitle, reportName, rangeLabel } from '../lib/print';
+import { PrintSheet, PrintTable, StatusPill } from '../components/PrintSheet';
 import { STATUS_META } from '../lib/status';
 import SectionPicker from '../components/SectionPicker';
 import PeriodBreakdown from '../components/PeriodBreakdown';
@@ -208,13 +209,62 @@ export default function StudentLookup() {
   const flagged = isFrequentAbsence(filteredHistory);
   const rateColor = stats.rate == null ? (dark ? '#64748b' : '#94a3b8') : stats.rate >= 90 ? '#05cd99' : stats.rate >= 75 ? '#ffb800' : '#ee5d50';
 
+  // printed / PDF version of the student's report (components/PrintSheet.jsx)
+  const printSheet = (selected && !historyLoading) ? (() => {
+    const nm = lang === 'ar' ? (selected.name_ar || selected.name_en) : (selected.name_en || selected.name_ar);
+    const periodList = (r, st) => Object.keys(r.periods || {}).filter((p) => r.periods[p] === st).sort((a, b) => a - b).join('، ');
+    const noteOf = (r) => {
+      const parts = [];
+      if (periodList(r, 'absent')) parts.push(`${t.statusAbsent}: ${periodList(r, 'absent')}`);
+      if (periodList(r, 'late')) parts.push(`${t.statusLate}: ${periodList(r, 'late')}`);
+      return parts.join(' · ');
+    };
+    return (
+      <PrintSheet
+        t={t} lang={lang}
+        title={`${t.studentReportTitle} — ${nm}`}
+        stats={[
+          { label: t.attendanceRate, value: stats.rate == null ? '—' : `${stats.rate}%`, color: rateColor },
+          { label: t.daysPresent, value: stats.present, color: '#05cd99' },
+          { label: t.daysAbsent, value: stats.absent, color: '#ee5d50' },
+          { label: t.daysLate, value: stats.late, color: '#ffb800' },
+          { label: t.daysExcused, value: stats.excused, color: '#8b5cf6' },
+        ]}
+        signatures={[t.signGuardian, t.signSchoolAdmin]}
+      >
+        <div className="ps-info">
+          <div><span>{t.studentInfoName}</span><b>{nm}</b></div>
+          <div><span>{t.sisNo}</span><b className="font-en">{selected.sis_no}</b></div>
+          <div><span>{t.colGradeSection}</span><b>{fmtSectionLabel(selected.sections, lang)}</b></div>
+          <div><span>{t.studentEmail}</span><b className="font-en">{selected.email || '—'}</b></div>
+          <div><span>{t.parentEmail}</span><b className="font-en">{selected.parent_email || '—'}</b></div>
+          <div><span>{t.fromDate} / {t.toDate}</span><b className="font-en">{rangeLabel(lang, fromDate, toDate) || '—'}</b></div>
+        </div>
+        {filteredHistory.length === 0 ? (
+          <p>{t.noAttendanceRecords}</p>
+        ) : (
+          <PrintTable
+            numbered={false}
+            columns={[
+              { label: t.recordDate, width: '84px', className: 'font-en', render: (r) => r.date },
+              { label: t.recordDay, width: '80px', render: (r) => dayName(r.date, lang) },
+              { label: t.recordStatus, width: '76px', align: 'center', render: (r) => { const meta = STATUS_META[r.status] || STATUS_META.not_recorded; return <StatusPill label={t[meta.key]} color={meta.color} />; } },
+              { label: t.printNotes, render: noteOf },
+            ]}
+            groups={[{ rows: filteredHistory }]}
+          />
+        )}
+      </PrintSheet>
+    );
+  })() : null;
+
   const inputCls = `w-full rounded-lg px-3 py-2.5 text-sm outline-none border font-en ${
     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
   }`;
 
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
-      <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
+      <div className={`print:hidden min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-5xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.lookupTitle}</h1>
@@ -341,6 +391,8 @@ export default function StudentLookup() {
           )}
         </main>
       </div>
+
+      {printSheet}
     </div>
   );
 }
@@ -354,15 +406,6 @@ function StudentProfileCard({
   // admin-only (the database only allows admins to delete attendance anyway).
   // "edari" corrects a wrong mark by editing its status instead.
   const canDeleteRecords = staff && staff.role === 'admin';
-
-  // The print title/filename used to always say today's date, even when a
-  // from/to filter was applied — so a report printed for, say, last month
-  // would still be named as if it were printed today. Use the actual
-  // applied range when there is one; only fall back to today's date for
-  // the unfiltered "full history as of today" case.
-  const dateRangeLabel = (fromDate || toDate)
-    ? `${fromDate || (history[history.length - 1]?.date || '')} - ${toDate || (history[0]?.date || '')}`
-    : todayStr();
 
   const [expandedDates, setExpandedDates] = useState(new Set());
   const toggleExpandDate = (date) => {
@@ -378,12 +421,6 @@ function StudentProfileCard({
       <button onClick={onBack} className={`flex items-center gap-1.5 text-xs font-medium mb-4 no-print ${dark ? 'text-slate-200 hover:text-slate-200' : 'text-slate-500 hover:text-slate-800'}`}>
         <ArrowRight size={14} className={lang === 'ar' ? '' : 'rotate-180'} /> {t.backToResults}
       </button>
-
-      <div className="print-only mb-4 text-black">
-        <h1 className="text-lg font-bold">{t.school} — {t.schoolSub}</h1>
-        <h2 className="text-base font-semibold mt-0.5">{t.lookupTitle} — {name}</h2>
-        <p className="text-sm mt-1">{(fromDate || toDate) ? `${t.fromDate}: ${fromDate || '—'} — ${t.toDate}: ${toDate || '—'}` : dateRangeLabel}</p>
-      </div>
 
       <div className={cardFloating(dark, 'p-6 mb-5 print-area')}>
         <div className="flex flex-wrap items-center gap-4 justify-between">
@@ -447,7 +484,7 @@ function StudentProfileCard({
         <button onClick={() => onRefresh && onRefresh()} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
           <RefreshCw size={14} /> {t.refresh}
         </button>
-        <button onClick={() => printWithTitle(`${name} - ${student.sis_no} - ${dateRangeLabel}`)} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+        <button onClick={() => printWithTitle(reportName(name, student.sis_no, rangeLabel(lang, fromDate, toDate), (fromDate || toDate) ? '' : todayStr()))} className={`flex items-center gap-1.5 text-xs font-medium px-4 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
           <Printer size={14} /> {t.printReport}
         </button>
       </div>

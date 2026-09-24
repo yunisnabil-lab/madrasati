@@ -57,27 +57,47 @@ html.dark { color-scheme: dark; }
 /* ---------------- Print (shared across every page) ---------------- */
 @media print {
   .no-print { display: none !important; }
-  @page { size: landscape; margin: 12mm; }
+  /* A4 portrait, small margins; page numbers where the browser supports margin boxes */
+  @page {
+    size: A4 portrait;
+    margin: 11mm 9mm 14mm;
+    @bottom-center { content: counter(page) " / " counter(pages); font-size: 9px; color: #64748b; }
+  }
+  html, body, #root { height: auto !important; }
   body { background: #fff !important; }
   .print-area { box-shadow: none !important; }
   .print-only { display: block !important; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  /* The report pages cap their on-screen width with max-w-5xl/6xl and
-     center it with mx-auto so the layout reads well on a monitor — but
-     that same cap carries into print, where the page is already landscape
-     (see @page above). Left in place, it wastes the extra landscape width
-     as empty side margins instead of fitting more student rows per page.
-     Printing should use the page's full width. */
   .print-area { max-width: none !important; margin-inline: 0 !important; }
-  /* Repeat the table header on every printed page instead of just the
-     first, and never let a student's row get cut in half across a page
-     break — without these, a report that would otherwise fit on one page
-     can spill an orphaned row (or two) onto a second page. */
   table thead { display: table-header-group; }
   table tr { page-break-inside: avoid; break-inside: avoid; }
-  /* Tighter rows/font in print so more students fit per landscape page
-     without needing to shrink-to-fit or spill extra pages. */
-  .print-area table { font-size: 11px; }
-  .print-area table th, .print-area table td { padding-top: 4px !important; padding-bottom: 4px !important; }
 }
 .print-only { display: none; }
+
+/* ---------------- Printed report sheet (components/PrintSheet.jsx) ----------------
+   Only ever visible when printing (the sheet is hidden on screen). */
+.ps-sheet { font-size: 10.5px; line-height: 1.4; color: #0f172a; }
+.ps-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding-bottom: 6px; margin-bottom: 10px; border-bottom: 2px solid #0f1b3c; }
+.ps-school { font-size: 15px; font-weight: 700; }
+.ps-muted { font-size: 10px; color: #64748b; }
+.ps-end { text-align: end; }
+.ps-title { font-size: 18px; font-weight: 700; margin: 0 0 6px; }
+.ps-h2 { font-size: 12.5px; font-weight: 700; margin: 14px 0 6px; break-after: avoid; }
+.ps-meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-size: 11px; margin-bottom: 10px; }
+.ps-stats { display: grid; gap: 8px; margin-bottom: 12px; }
+.ps-stat { border: 1px solid #cbd5e1; border-top-width: 3px; border-radius: 6px; padding: 5px 4px; text-align: center; break-inside: avoid; }
+.ps-stat-value { font-size: 17px; font-weight: 700; line-height: 1.2; }
+.ps-stat-label { font-size: 9.5px; color: #475569; margin-top: 1px; }
+.ps-table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+.ps-table th { background: #eef2f7; font-weight: 700; padding: 4px 6px; border-bottom: 1.5px solid #0f1b3c; white-space: nowrap; }
+.ps-table td { padding: 3px 6px; border-bottom: 1px solid #e2e8f0; vertical-align: middle; }
+.ps-table tbody tr:nth-child(even) td { background: #f8fafc; }
+.ps-table tr.ps-group td { background: #dfe7f3 !important; font-weight: 700; font-size: 11px; border-top: 1.5px solid #94a3b8; padding: 4px 6px; }
+.ps-table tr { break-inside: avoid; }
+.ps-pill { display: inline-block; min-width: 42px; text-align: center; color: #fff; font-size: 9.5px; font-weight: 600; padding: 1px 7px; border-radius: 4px; }
+.ps-signs { display: flex; justify-content: space-between; gap: 40px; margin-top: 34px; break-inside: avoid; }
+.ps-sign { flex: 1; display: flex; align-items: flex-end; gap: 6px; font-size: 11px; }
+.ps-sign i { flex: 1; border-bottom: 1px solid #0f172a; height: 1px; }
+.ps-info { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 14px; margin-bottom: 12px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; break-inside: avoid; }
+.ps-info div span { display: block; font-size: 9.5px; color: #64748b; }
+.ps-info div b { font-size: 11px; }

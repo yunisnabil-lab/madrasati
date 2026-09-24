@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from './supabase';
 import { TEXT } from './i18n';
 
@@ -44,17 +44,26 @@ export function AppProvider({ children }) {
     localStorage.setItem('madrasati-lang', lang);
   }, [lang]);
 
+  // whose staff row is currently loaded; Supabase re-fires auth events
+  // (token refresh, SIGNED_IN) whenever the tab regains focus, and showing
+  // the loading screen then would unmount the open page and lose its state
+  const loadedUserId = useRef(null);
+
   const fetchStaff = useCallback(async (userId) => {
-    if (!userId) { setStaff(null); setStaffLoading(false); return; }
-    setStaffLoading(true);
-    const { data } = await supabase
+    if (!userId) { loadedUserId.current = null; setStaff(null); setStaffLoading(false); return; }
+    // same user again: refresh quietly in the background
+    if (loadedUserId.current !== userId) setStaffLoading(true);
+    loadedUserId.current = userId;
+    const { data, error } = await supabase
       .from('staff')
       // '*' so newer columns (cycles, subjects) load when present without
       // breaking sign-in on a database that doesn't have them yet
       .select('*')
       .eq('id', userId)
       .maybeSingle();
-    setStaff(data || null);
+    // a failed background refresh (e.g. a network blip) keeps the old row
+    // instead of signing the user out of every page
+    if (!error) setStaff(data || null);
     setStaffLoading(false);
   }, []);
 

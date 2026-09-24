@@ -63,7 +63,12 @@ export function AppProvider({ children }) {
       .maybeSingle();
     // a failed background refresh (e.g. a network blip) keeps the old row
     // instead of signing the user out of every page
-    if (!error) setStaff(data || null);
+    // keep the SAME object when nothing changed: pages list `staff` in their
+    // effect dependencies, and a new (equal) object would make each of them
+    // reload and wipe what the user was typing
+    if (!error) {
+      setStaff((prev) => (prev && data && JSON.stringify(prev) === JSON.stringify(data) ? prev : (data || null)));
+    }
     setStaffLoading(false);
   }, []);
 
@@ -73,8 +78,12 @@ export function AppProvider({ children }) {
       fetchStaff(data.session ? data.session.user.id : null);
     });
 
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      setSession(newSession || null);
+    const { data: sub } = supabase.auth.onAuthStateChange((event, newSession) => {
+      // returning to the tab (screenshot, another tab) re-fires SIGNED_IN /
+      // TOKEN_REFRESHED for the same user: nothing about the page changed
+      const sameUser = newSession && loadedUserId.current === newSession.user.id;
+      if (sameUser && (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED' || event === 'INITIAL_SESSION')) return;
+      setSession((prev) => (prev && newSession && prev.user.id === newSession.user.id ? prev : (newSession || null)));
       fetchStaff(newSession ? newSession.user.id : null);
     });
 

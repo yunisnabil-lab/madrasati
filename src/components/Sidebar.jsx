@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3, ChevronDown, UserRound, Sun, Moon, Languages, LogOut, Menu, Activity, ListChecks, ShieldAlert } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 
@@ -118,6 +118,28 @@ export default function Sidebar() {
   const guardNav = (e) => { if (!confirmLeave()) e.preventDefault(); };
   const items = visibleItems(staff?.role);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { pathname } = useLocation();
+
+  // group headings fold their items away; the choice is remembered, and the
+  // group holding the open page always unfolds so it never gets lost
+  const [closed, setClosed] = useState(() => {
+    try {
+      const saved = localStorage.getItem('madrasati-nav-closed');
+      if (saved) return JSON.parse(saved);
+    } catch { /* storage unavailable */ }
+    return ['behavior', 'admin'];
+  });
+  const saveClosed = (next) => {
+    try { localStorage.setItem('madrasati-nav-closed', JSON.stringify(next)); } catch { /* storage unavailable */ }
+    return next;
+  };
+  const toggleGroup = (key) => setClosed((prev) => saveClosed(prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
+  const isActivePath = (item) => (item.end ? pathname === item.to : pathname === item.to || pathname.startsWith(item.to + '/'));
+
+  useEffect(() => {
+    const active = visibleItems(staff?.role).find(isActivePath);
+    if (active) setClosed((prev) => (prev.includes(active.group) ? saveClosed(prev.filter((k) => k !== active.group)) : prev));
+  }, [pathname]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!menuOpen) return;
@@ -208,11 +230,17 @@ export default function Sidebar() {
           return (
             <div key={groupKey} className="mb-2 space-y-1">
               {GROUP_LABEL_KEYS[groupKey] && (
-                <div className={`px-3 pt-3 pb-1 text-xs font-semibold tracking-wide ${dark ? 'text-slate-300' : 'text-slate-500'}`}>
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(groupKey)}
+                  aria-expanded={!closed.includes(groupKey)}
+                  className={`w-full flex items-center justify-between px-3 pt-3 pb-1 text-xs font-semibold tracking-wide ${dark ? 'text-slate-300 hover:text-white' : 'text-slate-500 hover:text-slate-800'}`}
+                >
                   {t[GROUP_LABEL_KEYS[groupKey]]}
-                </div>
+                  <ChevronDown size={14} className={`transition-transform duration-200 ${closed.includes(groupKey) ? '-rotate-90 rtl:rotate-90' : ''}`} />
+                </button>
               )}
-              {groupItems.map((item) => {
+              {(!GROUP_LABEL_KEYS[groupKey] || !closed.includes(groupKey)) && groupItems.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink

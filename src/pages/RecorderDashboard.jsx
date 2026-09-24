@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Users, Layers, CheckCircle2, Flag, ClipboardCheck, Search } from 'lucide-react';
+import { Users, Layers, CheckCircle2, Flag, ClipboardCheck, Search, AlertTriangle } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { sectionLabel as fmtSectionLabel, sortSections } from '../lib/sections';
@@ -155,6 +155,7 @@ export default function RecorderDashboard() {
   const quickActions = [
     { to: '/attendance', label: t.qaRecordAttendance, icon: ClipboardCheck },
     { to: '/lookup', label: t.qaLookup, icon: Search },
+    { to: '/violations', label: t.qaReportViolation, icon: AlertTriangle },
   ];
 
   return (

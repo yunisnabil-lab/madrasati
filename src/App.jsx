@@ -123,7 +123,9 @@ function Router() {
         <Route path="/daily-report" element={<Gate><Layout><DailyReport /></Layout></Gate>} />
         <Route path="/period-report" element={<Gate><Layout><PeriodReport /></Layout></Gate>} />
         <Route path="/profile" element={<Gate><Layout><Profile /></Layout></Gate>} />
-        <Route path="/violations" element={<Gate><ViolationsAccess><Layout><Violations /></Layout></ViolationsAccess></Gate>} />
+        {/* open to every role: teachers report violations for their own
+            students, which then wait for the supervisor's approval */}
+        <Route path="/violations" element={<Gate><Layout><Violations /></Layout></Gate>} />
         <Route path="/lateness" element={<Gate><ViolationsAccess><Layout><Lateness /></Layout></ViolationsAccess></Gate>} />
         <Route path="/supervisor-report" element={<Gate><ViolationsAccess><Layout><SupervisorReport /></Layout></ViolationsAccess></Gate>} />
         <Route path="/contact-requests" element={<Gate><ContactRequestsAccess><Layout><ContactRequests /></Layout></ContactRequestsAccess></Gate>} />

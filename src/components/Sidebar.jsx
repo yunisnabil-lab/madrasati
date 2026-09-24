@@ -15,7 +15,7 @@ const ITEMS = [
   { to: '/daily-report', icon: FileText, key: 'navDailyReport', end: false, hideFor: [] },
   { to: '/period-report', icon: FileBarChart, key: 'navPeriodReport', end: false, hideFor: [] },
   { to: '/students', icon: GraduationCap, key: 'navStudents', end: false, hideFor: ['recorder', 'supervisor'] },
-  { to: '/violations', icon: AlertTriangle, key: 'navViolations', end: false, hideFor: ['recorder'] },
+  { to: '/violations', icon: AlertTriangle, key: 'navViolations', end: false, hideFor: [] },
   { to: '/lateness', icon: Clock3, key: 'navLateness', end: false, hideFor: ['recorder'] },
   { to: '/supervisor-report', icon: BarChart3, key: 'navSupervisorReport', end: false, hideFor: ['recorder'] },
   { to: '/contact-requests', icon: MessageCircle, key: 'navContactRequests', end: false, hideFor: ['recorder', 'edari'] },

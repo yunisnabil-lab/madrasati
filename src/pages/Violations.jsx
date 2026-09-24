@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Loader2, Trash2, AlertTriangle } from 'lucide-react';
+import { Search, Loader2, Trash2, AlertTriangle, Inbox, Check, X } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -34,6 +34,21 @@ function daysAgoStr(n) {
 export default function Violations() {
   const { t, lang, dark, staff } = useApp();
   const canManage = staff && (staff.role === 'admin' || staff.role === 'supervisor' || staff.role === 'edari');
+  // A teacher (recorder) reports violations for students in their own
+  // sections; each report waits as "pending" until the supervisor (or the
+  // admin) approves it — only then does it count in lists and reports and
+  // can the parent be contacted about it.
+  const isRecorder = staff?.role === 'recorder';
+  const canReview = staff && (staff.role === 'admin' || staff.role === 'supervisor');
+  const canReport = canManage || isRecorder;
+
+  const [pendingList, setPendingList] = useState(null); // reports awaiting review
+  const [reviewingId, setReviewingId] = useState(null);
+  const [myReports, setMyReports] = useState(null); // recorder: what I reported
+  const [approvedViolation, setApprovedViolation] = useState(null); // just approved -> prefill parent message
+  const [editingActionId, setEditingActionId] = useState(null);
+  const [actionDraft, setActionDraft] = useState('');
+  const [savingAction, setSavingAction] = useState(false);
 
   const [sections, setSections] = useState([]);
   const [grade, setGrade] = useState('');
@@ -78,7 +93,10 @@ export default function Violations() {
         // qualified with the explicit FK name: behavior_violations now has a
         // second FK to students (affected_student_id), so an unqualified
         // "students(...)" embed is ambiguous to PostgREST.
-        .select('id, student_id, violation_type, date, students!behavior_violations_student_id_fkey(name_ar, name_en, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order))');
+        .select('id, student_id, violation_type, date, students!behavior_violations_student_id_fkey(name_ar, name_en, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order))')
+        // pending (not yet reviewed) and rejected teacher reports don't count
+        .eq('status', 'approved')
+        .order('id');
       if (from) q = q.gte('date', from);
       if (to) q = q.lte('date', to);
       return q;
@@ -101,14 +119,65 @@ export default function Violations() {
     setAggLoading(false);
   }, []);
 
-  useEffect(() => { if (!selected) loadAggregate(fromDate, toDate); }, [fromDate, toDate, selected, loadAggregate]);
+  useEffect(() => { if (!selected && canManage) loadAggregate(fromDate, toDate); }, [fromDate, toDate, selected, loadAggregate, canManage]);
+
+  const STUDENT_EMBED = 'students!behavior_violations_student_id_fkey(id, sis_no, name_ar, name_en, section_id, is_active, parent_email, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order))';
+
+  const loadPending = useCallback(async () => {
+    if (!canReview) return;
+    const { data } = await supabase
+      .from('behavior_violations')
+      .select(`id, student_id, violation_type, description, date, period, teacher_action, created_at, ${STUDENT_EMBED}, staff(full_name), affected_student:students!behavior_violations_affected_student_id_fkey(name_ar, name_en)`)
+      .eq('status', 'pending')
+      .order('created_at', { ascending: true });
+    setPendingList(data || []);
+  }, [canReview]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const loadMyReports = useCallback(async () => {
+    if (!isRecorder || !staff) return;
+    const { data } = await supabase
+      .from('behavior_violations')
+      .select(`id, student_id, violation_type, date, status, created_at, ${STUDENT_EMBED}`)
+      .eq('staff_id', staff.id)
+      .order('created_at', { ascending: false })
+      .limit(50);
+    setMyReports(data || []);
+  }, [isRecorder, staff]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { if (!selected) { loadPending(); loadMyReports(); } }, [selected, loadPending, loadMyReports]);
 
   useEffect(() => {
+    if (!staff) return;
     (async () => {
       const { data } = await supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
-      setSections(data || []);
+      let list = data || [];
+      // a teacher only picks from the sections they've been assigned
+      if (isRecorder) {
+        const { data: assigned } = await supabase.from('staff_sections').select('section_id').eq('staff_id', staff.id);
+        const allowed = new Set((assigned || []).map((a) => a.section_id));
+        list = list.filter((s) => allowed.has(s.id));
+      }
+      setSections(list);
     })();
-  }, []);
+  }, [staff, isRecorder]);
+
+  const reviewViolation = async (v, approve) => {
+    setReviewingId(v.id);
+    const { error } = await supabase
+      .from('behavior_violations')
+      .update({ status: approve ? 'approved' : 'rejected', reviewed_by: staff.id, reviewed_at: new Date().toISOString() })
+      .eq('id', v.id);
+    setReviewingId(null);
+    if (error) { window.alert(t.saveError); return; }
+    if (approve && v.students) {
+      // go straight to the student so the supervisor can add their action
+      // and contact the parent, with the message already about this violation
+      setApprovedViolation(v);
+      selectStudent({ ...v.students, id: v.student_id });
+    } else {
+      loadPending();
+    }
+  };
 
   const activeSectionIds = useMemo(() => {
     if (!grade) return null;
@@ -177,14 +246,26 @@ export default function Violations() {
     const { data } = await supabase
       .from('behavior_violations')
       .select(`
-        id, violation_type, description, date, period, teacher_action, supervisor_action, created_at,
+        id, violation_type, description, date, period, teacher_action, supervisor_action, created_at, status, staff_id,
         staff(full_name),
         affected_student:students!behavior_violations_affected_student_id_fkey(name_ar, name_en)
       `)
       .eq('student_id', studentId)
+      // rejected reports are kept for the teacher who sent them, but they're
+      // not part of the student's record
+      .neq('status', 'rejected')
       .order('date', { ascending: false });
     setStudentViolations(data || []);
   }, []);
+
+  const saveSupervisorAction = async (id) => {
+    setSavingAction(true);
+    const { error } = await supabase.from('behavior_violations').update({ supervisor_action: actionDraft.trim() || null }).eq('id', id);
+    setSavingAction(false);
+    if (error) { window.alert(t.saveError); return; }
+    setEditingActionId(null);
+    loadStudentViolations(selected.id);
+  };
 
   useEffect(() => {
     if (selected) loadStudentViolations(selected.id);
@@ -229,6 +310,8 @@ export default function Violations() {
     setQuery('');
     setMatches(null);
     setSaveMsg(null);
+    setApprovedViolation(null);
+    setEditingActionId(null);
   };
 
   const save = async () => {
@@ -236,6 +319,9 @@ export default function Violations() {
     setSaving(true);
     setSaveMsg(null);
     const { error } = await supabase.from('behavior_violations').insert({
+      // a teacher's report waits for the supervisor; staff who manage
+      // violations record them as already approved
+      status: isRecorder ? 'pending' : 'approved',
       school_id: staff.school_id,
       student_id: selected.id,
       staff_id: staff.id,
@@ -245,14 +331,14 @@ export default function Violations() {
       period: period ? Number(period) : null,
       affected_student_id: affectedStudent?.id || null,
       teacher_action: teacherAction.trim() || null,
-      supervisor_action: supervisorAction.trim() || null,
+      supervisor_action: isRecorder ? null : (supervisorAction.trim() || null),
     });
     setSaving(false);
     if (error) {
       setSaveMsg({ type: 'err', text: t.saveError });
       return;
     }
-    setSaveMsg({ type: 'ok', text: t.violationSaved });
+    setSaveMsg({ type: 'ok', text: isRecorder ? t.violationSentForReview : t.violationSaved });
     setViolationType('');
     setDescription('');
     setPeriod('');
@@ -262,17 +348,32 @@ export default function Violations() {
     setTeacherAction('');
     setSupervisorAction('');
     loadStudentViolations(selected.id);
-    loadAggregate(fromDate, toDate);
+    if (canManage) loadAggregate(fromDate, toDate);
   };
 
+  // deleting is permanent, so it asks first (it used to delete on one tap)
   const removeViolation = async (id) => {
+    if (!window.confirm(t.confirmDeleteViolation)) return;
     setDeletingId(id);
     const { error } = await supabase.from('behavior_violations').delete().eq('id', id);
     setDeletingId(null);
     if (!error) {
       if (selected) loadStudentViolations(selected.id);
-      loadAggregate(fromDate, toDate);
+      if (canManage) loadAggregate(fromDate, toDate);
+      loadMyReports();
     }
+  };
+
+  // who may delete a given entry: staff who manage violations, or the teacher
+  // who reported it while it's still waiting for review
+  const canDeleteViolation = (v) => canManage || (isRecorder && v.staff_id === staff.id && v.status === 'pending');
+
+  const statusChip = (status) => {
+    if (!status || status === 'approved') return null;
+    const cls = status === 'pending'
+      ? (dark ? 'bg-amber-500/15 text-amber-300' : 'bg-amber-50 text-amber-700')
+      : (dark ? 'bg-rose-500/15 text-rose-300' : 'bg-rose-50 text-rose-600');
+    return <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${cls}`}>{status === 'pending' ? t.violationStatusPending : t.violationStatusRejected}</span>;
   };
 
   const inputCls = `w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${
@@ -320,6 +421,73 @@ export default function Violations() {
 
           {!selected ? (
             <>
+              {canReview && (
+                <div className={cardFloating(dark, 'p-5 mb-5 border-2 border-amber-300/70')}>
+                  <div className="flex items-center gap-2 mb-1">
+                    <Inbox size={16} className="text-amber-500" />
+                    <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>
+                      {t.pendingViolationsTitle}{pendingList && pendingList.length > 0 ? ` (${pendingList.length})` : ''}
+                    </h2>
+                  </div>
+                  {pendingList === null ? (
+                    <div className="space-y-2 mt-3">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-16 w-full')} />)}</div>
+                  ) : pendingList.length === 0 ? (
+                    <p className={`text-sm mt-2 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noPendingViolations}</p>
+                  ) : (
+                    <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+                      {pendingList.map((v) => {
+                        const s = v.students || {};
+                        const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
+                        return (
+                          <li key={v.id} className="py-3.5">
+                            <div className="flex flex-wrap items-center gap-2">
+                              <span className="text-sm font-semibold">{name}</span>
+                              {s.sections && (
+                                <span className={`text-[11px] px-2 py-0.5 rounded-full ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>{fmtSectionLabel(s.sections, lang)}</span>
+                              )}
+                              <span className="text-xs font-semibold text-rose-500">{t.violationTypeNames[v.violation_type] || v.violation_type}</span>
+                            </div>
+                            <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
+                              {fmtDate(v.date)} · {dayName(v.date)}{v.period ? ' · ' + t.periodN.replace('{n}', v.period) : ''}{v.staff?.full_name ? ' · ' + t.recordedBy + ' ' + v.staff.full_name : ''}
+                            </div>
+                            {v.description && <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{v.description}</div>}
+                            {v.affected_student && (
+                              <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{t.affectedStudentDisplayLabel}: {affectedStudentName(v.affected_student)}</div>
+                            )}
+                            {v.teacher_action && (
+                              <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{t.teacherActionDisplayLabel}: {v.teacher_action}</div>
+                            )}
+                            <div className="flex gap-2 mt-2.5">
+                              <button
+                                onClick={() => reviewViolation(v, true)}
+                                disabled={reviewingId === v.id}
+                                className="flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-60"
+                              >
+                                {reviewingId === v.id ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} {t.approveViolation}
+                              </button>
+                              <button
+                                onClick={() => reviewViolation(v, false)}
+                                disabled={reviewingId === v.id}
+                                className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border disabled:opacity-60 ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
+                              >
+                                <X size={13} /> {t.rejectViolation}
+                              </button>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              {isRecorder && (
+                <div className={cardFloating(dark, 'p-4 mb-5')}>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{t.reportViolationHint}</p>
+                </div>
+              )}
+
+              {canManage && (
               <div className={cardFloating(dark, 'p-4 mb-5 flex flex-col sm:flex-row gap-3 sm:items-end')}>
                 <div className="flex-1">
                   <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.fromDate}</label>
@@ -335,6 +503,7 @@ export default function Violations() {
                   </button>
                 )}
               </div>
+              )}
 
               <div className={cardFloating(dark, 'p-4 mb-5 space-y-3')}>
                 <SectionPicker
@@ -396,6 +565,42 @@ export default function Violations() {
                 </div>
               )}
 
+              {isRecorder && (
+                <div className={cardFloating(dark, 'p-5')}>
+                  <h2 className={`text-sm font-semibold mb-3 ${dark ? 'text-white' : 'text-slate-900'}`}>{t.myReportedViolationsTitle}</h2>
+                  {myReports === null ? (
+                    <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
+                  ) : myReports.length === 0 ? (
+                    <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noReportedViolations}</p>
+                  ) : (
+                    <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+                      {myReports.map((v) => {
+                        const s = v.students || {};
+                        const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
+                        const approvedChip = v.status === 'approved'
+                          ? <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full ${dark ? 'bg-emerald-500/15 text-emerald-300' : 'bg-emerald-50 text-emerald-700'}`}>{t.violationStatusApproved}</span>
+                          : statusChip(v.status);
+                        return (
+                          <li key={v.id}>
+                            <button onClick={() => v.students && selectStudent({ ...v.students, id: v.student_id })} className={`w-full flex items-center gap-3 py-3 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+                              <div className="flex-1 min-w-0">
+                                <div className="text-sm font-medium truncate">{name || '—'}</div>
+                                <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
+                                  {t.violationTypeNames[v.violation_type] || v.violation_type} · {fmtDate(v.date)}
+                                </div>
+                              </div>
+                              {approvedChip}
+                            </button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              )}
+
+              {canManage && (
+              <>
               <div className={cardFloating(dark, 'p-5 mb-5')}>
                 <div className="flex items-center gap-2 mb-3">
                   <AlertTriangle size={16} className="text-rose-500" />
@@ -426,6 +631,8 @@ export default function Violations() {
                   </ul>
                 )}
               </div>
+              </>
+              )}
             </>
           ) : (
             <>
@@ -441,8 +648,11 @@ export default function Violations() {
                   <button onClick={reset} className={`text-xs font-medium ${dark ? 'text-royal-light' : 'text-royal'}`}>{t.backToResults}</button>
                 </div>
 
-                {canManage && (
+                {canReport && (
                   <div className="space-y-3 mb-2">
+                    {isRecorder && (
+                      <p className={`text-xs rounded-lg px-3 py-2 ${dark ? 'bg-amber-500/10 text-amber-200' : 'bg-amber-50 text-amber-800'}`}>{t.reportGoesToSupervisor}</p>
+                    )}
                     <div className={`text-xs rounded-lg px-3 py-2 flex flex-wrap gap-x-4 gap-y-1 ${dark ? 'bg-white/5 text-slate-400' : 'bg-slate-50 text-slate-500'}`}>
                       <span>{t.violationTeacherNameLabel}: <span className="font-medium">{staff.full_name}</span></span>
                       {staff.subject && (
@@ -515,20 +725,22 @@ export default function Violations() {
                       <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder={t.violationDescriptionPlaceholder} className={inputCls} />
                     </div>
 
-                    <div className="grid sm:grid-cols-2 gap-3">
+                    <div className={`grid gap-3 ${isRecorder ? '' : 'sm:grid-cols-2'}`}>
                       <div>
                         <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.teacherActionLabel}</label>
                         <textarea value={teacherAction} onChange={(e) => setTeacherAction(e.target.value)} rows={2} placeholder={t.teacherActionPlaceholder} className={inputCls} />
                       </div>
+                      {!isRecorder && (
                       <div>
                         <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.supervisorActionLabel}</label>
                         <textarea value={supervisorAction} onChange={(e) => setSupervisorAction(e.target.value)} rows={2} placeholder={t.supervisorActionPlaceholder} className={inputCls} />
                       </div>
+                      )}
                     </div>
 
                     {saveMsg && <p className={`text-xs ${saveMsg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{saveMsg.text}</p>}
                     <button onClick={save} disabled={saving || !violationType} className="flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-lg bg-rose-500 hover:bg-rose-600 text-white transition-colors disabled:opacity-60">
-                      {saving && <Loader2 size={14} className="animate-spin" />} {t.addViolation}
+                      {saving && <Loader2 size={14} className="animate-spin" />} {isRecorder ? t.sendViolationToSupervisor : t.addViolation}
                     </button>
                   </div>
                 )}
@@ -536,12 +748,17 @@ export default function Violations() {
 
               {canManage && (
                 <ContactParentPanel
+                  key={`${selected.id}-${approvedViolation?.id || ''}`}
                   student={selected}
                   name={lang === 'ar' ? (selected.name_ar || selected.name_en) : (selected.name_en || selected.name_ar)}
                   sectionLabel={fmtSectionLabel(selected.sections, lang)}
-                  defaultNote={lang === 'ar'
-                    ? 'تم رصد مخالفة سلوكية لهذا الطالب، ونرجو منكم متابعة الأمر معه.'
-                    : "A behavioral violation was recorded for this student — we'd like to bring this to your attention."}
+                  defaultNote={approvedViolation
+                    ? (lang === 'ar'
+                      ? `تم رصد مخالفة سلوكية لهذا الطالب (${t.violationTypeNames[approvedViolation.violation_type] || approvedViolation.violation_type}) بتاريخ ${approvedViolation.date}، ونرجو منكم متابعة الأمر معه.`
+                      : `A behavioral violation (${t.violationTypeNames[approvedViolation.violation_type] || approvedViolation.violation_type}) was recorded for this student on ${approvedViolation.date} — we'd like to bring this to your attention.`)
+                    : (lang === 'ar'
+                      ? 'تم رصد مخالفة سلوكية لهذا الطالب، ونرجو منكم متابعة الأمر معه.'
+                      : "A behavioral violation was recorded for this student — we'd like to bring this to your attention.")}
                   mode="direct"
                   staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls}
                 />
@@ -561,7 +778,7 @@ export default function Violations() {
                           <AlertTriangle size={15} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium">{t.violationTypeNames[v.violation_type] || v.violation_type}</div>
+                          <div className="text-sm font-medium flex flex-wrap items-center gap-2">{t.violationTypeNames[v.violation_type] || v.violation_type}{statusChip(v.status)}</div>
                           <div className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
                             {fmtDate(v.date)} · {dayName(v.date)}{v.period ? ' · ' + t.periodN.replace('{n}', v.period) : ''}{v.staff?.full_name ? ' · ' + t.recordedBy + ' ' + v.staff.full_name : ''}
                           </div>
@@ -576,13 +793,35 @@ export default function Violations() {
                               {t.teacherActionDisplayLabel}: {v.teacher_action}
                             </div>
                           )}
-                          {v.supervisor_action && (
-                            <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>
-                              {t.supervisorActionDisplayLabel}: {v.supervisor_action}
+                          {editingActionId === v.id ? (
+                            <div className="mt-2 space-y-2">
+                              <textarea value={actionDraft} onChange={(e) => setActionDraft(e.target.value)} rows={2} placeholder={t.supervisorActionPlaceholder} className={inputCls} autoFocus />
+                              <div className="flex gap-2">
+                                <button onClick={() => saveSupervisorAction(v.id)} disabled={savingAction} className="flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg bg-royal hover:bg-royal-light text-white disabled:opacity-60">
+                                  {savingAction && <Loader2 size={13} className="animate-spin" />} {t.save}
+                                </button>
+                                <button onClick={() => setEditingActionId(null)} className={`text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700' : 'border-slate-200'}`}>{t.cancel}</button>
+                              </div>
                             </div>
+                          ) : (
+                            <>
+                              {v.supervisor_action && (
+                                <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>
+                                  {t.supervisorActionDisplayLabel}: {v.supervisor_action}
+                                </div>
+                              )}
+                              {canManage && v.status !== 'pending' && (
+                                <button
+                                  onClick={() => { setEditingActionId(v.id); setActionDraft(v.supervisor_action || ''); }}
+                                  className={`text-xs font-medium mt-1.5 ${dark ? 'text-royal-light' : 'text-royal'}`}
+                                >
+                                  {v.supervisor_action ? t.editSupervisorAction : t.addSupervisorAction}
+                                </button>
+                              )}
+                            </>
                           )}
                         </div>
-                        {canManage && (
+                        {canDeleteViolation(v) && (
                           <button onClick={() => removeViolation(v.id)} disabled={deletingId === v.id} className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg p-2 shrink-0">
                             {deletingId === v.id ? <Loader2 size={15} className="animate-spin" /> : <Trash2 size={15} />}
                           </button>

@@ -39,6 +39,21 @@ export default function Header() {
 
   useEffect(() => { loadRequests(); }, [loadRequests]);
 
+  // supervisor/admin: teacher-reported violations waiting for review
+  const canReview = staff && (staff.role === 'admin' || staff.role === 'supervisor');
+  const [pendingViolations, setPendingViolations] = useState(0);
+  useEffect(() => {
+    if (!canReview) return;
+    (async () => {
+      const { count } = await supabase
+        .from('behavior_violations')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'pending');
+      setPendingViolations(count || 0);
+    })();
+  }, [canReview]);
+  const notifCount = (isAdmin ? requests.length : 0) + (canReview ? pendingViolations : 0);
+
   return (
     <header className={`no-print sticky top-0 z-20 backdrop-blur-md border-b shadow-lg transition-colors duration-300 ${dark ? 'bg-gradient-to-b from-navy-soft to-navy/80 border-royal/20' : 'bg-gradient-to-b from-white to-pearl-soft/70 border-royal/10'}`}>
       {notifOpen && (
@@ -94,9 +109,9 @@ export default function Header() {
               className={`relative h-10 w-10 rounded-full flex items-center justify-center transition-colors ${dark ? 'bg-royal/15 text-royal-light hover:bg-royal/25' : 'bg-royal/10 text-royal hover:bg-royal/20'}`}
             >
               <Bell size={18} />
-              {isAdmin && requests.length > 0 && (
-                <span className={`absolute -top-0.5 -end-0.5 inline-flex items-center justify-center h-4 w-4 rounded-full bg-gold text-white text-[9px] font-bold ring-2 ${dark ? 'ring-navy' : 'ring-white'}`}>
-                  {requests.length}
+              {notifCount > 0 && (
+                <span className={`absolute -top-0.5 -end-0.5 inline-flex items-center justify-center min-w-4 h-4 px-1 rounded-full bg-gold text-white text-[9px] font-bold ring-2 ${dark ? 'ring-navy' : 'ring-white'}`}>
+                  {notifCount}
                 </span>
               )}
             </button>
@@ -107,6 +122,15 @@ export default function Header() {
                   className={`absolute end-0 mt-2 w-72 rounded-xl border shadow-xl py-2 z-30 ${dark ? 'bg-navy-soft border-slate-700' : 'bg-white border-slate-100'}`}
                 >
                   <div className="px-3.5 py-1.5 text-xs font-semibold">{t.notifications}</div>
+                  {canReview && pendingViolations > 0 && (
+                    <Link
+                      to="/violations"
+                      onClick={(e) => { if (!confirmLeave()) { e.preventDefault(); return; } setNotifOpen(false); }}
+                      className={`block px-3.5 py-2 text-xs font-medium text-rose-500 ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}
+                    >
+                      {t.pendingViolationsNotif.replace('{n}', pendingViolations)}
+                    </Link>
+                  )}
                   {isAdmin && requests.length > 0 ? (
                     requests.map((r) => (
                       <div key={r.id} className="px-3.5 py-2 text-xs">
@@ -114,9 +138,9 @@ export default function Header() {
                         <span className="font-medium">{r.full_name}</span>
                       </div>
                     ))
-                  ) : (
+                  ) : notifCount === 0 ? (
                     <div className={`px-3.5 py-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noNotifications}</div>
-                  )}
+                  ) : null}
                 </motion.div>
               )}
             </AnimatePresence>

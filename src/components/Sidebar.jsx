@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3, ChevronDown, UserRound, Sun, Moon, Languages, LogOut, Menu, Activity, ListChecks, ShieldAlert } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3, ChevronDown, UserRound, Sun, Moon, Languages, LogOut, Menu, Activity, ListChecks, ShieldAlert, Settings } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 
 function initials(name) {
@@ -28,6 +28,7 @@ const ITEMS = [
 ];
 
 const GROUP_ORDER = ['main', 'attendance', 'reports', 'behavior', 'admin'];
+const GROUP_ICONS = { attendance: ClipboardCheck, reports: FileBarChart, behavior: AlertTriangle, admin: Settings };
 const GROUP_LABEL_KEYS = { attendance: 'navGroupAttendance', reports: 'navGroupReports', behavior: 'navGroupBehavior', admin: 'navGroupAdmin' };
 
 function visibleItems(role) {
@@ -227,44 +228,57 @@ export default function Sidebar() {
         {GROUP_ORDER.map((groupKey) => {
           const groupItems = items.filter((i) => i.group === groupKey);
           if (groupItems.length === 0) return null;
+          const foldable = !!GROUP_LABEL_KEYS[groupKey];
+          const open = !foldable || !closed.includes(groupKey);
+          const GroupIcon = GROUP_ICONS[groupKey];
+          const hasActive = groupItems.some(isActivePath);
           return (
-            <div key={groupKey} className="mb-2 space-y-1">
-              {GROUP_LABEL_KEYS[groupKey] && (
+            <div key={groupKey} className="mb-1">
+              {foldable && (
                 <button
                   type="button"
                   onClick={() => toggleGroup(groupKey)}
-                  aria-expanded={!closed.includes(groupKey)}
-                  className={`w-full flex items-center justify-between px-3 pt-3 pb-1 text-xs font-semibold tracking-wide ${dark ? 'text-slate-300 hover:text-white' : 'text-slate-500 hover:text-slate-800'}`}
+                  aria-expanded={open}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                    hasActive && !open
+                      ? (dark ? 'bg-royal/20 text-royal-light' : 'bg-royal/10 text-royal')
+                      : (dark ? 'text-slate-100 hover:bg-white/5' : 'text-slate-700 hover:bg-slate-50')
+                  }`}
                 >
-                  {t[GROUP_LABEL_KEYS[groupKey]]}
-                  <ChevronDown size={14} className={`transition-transform duration-200 ${closed.includes(groupKey) ? '-rotate-90 rtl:rotate-90' : ''}`} />
+                  {GroupIcon && <GroupIcon size={17} className={dark ? 'text-slate-300' : 'text-slate-400'} />}
+                  <span className="flex-1 text-start">{t[GROUP_LABEL_KEYS[groupKey]]}</span>
+                  <ChevronDown size={15} className={`shrink-0 transition-transform duration-200 ${open ? '' : 'ltr:-rotate-90 rtl:rotate-90'} ${dark ? 'text-slate-300' : 'text-slate-400'}`} />
                 </button>
               )}
-              {(!GROUP_LABEL_KEYS[groupKey] || !closed.includes(groupKey)) && groupItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={guardNav}
-              className={({ isActive }) =>
-                `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  isActive
-                    ? dark
-                      ? 'bg-royal/20 text-royal-light'
-                      : 'bg-royal/10 text-royal'
-                    : dark
-                    ? 'text-slate-200 hover:bg-white/5 hover:text-slate-200'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-                }`
-              }
-            >
-              <Icon size={17} />
-              {t[item.key]}
-            </NavLink>
-          );
-              })}
+              {open && (
+                <div className={foldable ? `ms-5 mt-0.5 mb-1 ps-2 space-y-0.5 border-s ${dark ? 'border-slate-700' : 'border-slate-200'}` : 'space-y-0.5'}>
+                  {groupItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        end={item.end}
+                        onClick={guardNav}
+                        className={({ isActive }) =>
+                          `flex items-center gap-2.5 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                            isActive
+                              ? dark
+                                ? 'bg-royal/20 text-royal-light'
+                                : 'bg-royal/10 text-royal'
+                              : dark
+                              ? 'text-slate-200 hover:bg-white/5'
+                              : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                          }`
+                        }
+                      >
+                        <Icon size={foldable ? 16 : 17} />
+                        <span className="leading-snug">{t[item.key]}</span>
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           );
         })}

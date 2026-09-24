@@ -21,6 +21,14 @@
 // use them to show, say, "days with a late period").
 
 export const PERIODS_PER_DAY = 8;
+
+// The school week: Saturday and Sunday are off, and Friday is a short day of
+// 4 periods (every other school day has 8). dateStr is 'YYYY-MM-DD'.
+export const FRIDAY_PERIODS = 4;
+export function periodsForDate(dateStr) {
+  if (!dateStr) return PERIODS_PER_DAY;
+  return new Date(dateStr + 'T00:00:00').getDay() === 5 ? FRIDAY_PERIODS : PERIODS_PER_DAY;
+}
 const REQUIRED_PERIODS = 5; // periods (of 8) a student must attend for the day to count as attended
 const MIN_PERIODS_TO_DECIDE = 3; // fewer recorded periods than this -> no day verdict yet
 

@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionsFor, sectionLabel } from '../lib/sections';
 import { fetchAllRows } from '../lib/fetchAll';
+import { periodsForDate } from '../lib/attendanceDerive';
 import SectionPicker from '../components/SectionPicker';
 
 const STATUS_OPTIONS = [
@@ -323,7 +324,7 @@ export default function Attendance() {
                   }`}
                 >
                   <option value="">{t.choosePeriod}</option>
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map((p) => (
+                  {[...Array(periodsForDate(date))].map((_, i) => i + 1).map((p) => (
                     <option key={p} value={p}>{t.periodN.replace('{n}', p)}</option>
                   ))}
                 </select>
@@ -336,7 +337,7 @@ export default function Attendance() {
                 <input
                   type="date"
                   value={date}
-                  onChange={(e) => guarded(setDate)(e.target.value)}
+                  onChange={(e) => guarded((d) => { setDate(d); if (period && Number(period) > periodsForDate(d)) setPeriod(''); })(e.target.value)}
                   className={`w-full rounded-lg px-3 py-2.5 text-sm outline-none border font-en ${
                     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
                   }`}

@@ -8,6 +8,7 @@ import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { matchesStudentSearch, searchStudents, studentMatchRank } from '../lib/search';
 import { fetchAllRows } from '../lib/fetchAll';
+import { periodsForDate } from '../lib/attendanceDerive';
 import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
 import { VIOLATION_TYPE_KEYS } from '../lib/i18n';
 import { shownSubjects, namesOf } from '../lib/staffInfo';
@@ -744,7 +745,7 @@ export default function Violations() {
                         <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.violationPeriodOptionalLabel}</label>
                         <select value={period} onChange={(e) => setPeriod(e.target.value)} className={inputCls + ' font-en'}>
                           <option value="">{t.choosePeriod}</option>
-                          {[1, 2, 3, 4, 5, 6, 7, 8].map((p) => (
+                          {[...Array(periodsForDate(date))].map((_, i) => i + 1).map((p) => (
                             <option key={p} value={p}>{t.periodN.replace('{n}', p)}</option>
                           ))}
                         </select>

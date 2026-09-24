@@ -6,7 +6,7 @@ import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionsFor, sectionLabel as fmtSectionLabel, streamLabel, gradeLabel } from '../lib/sections';
-import { deriveByStudentAndDate, PERIODS_PER_DAY } from '../lib/attendanceDerive';
+import { deriveByStudentAndDate, periodsForDate } from '../lib/attendanceDerive';
 import { STATUS_META, STATUS_LIST } from '../lib/status';
 import { exportXlsx } from '../lib/exportXlsx';
 import { printWithTitle } from '../lib/print';
@@ -258,7 +258,7 @@ export default function DailyReport() {
                 <div className={cardFloating(dark, 'p-4 mb-5 no-print')}>
                   <div className={`text-xs font-medium mb-2.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.viewByPeriod}</div>
                   <div className="flex flex-wrap gap-2">
-                    {[...Array(PERIODS_PER_DAY)].map((_, i) => {
+                    {[...Array(periodsForDate(date))].map((_, i) => {
                       const p = i + 1;
                       const active = view === p;
                       return (

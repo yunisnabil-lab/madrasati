@@ -531,7 +531,7 @@ function StudentProfileCard({
                     {isExpanded && (
                       <tr className="no-print">
                         <td colSpan={4} className={`px-4 pb-3 pt-0 ${dark ? 'bg-black/10' : 'bg-slate-50/60'}`}>
-                          <PeriodBreakdown periods={r.periods} lang={lang} dark={dark} />
+                          <PeriodBreakdown periods={r.periods} date={r.date} lang={lang} dark={dark} />
                         </td>
                       </tr>
                     )}

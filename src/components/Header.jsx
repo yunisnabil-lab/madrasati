@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Search, Bell, LogOut, GraduationCap } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
@@ -120,6 +121,18 @@ export default function Header() {
               )}
             </AnimatePresence>
           </div>
+
+          {/* Account — mobile only; on desktop it lives at the top of the sidebar,
+              which is hidden on small screens. */}
+          <Link to="/profile" className="md:hidden h-10 w-10 rounded-full shrink-0 overflow-hidden">
+            {staff && staff.avatar_url ? (
+              <img src={staff.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
+            ) : (
+              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold">
+                {staff ? (staff.full_name || '').trim().split(/\s+/).slice(0, 2).map((p) => p[0]).join('').toUpperCase() : '--'}
+              </div>
+            )}
+          </Link>
 
           {/* Sign-out */}
           <button

@@ -67,11 +67,37 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`no-print hidden md:flex flex-col w-56 shrink-0 fixed top-0 start-0 h-screen z-40 overflow-y-auto border-e transition-colors duration-300 ${
+      className={`no-print hidden md:flex flex-col w-56 shrink-0 fixed top-0 start-0 h-screen z-40 border-e transition-colors duration-300 ${
         dark ? 'bg-navy border-slate-800' : 'bg-white border-slate-200/60'
       }`}
     >
-      <nav className="px-3 pt-5 space-y-1">
+      {/* Account — pinned at the top of the sidebar, photo and name centered.
+          shrink-0 keeps it in place; only the nav below it scrolls when a
+          role has more links than fit on a short screen. */}
+      <div className={`shrink-0 px-3 pt-5 pb-4 border-b ${dark ? 'border-slate-800' : 'border-slate-200/60'}`}>
+        <Link
+          to="/profile"
+          className={`w-full px-3 py-4 rounded-xl flex flex-col items-center text-center gap-2 border transition-colors ${dark ? 'border-slate-800 hover:bg-white/5' : 'border-slate-200/60 hover:bg-slate-50'}`}
+        >
+          {staff && staff.avatar_url ? (
+            <img src={staff.avatar_url} alt="" className="h-14 w-14 rounded-full object-cover" />
+          ) : (
+            <div className="h-14 w-14 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-sm font-semibold">
+              {staff ? initials(staff.full_name) : '--'}
+            </div>
+          )}
+          <div className="w-full leading-snug">
+            <div className={`text-sm font-bold break-words ${dark ? 'text-white' : 'text-navy'}`}>
+              {staff ? staff.full_name : '...'}
+            </div>
+            <div className={`text-xs mt-0.5 font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
+              {staff ? t.roleNames[staff.role] : ''}
+            </div>
+          </div>
+        </Link>
+      </div>
+
+      <nav className="flex-1 min-h-0 overflow-y-auto px-3 pt-4 pb-4 space-y-1">
         {items.map((item) => {
           const Icon = item.icon;
           return (
@@ -97,36 +123,6 @@ export default function Sidebar() {
           );
         })}
       </nav>
-
-      {/* Account — sits directly below the nav with a clear separator, not
-          forced into any exact position. Simple and predictable: never
-          overlaps the nav, never needs its own scroll area.
-          dir="ltr" is intentional: the photo stays to the left of the name in both Arabic and English. */}
-      <div className={`mt-6 mx-3 pt-4 border-t ${dark ? 'border-slate-800' : 'border-slate-200/60'}`}>
-        <Link
-          to="/profile"
-          dir="ltr"
-          className={`w-full px-3 py-3 rounded-xl flex items-center gap-2.5 border transition-colors ${dark ? 'border-slate-800 hover:bg-white/5' : 'border-slate-200/60 hover:bg-slate-50'}`}
-        >
-          <div className="relative h-10 w-10 rounded-full shrink-0">
-            {staff && staff.avatar_url ? (
-              <img src={staff.avatar_url} alt="" className="h-10 w-10 rounded-full object-cover" />
-            ) : (
-              <div className="h-10 w-10 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold">
-                {staff ? initials(staff.full_name) : '--'}
-              </div>
-            )}
-          </div>
-          <div className="leading-tight overflow-hidden">
-            <div className={`text-sm font-bold truncate ${dark ? 'text-white' : 'text-navy'}`}>
-              {staff ? staff.full_name : '...'}
-            </div>
-            <div className={`text-[11px] mt-0.5 truncate ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
-              {staff ? t.roleNames[staff.role] : ''}
-            </div>
-          </div>
-        </Link>
-      </div>
     </aside>
   );
 }

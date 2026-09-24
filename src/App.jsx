@@ -91,7 +91,7 @@ function NotSupervisor({ children, fallback = '/violations' }) {
 
 function ViolationsAccess({ children, fallback = '/attendance' }) {
   const { staff } = useApp();
-  const allowed = ['admin', 'supervisor', 'viewer', 'edari'];
+  const allowed = ['admin', 'supervisor', 'edari'];
   if (staff && !allowed.includes(staff.role)) return <Navigate to={fallback} replace />;
   return children;
 }

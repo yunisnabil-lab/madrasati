@@ -790,18 +790,18 @@ export default function Violations() {
 
                     <div>
                       <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.violationDescription}</label>
-                      <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder={t.violationDescriptionPlaceholder} className={inputCls} />
+                      <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} rows={2} placeholder={t.violationDescriptionPlaceholder} className={inputCls} />
                     </div>
 
                     <div className={`grid gap-3 ${isRecorder ? '' : 'sm:grid-cols-2'}`}>
                       <div>
                         <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.teacherActionLabel}</label>
-                        <textarea value={teacherAction} onChange={(e) => setTeacherAction(e.target.value)} rows={2} placeholder={t.teacherActionPlaceholder} className={inputCls} />
+                        <textarea value={teacherAction} onChange={(e) => setTeacherAction(e.target.value)} maxLength={2000} rows={2} placeholder={t.teacherActionPlaceholder} className={inputCls} />
                       </div>
                       {!isRecorder && (
                       <div>
                         <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.supervisorActionLabel}</label>
-                        <textarea value={supervisorAction} onChange={(e) => setSupervisorAction(e.target.value)} rows={2} placeholder={t.supervisorActionPlaceholder} className={inputCls} />
+                        <textarea value={supervisorAction} onChange={(e) => setSupervisorAction(e.target.value)} maxLength={2000} rows={2} placeholder={t.supervisorActionPlaceholder} className={inputCls} />
                       </div>
                       )}
                     </div>
@@ -870,7 +870,7 @@ export default function Violations() {
                           )}
                           {editingActionId === v.id ? (
                             <div className="mt-2 space-y-2">
-                              <textarea value={actionDraft} onChange={(e) => setActionDraft(e.target.value)} rows={2} placeholder={t.supervisorActionPlaceholder} className={inputCls} autoFocus />
+                              <textarea value={actionDraft} onChange={(e) => setActionDraft(e.target.value)} maxLength={2000} rows={2} placeholder={t.supervisorActionPlaceholder} className={inputCls} autoFocus />
                               <div className="flex gap-2">
                                 <button onClick={() => saveSupervisorAction(v.id)} disabled={savingAction} className="flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg bg-royal hover:bg-royal-light text-white disabled:opacity-60">
                                   {savingAction && <Loader2 size={13} className="animate-spin" />} {t.save}

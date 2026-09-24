@@ -448,7 +448,7 @@ export default function Lateness() {
                     </div>
                     <div>
                       <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.latenessDescription}</label>
-                      <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder={t.latenessDescriptionPlaceholder} className={inputCls} />
+                      <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} rows={2} placeholder={t.latenessDescriptionPlaceholder} className={inputCls} />
                     </div>
                     {saveMsg && <p className={`text-xs ${saveMsg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{saveMsg.text}</p>}
                     <button onClick={save} disabled={saving} className="flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-60">

@@ -71,7 +71,7 @@ export default function BulkContactModal({ students, contextType, defaultNote, s
 
         <div className="px-5 mb-3">
           <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.bulkContactNote}</label>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3} className={inputCls} />
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={3000} rows={3} className={inputCls} />
         </div>
 
         <ul className={`flex-1 overflow-y-auto px-5 pb-2 divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>

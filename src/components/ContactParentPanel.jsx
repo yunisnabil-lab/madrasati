@@ -55,6 +55,7 @@ export default function ContactParentPanel({ student, name, sectionLabel, defaul
       channel,
       recipient,
       message,
+      status: 'pending',
     });
     return error;
   };
@@ -106,7 +107,7 @@ export default function ContactParentPanel({ student, name, sectionLabel, defaul
 
       <div>
         <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{lang === 'ar' ? 'نص الرسالة' : 'Message text'}</label>
-        <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className={inputCls} />
+        <textarea value={message} onChange={(e) => setMessage(e.target.value)} maxLength={4000} rows={4} className={inputCls} />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 sm:items-end">

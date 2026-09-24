@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Loader2, Trash2, Clock3, AlertTriangle } from 'lucide-react';
+import { Search, Loader2, Trash2, Clock3, AlertTriangle, Check } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -144,10 +144,25 @@ export default function Lateness() {
     setStudentLateness(data || []);
   }, []);
 
+  // when a parent was last contacted about this student's lateness, so the
+  // supervisor can tell at a glance whether it's already been sent
+  const [lastContact, setLastContact] = useState(null);
+  const loadLastContact = useCallback(async (studentId) => {
+    // best-effort: without the parent_contacts table this just stays empty
+    const { data } = await supabase
+      .from('parent_contacts')
+      .select('created_at, channel')
+      .eq('student_id', studentId)
+      .eq('context', 'lateness')
+      .order('created_at', { ascending: false })
+      .limit(1);
+    setLastContact(data && data[0] ? data[0] : null);
+  }, []);
+
   useEffect(() => {
-    if (selected) loadStudentLateness(selected.id);
-    else setStudentLateness(null);
-  }, [selected, loadStudentLateness]);
+    if (selected) { loadStudentLateness(selected.id); loadLastContact(selected.id); }
+    else { setStudentLateness(null); setLastContact(null); }
+  }, [selected, loadStudentLateness, loadLastContact]);
 
   const runSearch = async () => {
     const q = query.trim();
@@ -407,6 +422,12 @@ export default function Lateness() {
                 )}
               </motion.div>
 
+              {canManage && lastContact && (
+                <p className="flex items-center gap-1.5 text-xs font-medium text-emerald-500 mb-3">
+                  <Check size={13} /> {t.lastContactedLabel}: {fmtDate(lastContact.created_at.slice(0, 10))} ({lastContact.channel === 'whatsapp' ? 'WhatsApp' : 'Email'})
+                </p>
+              )}
+
               {canManage && (
                 <ContactParentPanel
                   student={selected}
@@ -416,6 +437,8 @@ export default function Lateness() {
                     ? 'لاحظنا تكرار تأخر هذا الطالب في الحضور الصباحي، ونرجو منكم متابعة الأمر معه.'
                     : "We've noticed repeated morning lateness for this student — we'd like to bring this to your attention."}
                   mode="direct"
+                  contextType="lateness"
+                  onSent={() => loadLastContact(selected.id)}
                   staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls}
                 />
               )}

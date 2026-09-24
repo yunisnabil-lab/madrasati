@@ -247,6 +247,19 @@ export default function Violations() {
     setSectionSel('');
   };
 
+  const [contactedViolationIds, setContactedViolationIds] = useState(new Set());
+
+  const loadContactedIds = useCallback(async (violationIds) => {
+    if (!violationIds.length) { setContactedViolationIds(new Set()); return; }
+    // best-effort: an older database without this table just shows no badges
+    const { data } = await supabase
+      .from('parent_contacts')
+      .select('context_id')
+      .eq('context', 'violation')
+      .in('context_id', violationIds);
+    setContactedViolationIds(new Set((data || []).map((r) => r.context_id)));
+  }, []);
+
   const loadStudentViolations = useCallback(async (studentId) => {
     const { data } = await supabase
       .from('behavior_violations')
@@ -261,7 +274,8 @@ export default function Violations() {
       .neq('status', 'rejected')
       .order('date', { ascending: false });
     setStudentViolations(data || []);
-  }, []);
+    loadContactedIds((data || []).map((v) => v.id));
+  }, [loadContactedIds]);
 
   const saveSupervisorAction = async (id) => {
     setSavingAction(true);
@@ -775,6 +789,9 @@ export default function Violations() {
                       ? 'تم رصد مخالفة سلوكية لهذا الطالب، ونرجو منكم متابعة الأمر معه.'
                       : "A behavioral violation was recorded for this student — we'd like to bring this to your attention.")}
                   mode="direct"
+                  contextType="violation"
+                  contextId={approvedViolation?.id || null}
+                  onSent={() => loadStudentViolations(selected.id)}
                   staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls}
                 />
               )}
@@ -793,7 +810,11 @@ export default function Violations() {
                           <AlertTriangle size={15} />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium flex flex-wrap items-center gap-2">{t.violationTypeNames[v.violation_type] || v.violation_type}{statusChip(v.status)}</div>
+                          <div className="text-sm font-medium flex flex-wrap items-center gap-2">{t.violationTypeNames[v.violation_type] || v.violation_type}{statusChip(v.status)}{contactedViolationIds.has(v.id) && (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500">
+                              <Check size={11} /> {t.parentContactedBadge}
+                            </span>
+                          )}</div>
                           <div className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
                             {fmtDate(v.date)} · {dayName(v.date)}{v.period ? ' · ' + t.periodN.replace('{n}', v.period) : ''}{v.staff?.full_name ? ' · ' + t.recordedBy + ' ' + v.staff.full_name : ''}
                           </div>

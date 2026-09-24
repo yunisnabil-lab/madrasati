@@ -75,11 +75,12 @@ export default function Header() {
             on its own from the document's dir, so one order works for both):
             school branding, live time, language, notifications, sign-out. */}
         <div className="flex items-center gap-6">
-          {/* School branding — the school's own name only, photo to its
-              start side (the side nearer the rest of this group). */}
+          {/* School branding — school name with the app name "مدرستي" as a
+              small line under it, photo to the name's start side. */}
           <div className="hidden sm:flex items-center gap-2.5">
             <div className="hidden md:block leading-tight">
               <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.school}</div>
+              <div className={`text-[11px] font-medium ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
             </div>
             <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${dark ? 'bg-royal/15' : 'bg-royal/10'}`}>
               {staff && staff.school_logo_url ? (

@@ -17,7 +17,7 @@ function buildDefaultMessage({ name, sectionLabel, note, lang, t }) {
 //  - "request": a teacher (recorder) can't contact parents directly — they
 //    submit a request that goes into contact_requests for a supervisor or
 //    admin to approve before anything is actually sent.
-export default function ContactParentPanel({ student, name, sectionLabel, defaultNote, mode, staff, t, lang, dark, inputCls }) {
+export default function ContactParentPanel({ student, name, sectionLabel, defaultNote, mode, staff, t, lang, dark, inputCls, contextType, contextId, onSent }) {
   const isRequest = mode === 'request';
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState(student?.parent_email || '');
@@ -28,6 +28,24 @@ export default function ContactParentPanel({ student, name, sectionLabel, defaul
   const [emailMsg, setEmailMsg] = useState(null);
 
   const link = buildWhatsAppLink(phone, message);
+
+  // Best-effort log of a direct send, so a violation/lateness list can show
+  // "already contacted" instead of the staff having to remember or re-check
+  // WhatsApp themselves. Never blocks the actual send on this succeeding —
+  // an older database without the table (or an RLS hiccup) just means no
+  // badge shows up, not a broken send button.
+  const logSent = (channel, recipient) => {
+    if (isRequest || !contextType) return;
+    supabase.from('parent_contacts').insert({
+      school_id: staff.school_id,
+      student_id: student.id,
+      staff_id: staff.id,
+      channel,
+      context: contextType,
+      context_id: contextId || null,
+      recipient,
+    }).then(({ error }) => { if (!error && onSent) onSent(); });
+  };
 
   const submitRequest = async (channel, recipient) => {
     const { error } = await supabase.from('contact_requests').insert({
@@ -72,6 +90,7 @@ export default function ContactParentPanel({ student, name, sectionLabel, defaul
       setEmailMsg({ type: 'err', text: t.emailSendError });
     } else {
       setEmailMsg({ type: 'ok', text: t.emailSent });
+      logSent('email', email.trim());
     }
   };
 
@@ -108,7 +127,7 @@ export default function ContactParentPanel({ student, name, sectionLabel, defaul
             href={link || undefined}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={(e) => { if (!link) e.preventDefault(); }}
+            onClick={(e) => { if (!link) { e.preventDefault(); return; } logSent('whatsapp', phone.trim()); }}
             className={`flex items-center gap-1.5 text-sm font-medium px-4 py-2.5 rounded-lg text-white transition-colors whitespace-nowrap ${link ? 'bg-emerald-500 hover:bg-emerald-600' : 'bg-slate-300 cursor-not-allowed'}`}
           >
             <MessageCircle size={15} /> {t.sendWhatsApp}

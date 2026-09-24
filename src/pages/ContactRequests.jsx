@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { MessageCircle, Mail, Check, X, Loader2, Inbox, History, ChevronDown } from 'lucide-react';
+import { MessageCircle, Mail, Check, X, Loader2, Inbox, History, ChevronDown, Trash2 } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
+import { useDialogs } from '../lib/Dialogs';
 import EmptyState from '../components/EmptyState';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -17,6 +18,7 @@ const SELECT = `
 
 export default function ContactRequests() {
   const { t, lang, dark, staff } = useApp();
+  const { confirm, notify } = useDialogs();
 
   const [pending, setPending] = useState(null);
   const [reviewed, setReviewed] = useState(null);
@@ -78,7 +80,22 @@ export default function ContactRequests() {
     loadAll();
   };
 
-  const fmtDateTime = (d) => (d ? new Date(d).toLocaleString(lang === 'ar' ? 'ar-u-nu-latn' : 'en-US', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '—');
+  // .select() returns the rows really deleted: a delete the database refuses
+  // (row-level security) succeeds with 0 rows, so that has to be checked
+  const removeReviewed = async (id) => {
+    if (!(await confirm(id ? t.confirmDeleteRequest : t.confirmDeleteAllReviewed))) return;
+    let q = supabase.from('contact_requests').delete().neq('status', 'pending');
+    if (id) q = q.eq('id', id);
+    const { data, error } = await q.select('id');
+    if (error || !data || data.length === 0) {
+      notify(t.requestDeleteFailed, 'error');
+      return;
+    }
+    notify(t.requestDeleted, 'success');
+    loadAll();
+  };
+
+  const fmtDateTime =(d) => (d ? new Date(d).toLocaleString(lang === 'ar' ? 'ar-u-nu-latn' : 'en-US', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) : '—');
 
   // Handled requests pile up fast and don't need the pending card's full
   // real estate — one compact line by default, with the same detail
@@ -108,6 +125,12 @@ export default function ContactRequests() {
             <pre className={`text-xs p-2.5 rounded-lg whitespace-pre-wrap font-sans max-h-28 overflow-y-auto ${dark ? 'bg-black/20 text-slate-300' : 'bg-slate-50 text-slate-600'}`}>
               {r.message}
             </pre>
+            <button
+              onClick={() => removeReviewed(r.id)}
+              className="mt-2 flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-rose-500 border border-rose-300/60 hover:bg-rose-500/10"
+            >
+              <Trash2 size={13} /> {t.deleteRequestBtn}
+            </button>
           </div>
         )}
       </li>
@@ -193,7 +216,15 @@ export default function ContactRequests() {
           <div className={cardFloating(dark, 'p-5')}>
             <div className="flex items-center gap-2 mb-1">
               <History size={16} className={dark ? 'text-royal-light' : 'text-royal'} />
-              <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>{t.reviewedRequestsTitle}</h2>
+              <h2 className={`text-sm font-semibold flex-1 ${dark ? 'text-white' : 'text-slate-900'}`}>{t.reviewedRequestsTitle}</h2>
+              {reviewed && reviewed.length > 0 && (
+                <button
+                  onClick={() => removeReviewed(null)}
+                  className="flex items-center gap-1.5 text-xs font-medium px-3 py-1.5 rounded-lg text-rose-500 border border-rose-300/60 hover:bg-rose-500/10"
+                >
+                  <Trash2 size={13} /> {t.deleteAllReviewedBtn}
+                </button>
+              )}
             </div>
             {reviewed === null ? (
               <div className="space-y-2 mt-3">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-16 w-full')} />)}</div>

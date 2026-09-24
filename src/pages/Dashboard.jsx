@@ -212,7 +212,7 @@ export default function Dashboard() {
         <main className="max-w-7xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.dashboard}</h1>
-            <p className={`text-sm mt-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.overview}</p>
+            <p className={`text-sm mt-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.overview}</p>
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
@@ -225,7 +225,7 @@ export default function Dashboard() {
                   className={`${cardFloating(dark)} p-6`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className={`text-[15px] font-medium ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{item.label}</span>
+                    <span className={`text-[15px] font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{item.label}</span>
                     <div className={`h-11 w-11 rounded-full flex items-center justify-center ${item.accent}`}>
                       <Icon size={19} />
                     </div>
@@ -237,7 +237,7 @@ export default function Dashboard() {
                       {item.value != null ? item.value.toLocaleString('en-US') : '—'}
                     </div>
                   )}
-                  <div className={`mt-2 text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{item.hint}</div>
+                  <div className={`mt-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{item.hint}</div>
                 </motion.div>
               );
             })}
@@ -257,14 +257,14 @@ export default function Dashboard() {
                   <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>
                     {lang === 'ar' ? 'نظرة عامة' : 'Overview'}
                   </h2>
-                  <p className={`text-xs mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-500'}`}>
+                  <p className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                     {lang === 'ar' ? 'الإجمالي وأعداد الطلاب في كل صف' : 'Totals and student counts per section'}
                   </p>
                 </div>
               </div>
               <ChevronDown
                 size={18}
-                className={`shrink-0 transition-transform duration-200 ${overviewOpen ? 'rotate-180' : ''} ${dark ? 'text-slate-400' : 'text-slate-400'}`}
+                className={`shrink-0 transition-transform duration-200 ${overviewOpen ? 'rotate-180' : ''} ${dark ? 'text-slate-200' : 'text-slate-400'}`}
               />
             </button>
 
@@ -283,7 +283,7 @@ export default function Dashboard() {
                         breakdown, so we don't repeat them here, only the one number
                         that's genuinely new: the average class size. */}
                     <div className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 mb-4 mt-3 ${dark ? 'bg-black/20' : 'bg-slate-50'}`}>
-                      <span className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                      <span className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
                         {lang === 'ar' ? 'متوسط عدد الطلاب لكل صف' : 'Avg. students per section'}
                       </span>
                       <span className={`text-lg font-bold font-en ${dark ? 'text-white' : 'text-navy'}`}>
@@ -293,7 +293,7 @@ export default function Dashboard() {
                       </span>
                     </div>
 
-                    <h3 className={`text-xs font-semibold mb-2 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <h3 className={`text-xs font-semibold mb-2 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                       {lang === 'ar' ? 'أعضاء الصفوف' : 'Section membership'}
                     </h3>
 
@@ -302,7 +302,7 @@ export default function Dashboard() {
                         {[...Array(6)].map((_, i) => <div key={i} className={skeleton(dark, 'h-10 w-full')} />)}
                       </div>
                     ) : sectionBreakdown.length === 0 ? (
-                      <div className={`text-sm py-4 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>—</div>
+                      <div className={`text-sm py-4 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>—</div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
                         {sectionBreakdown.map((row) => (
@@ -332,18 +332,18 @@ export default function Dashboard() {
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>{t.gradeTitle}</h2>
-                  <p className={`text-xs mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-500'}`}>{t.gradeSub}</p>
+                  <p className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.gradeSub}</p>
                 </div>
                 <div className={`flex items-center rounded-full p-1 ${dark ? 'bg-black/20' : 'bg-slate-100'}`}>
                   <button
                     onClick={() => setChartType('bar')}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${chartType === 'bar' ? (dark ? 'bg-navy-soft text-white shadow-sm' : 'bg-white text-slate-800 shadow-sm') : (dark ? 'text-slate-400' : 'text-slate-500')}`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${chartType === 'bar' ? (dark ? 'bg-navy-soft text-white shadow-sm' : 'bg-white text-slate-800 shadow-sm') : (dark ? 'text-slate-200' : 'text-slate-500')}`}
                   >
                     {lang === 'ar' ? 'أعمدة بيانية' : 'Bar'}
                   </button>
                   <button
                     onClick={() => setChartType('area')}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${chartType === 'area' ? (dark ? 'bg-navy-soft text-white shadow-sm' : 'bg-white text-slate-800 shadow-sm') : (dark ? 'text-slate-400' : 'text-slate-500')}`}
+                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${chartType === 'area' ? (dark ? 'bg-navy-soft text-white shadow-sm' : 'bg-white text-slate-800 shadow-sm') : (dark ? 'text-slate-200' : 'text-slate-500')}`}
                   >
                     {lang === 'ar' ? 'مخطط خطي' : 'Line'}
                   </button>
@@ -384,7 +384,7 @@ export default function Dashboard() {
                   )}
                 </ResponsiveContainer>
               ) : (
-                <div className={`text-sm text-center py-16 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>—</div>
+                <div className={`text-sm text-center py-16 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>—</div>
               )}
             </motion.div>
 
@@ -417,7 +417,7 @@ export default function Dashboard() {
                           </div>
                           <div className="min-w-0 flex-1">
                             <div className={`truncate font-medium ${dark ? 'text-slate-100' : 'text-slate-800'}`}>{lang === 'ar' ? s.name_ar : (s.name_en || s.name_ar)}</div>
-                            <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                            <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
                               {s.sections ? fmtSectionLabel(s.sections, lang) : '—'} · {r.date}
                             </div>
                           </div>
@@ -427,7 +427,7 @@ export default function Dashboard() {
                         </div>
                       );
                     })}
-                    {recent.length === 0 && <div className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>—</div>}
+                    {recent.length === 0 && <div className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>—</div>}
                   </>
                 )}
               </div>
@@ -439,7 +439,7 @@ export default function Dashboard() {
               className={`${cardFloating(dark)} p-5`}>
               <div className="mb-4">
                 <h2 className={`text-sm font-semibold ${dark ? "text-white" : "text-slate-900"}`}>{t.requestsTitle}</h2>
-                <p className={`text-xs mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.requestsSub}</p>
+                <p className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.requestsSub}</p>
               </div>
 
               <table className="w-full text-sm">
@@ -477,15 +477,15 @@ export default function Dashboard() {
                               <div className="min-w-0">
                                 <div className={`font-medium ${dark ? 'text-slate-100' : 'text-slate-800'}`}>{r.full_name}</div>
                                 {(r.cycle || r.subject) && (
-                                  <div className={`text-[11px] mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                                  <div className={`text-[11px] mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
                                     {[r.cycle && t.cycleNames[r.cycle], r.subject && t.subjectNames[r.subject]].filter(Boolean).join(' · ')}
                                   </div>
                                 )}
                               </div>
                             </div>
                           </td>
-                          <td className={`py-3.5 font-en hidden sm:table-cell ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{r.email}</td>
-                          <td className={`py-3.5 font-en hidden md:table-cell ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+                          <td className={`py-3.5 font-en hidden sm:table-cell ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{r.email}</td>
+                          <td className={`py-3.5 font-en hidden md:table-cell ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                             {r.created_at ? new Date(r.created_at).toLocaleDateString(lang === 'ar' ? 'ar-EG' : 'en-US') : '—'}
                           </td>
                           <td className="py-3.5 hidden lg:table-cell">
@@ -526,7 +526,7 @@ export default function Dashboard() {
                 </tbody>
               </table>
               {!requestsLoading && requests.length === 0 && (
-                <div className={`text-center py-8 text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noRequests}</div>
+                <div className={`text-center py-8 text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noRequests}</div>
               )}
             </motion.div>
           )}
@@ -619,7 +619,7 @@ function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
       {staffList === null ? (
         <div className="space-y-2">{[...Array(3)].map((_, i) => <div key={i} className={skeleton(dark, 'h-11 w-full')} />)}</div>
       ) : staffList.length === 0 ? (
-        <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noStaffYet}</p>
+        <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noStaffYet}</p>
       ) : (
         <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
           {staffList.map((s) => (
@@ -634,7 +634,7 @@ function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
                     <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-rose-500/10 text-rose-500">{t.revokedBadge}</span>
                   )}
                 </div>
-                <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{s.email}</div>
+                <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{s.email}</div>
               </div>
 
               {s.status === 'approved' ? (
@@ -735,7 +735,7 @@ function ResetAttendanceZone({ t, lang, dark, school_id }) {  const [confirmText
         <AlertTriangle size={16} className="text-rose-500" />
         <h3 className="text-sm font-semibold text-rose-500">{t.resetAttendanceTitle}</h3>
       </div>
-      <p className={`text-xs mb-3 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.resetAttendanceSub}</p>
+      <p className={`text-xs mb-3 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.resetAttendanceSub}</p>
 
       {!confirming ? (
         <button
@@ -747,7 +747,7 @@ function ResetAttendanceZone({ t, lang, dark, school_id }) {  const [confirmText
       ) : (
         <div className={`rounded-lg p-3.5 ${dark ? 'bg-rose-500/10' : 'bg-rose-50'}`}>
           <p className="text-sm font-medium text-rose-600 mb-2">{t.resetConfirmWarning}</p>
-          <p className={`text-xs mb-2 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+          <p className={`text-xs mb-2 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
             {t.typeToConfirm.replace('{word}', CONFIRM_WORD)}
           </p>
           <input

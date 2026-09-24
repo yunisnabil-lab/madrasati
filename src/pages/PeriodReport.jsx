@@ -250,11 +250,11 @@ export default function PeriodReport() {
             />
             <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
               <div className="flex-1">
-                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.fromDate}</label>
+                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.fromDate}</label>
                 <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={`${inputCls} font-en`} />
               </div>
               <div className="flex-1">
-                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.toDate}</label>
+                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.toDate}</label>
                 <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={`${inputCls} font-en`} />
               </div>
               <button
@@ -272,7 +272,7 @@ export default function PeriodReport() {
             <div className={cardFloating(dark, 'p-5 space-y-3')}>{[...Array(6)].map((_, i) => <div key={i} className={skeleton(dark, 'h-11 w-full')} />)}</div>
           ) : rows === null ? (
             <div className={cardFloating(dark, 'p-10 text-center no-print')}>
-              <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noReportYet}</p>
+              <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noReportYet}</p>
             </div>
           ) : (
             <>
@@ -282,7 +282,7 @@ export default function PeriodReport() {
                 // printed report only needs the data table itself.
                 <div className={cardFloating(dark, 'p-5 mb-5 no-print')}>
                   <div className="flex items-center gap-2 mb-3">
-                    <PieIcon size={15} className={dark ? 'text-slate-400' : 'text-slate-500'} />
+                    <PieIcon size={15} className={dark ? 'text-slate-200' : 'text-slate-500'} />
                     <h3 className="text-sm font-semibold">{t.chartTitle}</h3>
                   </div>
                   <ResponsiveContainer width="100%" height={220}>
@@ -314,7 +314,7 @@ export default function PeriodReport() {
 
               {sectionGroups.length > 1 && (
                 <div className="flex flex-wrap items-center gap-2 mb-3 no-print">
-                  <span className={`text-xs font-medium ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.selectBySection}</span>
+                  <span className={`text-xs font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.selectBySection}</span>
                   {sectionGroups.map((g) => {
                     const allSelected = g.ids.every((id) => printSelection.has(id));
                     return (
@@ -337,7 +337,7 @@ export default function PeriodReport() {
               <div className="flex items-center justify-between mb-3 no-print">
                 <div>
                   {printSelection.size > 0 && (
-                    <span className={`text-xs ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+                    <span className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                       {t.selectedForPrint.replace('{n}', printSelection.size)}
                       {' · '}
                       <button onClick={() => setPrintSelection(new Set())} className={dark ? 'text-royal-light' : 'text-royal'}>{t.clearSelection}</button>
@@ -356,7 +356,7 @@ export default function PeriodReport() {
 
               <div className={cardFloating(dark, 'overflow-hidden')}>
                 {rows.length === 0 ? (
-                  <div className="p-10 text-center"><p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noResultsForFilter}</p></div>
+                  <div className="p-10 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noResultsForFilter}</p></div>
                 ) : (
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">

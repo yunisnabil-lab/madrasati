@@ -73,15 +73,15 @@ export default function ContactRequests() {
     return (
       <li>
         <button onClick={() => setOpen((v) => !v)} className={`w-full flex items-center gap-2.5 py-2 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
-          <ChannelIcon size={13} className={r.channel === 'whatsapp' ? 'text-emerald-500' : (dark ? 'text-slate-500' : 'text-slate-400')} />
+          <ChannelIcon size={13} className={r.channel === 'whatsapp' ? 'text-emerald-500' : (dark ? 'text-slate-200' : 'text-slate-400')} />
           <span className="text-xs font-medium truncate flex-1 min-w-0">{name}</span>
           <span className={`text-[11px] font-medium shrink-0 ${statusColor}`}>{statusLabel}</span>
-          <span className={`text-[11px] shrink-0 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{fmtDateTime(r.reviewed_at)}</span>
-          <ChevronDown size={13} className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''} ${dark ? 'text-slate-500' : 'text-slate-400'}`} />
+          <span className={`text-[11px] shrink-0 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{fmtDateTime(r.reviewed_at)}</span>
+          <ChevronDown size={13} className={`shrink-0 transition-transform ${open ? 'rotate-180' : ''} ${dark ? 'text-slate-200' : 'text-slate-400'}`} />
         </button>
         {open && (
           <div className="pb-3 ps-5">
-            <div className={`text-xs mb-1.5 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+            <div className={`text-xs mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
               {s.sections ? fmtSectionLabel(s.sections, lang) + ' · ' : ''}{t.requestedBy} {r.requester?.full_name || '—'} · {r.recipient}
               {r.reviewer?.full_name ? ` · ${t.recordedBy} ${r.reviewer.full_name}` : ''}
             </div>
@@ -116,7 +116,7 @@ export default function ContactRequests() {
                 </span>
               )}
             </div>
-            <div className={`text-xs mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+            <div className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
               {t.requestedBy} {r.requester?.full_name || '—'} · {fmtDateTime(r.created_at)} · {r.recipient}
             </div>
             <pre className={`text-xs mt-2 p-2.5 rounded-lg whitespace-pre-wrap font-sans max-h-28 overflow-y-auto ${dark ? 'bg-black/20 text-slate-300' : 'bg-slate-50 text-slate-600'}`}>
@@ -150,7 +150,7 @@ export default function ContactRequests() {
         <main className="max-w-3xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.contactRequestsTitle}</h1>
-            <p className={`text-sm mt-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.contactRequestsSub}</p>
+            <p className={`text-sm mt-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.contactRequestsSub}</p>
           </motion.div>
 
           <div className={cardFloating(dark, 'p-5 mb-5')}>
@@ -161,7 +161,7 @@ export default function ContactRequests() {
             {pending === null ? (
               <div className="space-y-2 mt-3">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-16 w-full')} />)}</div>
             ) : pending.length === 0 ? (
-              <p className={`text-sm mt-3 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noPendingRequests}</p>
+              <p className={`text-sm mt-3 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noPendingRequests}</p>
             ) : (
               <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                 {pending.map((r) => <Row key={r.id} r={r} />)}
@@ -177,7 +177,7 @@ export default function ContactRequests() {
             {reviewed === null ? (
               <div className="space-y-2 mt-3">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-16 w-full')} />)}</div>
             ) : reviewed.length === 0 ? (
-              <p className={`text-sm mt-3 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>—</p>
+              <p className={`text-sm mt-3 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>—</p>
             ) : (
               <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                 {reviewed.map((r) => <CompactReviewedRow key={r.id} r={r} />)}

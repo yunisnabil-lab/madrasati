@@ -233,13 +233,13 @@ export default function Lateness() {
           </div>
           <div className="flex-1 min-w-0">
             <div className="text-sm font-medium truncate">{name}</div>
-            <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+            <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
               {s.sections ? fmtSectionLabel(s.sections, lang) : '—'}
             </div>
           </div>
           <div className="text-end shrink-0">
             <div className="text-sm font-bold font-en" style={{ color: r.count >= REPEAT_THRESHOLD ? '#ee5d50' : undefined }}>{r.count}</div>
-            <div className={`text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.lastLateDate}: {fmtDate(r.lastDate)}</div>
+            <div className={`text-[11px] ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.lastLateDate}: {fmtDate(r.lastDate)}</div>
           </div>
         </button>
       </li>
@@ -252,18 +252,18 @@ export default function Lateness() {
         <main className="max-w-3xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.latenessTitle}</h1>
-            <p className={`text-sm mt-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.latenessSub}</p>
+            <p className={`text-sm mt-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.latenessSub}</p>
           </motion.div>
 
           {!selected ? (
             <>
               <div className={cardFloating(dark, 'p-4 mb-5 flex flex-col sm:flex-row gap-3 sm:items-end')}>
                 <div className="flex-1">
-                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.fromDate}</label>
+                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.fromDate}</label>
                   <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={inputCls + ' font-en'} />
                 </div>
                 <div className="flex-1">
-                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.toDate}</label>
+                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.toDate}</label>
                   <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputCls + ' font-en'} />
                 </div>
                 {(fromDate || toDate) && (
@@ -310,7 +310,7 @@ export default function Lateness() {
               {results !== null && (
                 <div className={cardFloating(dark, 'overflow-hidden mb-5')}>
                   {results.length === 0 ? (
-                    <div className="p-8 text-center"><p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.lookupNoResults}</p></div>
+                    <div className="p-8 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.lookupNoResults}</p></div>
                   ) : (
                     <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                       {results.map((s) => {
@@ -321,7 +321,7 @@ export default function Lateness() {
                               <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials(name)}</div>
                               <div className="flex-1 min-w-0">
                                 <div className="text-sm font-semibold truncate">{name}</div>
-                                <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.sisNo}: {s.sis_no}</div>
+                                <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.sisNo}: {s.sis_no}</div>
                               </div>
                               <span className={`text-xs px-2.5 py-1 rounded-full shrink-0 ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>{fmtSectionLabel(s.sections, lang)}</span>
                             </button>
@@ -341,7 +341,7 @@ export default function Lateness() {
                 {aggLoading ? (
                   <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
                 ) : repeated.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noLatenessRecords}</p>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noLatenessRecords}</p>
                 ) : (
                   <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                     {repeated.map((r) => <AggRow key={r.id} r={r} />)}
@@ -357,9 +357,9 @@ export default function Lateness() {
                 {aggLoading ? (
                   <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
                 ) : rest.length === 0 && repeated.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noLatenessRecords}</p>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noLatenessRecords}</p>
                 ) : rest.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>—</p>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>—</p>
                 ) : (
                   <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                     {rest.map((r) => <AggRow key={r.id} r={r} />)}
@@ -376,7 +376,7 @@ export default function Lateness() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="font-semibold truncate">{lang === 'ar' ? (selected.name_ar || selected.name_en) : (selected.name_en || selected.name_ar)}</div>
-                    <div className={`text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{fmtSectionLabel(selected.sections, lang)}</div>
+                    <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{fmtSectionLabel(selected.sections, lang)}</div>
                   </div>
                   <button onClick={reset} className={`text-xs font-medium ${dark ? 'text-royal-light' : 'text-royal'}`}>{t.backToResults}</button>
                 </div>
@@ -385,12 +385,12 @@ export default function Lateness() {
                   <div className="space-y-3 mb-2">
                     <div className="grid sm:grid-cols-2 gap-3">
                       <div>
-                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.latenessDate}</label>
+                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.latenessDate}</label>
                         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls + ' font-en'} />
                       </div>
                     </div>
                     <div>
-                      <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.latenessDescription}</label>
+                      <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.latenessDescription}</label>
                       <textarea value={description} onChange={(e) => setDescription(e.target.value)} rows={2} placeholder={t.latenessDescriptionPlaceholder} className={inputCls} />
                     </div>
                     {saveMsg && <p className={`text-xs ${saveMsg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{saveMsg.text}</p>}
@@ -419,7 +419,7 @@ export default function Lateness() {
                 {studentLateness === null ? (
                   <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
                 ) : studentLateness.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noLatenessForStudent}</p>
+                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noLatenessForStudent}</p>
                 ) : (
                   <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                     {studentLateness.map((l) => (
@@ -429,10 +429,10 @@ export default function Lateness() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm font-medium">{fmtDate(l.date)}</div>
-                          <div className={`text-xs mt-0.5 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                          <div className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
                             {l.staff?.full_name ? t.recordedBy + ' ' + l.staff.full_name : ''}
                           </div>
-                          {l.description && <div className={`text-xs mt-1 ${dark ? 'text-slate-400' : 'text-slate-600'}`}>{l.description}</div>}
+                          {l.description && <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{l.description}</div>}
                         </div>
                         {canManage && (
                           <button onClick={() => removeLateness(l.id)} disabled={deletingId === l.id} className="text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-lg p-2 shrink-0">

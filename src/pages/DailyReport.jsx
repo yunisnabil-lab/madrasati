@@ -227,7 +227,7 @@ export default function DailyReport() {
             />
             <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
               <div className="sm:w-56">
-                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.dateLabel}</label>
+                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.dateLabel}</label>
                 <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={`${inputCls} font-en`} />
               </div>
               <button
@@ -244,7 +244,7 @@ export default function DailyReport() {
             <div className={cardFloating(dark, 'p-5 space-y-3')}>{[...Array(5)].map((_, i) => <div key={i} className={skeleton(dark, 'h-11 w-full')} />)}</div>
           ) : rows === null ? (
             <div className={cardFloating(dark, 'p-10 text-center no-print')}>
-              <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noReportYet}</p>
+              <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noReportYet}</p>
             </div>
           ) : (
             <>
@@ -252,7 +252,7 @@ export default function DailyReport() {
                   Periods 1..8 first, then the whole-day total last. */}
               {rows.length > 0 && (
                 <div className={cardFloating(dark, 'p-4 mb-5 no-print')}>
-                  <div className={`text-xs font-medium mb-2.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.viewByPeriod}</div>
+                  <div className={`text-xs font-medium mb-2.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.viewByPeriod}</div>
                   <div className="flex flex-wrap gap-2">
                     {[...Array(PERIODS_PER_DAY)].map((_, i) => {
                       const p = i + 1;
@@ -295,7 +295,7 @@ export default function DailyReport() {
                     style={{ borderBottomColor: STATUS_META[k].color }}
                   >
                     <div className="text-2xl font-bold">{counts[k]}</div>
-                    <div className={`text-xs mt-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t[STATUS_META[k].key]}</div>
+                    <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t[STATUS_META[k].key]}</div>
                   </button>
                 ))}
               </div>
@@ -305,7 +305,7 @@ export default function DailyReport() {
                 <div className="lg:col-span-2 order-2 lg:order-1">
                   {sectionGroups.length > 1 && (
                     <div className="flex flex-wrap items-center gap-2 mb-3 no-print">
-                      <span className={`text-xs font-medium ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.selectBySection}</span>
+                      <span className={`text-xs font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.selectBySection}</span>
                       {sectionGroups.map((g) => {
                         const allSelected = g.ids.every((id) => printSelection.has(id));
                         return (
@@ -327,11 +327,11 @@ export default function DailyReport() {
 
                   <div className="flex items-center justify-between mb-3 no-print">
                     <div className="flex items-center gap-3">
-                      <button onClick={() => setFilter('all')} className={`text-xs font-medium ${filter === 'all' ? (dark ? 'text-royal-light' : 'text-royal') : (dark ? 'text-slate-500' : 'text-slate-400')}`}>
+                      <button onClick={() => setFilter('all')} className={`text-xs font-medium ${filter === 'all' ? (dark ? 'text-royal-light' : 'text-royal') : (dark ? 'text-slate-200' : 'text-slate-400')}`}>
                         {t.filterAll} ({rows.length})
                       </button>
                       {printSelection.size > 0 && (
-                        <span className={`text-xs ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+                        <span className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                           {t.selectedForPrint.replace('{n}', printSelection.size)}
                           {' · '}
                           <button onClick={() => setPrintSelection(new Set())} className={dark ? 'text-royal-light' : 'text-royal'}>{t.clearSelection}</button>
@@ -350,7 +350,7 @@ export default function DailyReport() {
 
                   <div className={cardFloating(dark, 'overflow-hidden print-area')}>
                     {filtered.length === 0 ? (
-                      <div className="p-10 text-center"><p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noResultsForFilter}</p></div>
+                      <div className="p-10 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noResultsForFilter}</p></div>
                     ) : (
                       <table className="w-full text-sm">
                         <thead>
@@ -404,13 +404,13 @@ export default function DailyReport() {
                       </div>
                       <div>
                         <div className="text-2xl font-bold" style={{ color: STATUS_META.absent.color }}>{dayCounts.absent}</div>
-                        <div className={`text-xs mt-0.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.todayAbsenceStat}</div>
+                        <div className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.todayAbsenceStat}</div>
                       </div>
                     </div>
 
                     <div className={cardFloating(dark, 'p-5')}>
                       <div className="flex items-center gap-2 mb-3">
-                        <BarChart3 size={15} className={dark ? 'text-slate-400' : 'text-slate-500'} />
+                        <BarChart3 size={15} className={dark ? 'text-slate-200' : 'text-slate-500'} />
                         <h3 className="text-sm font-semibold">{t.chartTitle}</h3>
                       </div>
                       <ResponsiveContainer width="100%" height={200}>

@@ -190,7 +190,7 @@ export default function Profile() {
                       </button>
                     </div>
                   )}
-                  <div className={`text-xs mt-0.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{staff.email}</div>
+                  <div className={`text-xs mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{staff.email}</div>
                 </div>
 
                 <span className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-full shrink-0 ${roleStyle.bg} ${roleStyle.text}`}>
@@ -207,21 +207,21 @@ export default function Profile() {
             </div>
             <div>
               <div className="text-sm font-semibold">{t.school}</div>
-              <div className={`text-xs ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.schoolSub}</div>
+              <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.schoolSub}</div>
             </div>
           </div>
 
           {(staff.cycle || staff.subject) && (
             <div className={cardFloating(dark, 'p-5 mb-5 grid grid-cols-2 gap-4')}>
               <div>
-                <div className={`text-xs mb-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.cycle}</div>
+                <div className={`text-xs mb-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.cycle}</div>
                 <div className="text-sm font-semibold">{staff.cycle ? (t.cycleNames[staff.cycle] || staff.cycle) : '—'}</div>
               </div>
               <div>
-                <div className={`text-xs mb-1 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.subject}</div>
+                <div className={`text-xs mb-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.subject}</div>
                 <div className="text-sm font-semibold">{staff.subject ? (t.subjectNames[staff.subject] || staff.subject) : '—'}</div>
               </div>
-              <p className={`col-span-2 text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.cycleSubjectLockedNote}</p>
+              <p className={`col-span-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.cycleSubjectLockedNote}</p>
             </div>
           )}
 
@@ -230,21 +230,21 @@ export default function Profile() {
             <div className={cardFloating(dark, 'p-5')}>
               <div className="flex items-center gap-2 mb-2">
                 <ClipboardCheck size={16} className={dark ? 'text-royal-light' : 'text-royal'} />
-                <span className={`text-xs font-medium ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.totalRecorded}</span>
+                <span className={`text-xs font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.totalRecorded}</span>
               </div>
               <div className="text-2xl font-bold">{stats.total === null ? <span className={skeleton(dark, 'h-7 w-12 inline-block')} /> : stats.total.toLocaleString()}</div>
             </div>
             <div className={cardFloating(dark, 'p-5')}>
               <div className="flex items-center gap-2 mb-2">
                 <CalendarDays size={16} className={dark ? 'text-emerald-400' : 'text-emerald-600'} />
-                <span className={`text-xs font-medium ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.recordedThisMonth}</span>
+                <span className={`text-xs font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.recordedThisMonth}</span>
               </div>
               <div className="text-2xl font-bold">{stats.thisMonth === null ? <span className={skeleton(dark, 'h-7 w-12 inline-block')} /> : stats.thisMonth.toLocaleString()}</div>
             </div>
             <div className={cardFloating(dark, 'p-5')}>
               <div className="flex items-center gap-2 mb-2">
                 <Clock4 size={16} className={dark ? 'text-gold' : 'text-amber-600'} />
-                <span className={`text-xs font-medium ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.lastActivity}</span>
+                <span className={`text-xs font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.lastActivity}</span>
               </div>
               <div className="text-sm font-semibold pt-1.5">
                 {stats.total === null
@@ -285,7 +285,7 @@ export default function Profile() {
                   placeholder={t.newPassword}
                   className={`w-full rounded-lg px-3 py-2.5 pe-10 text-sm outline-none border ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
                 />
-                <button type="button" onClick={() => setShowPw((v) => !v)} className={`absolute inset-y-0 end-0 flex items-center px-3 ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                <button type="button" onClick={() => setShowPw((v) => !v)} className={`absolute inset-y-0 end-0 flex items-center px-3 ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
                   {showPw ? <EyeOff size={15} /> : <Eye size={15} />}
                 </button>
               </div>

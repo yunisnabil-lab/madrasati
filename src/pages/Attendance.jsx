@@ -254,7 +254,7 @@ export default function Attendance() {
           {/* controls */}
           <div className={cardFloating(dark, 'p-5 mb-6 space-y-4')}>
             <div>
-              <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+              <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                 {t.chooseSection}
               </label>
               <SectionPicker
@@ -276,7 +276,7 @@ export default function Attendance() {
 
             <div className="flex flex-col sm:flex-row gap-4 sm:items-end">
               <div className="sm:w-40">
-                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                   {t.periodLabel}
                 </label>
                 <select
@@ -294,7 +294,7 @@ export default function Attendance() {
               </div>
 
               <div className="sm:w-56">
-                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+                <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
                   {t.dateLabel}
                 </label>
                 <input
@@ -345,8 +345,8 @@ export default function Attendance() {
           {/* roster */}
           {activeSectionIds.length === 0 || !period ? (
             <div className={cardFloating(dark, 'p-10 text-center')}>
-              <Users size={28} className={`mx-auto mb-3 ${dark ? 'text-slate-600' : 'text-slate-300'}`} />
-              <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+              <Users size={28} className={`mx-auto mb-3 ${dark ? 'text-slate-200' : 'text-slate-300'}`} />
+              <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
                 {activeSectionIds.length === 0 ? t.chooseSectionPrompt : t.choosePeriodPrompt}
               </p>
             </div>
@@ -358,7 +358,7 @@ export default function Attendance() {
             </div>
           ) : students.length === 0 ? (
             <div className={cardFloating(dark, 'p-10 text-center')}>
-              <p className={`text-sm ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noStudentsInSection}</p>
+              <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noStudentsInSection}</p>
             </div>
           ) : (
             <div className={cardFloating(dark, 'overflow-hidden')}>
@@ -381,7 +381,7 @@ export default function Attendance() {
                       <div className="flex-1 min-w-0">
                         <div className="text-sm font-medium truncate">{name}</div>
                         {sectionSel === '__ALL__' && (
-                          <div className={`text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+                          <div className={`text-[11px] ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
                             {sectionLabel(sectionMap[s.section_id], lang)}
                           </div>
                         )}

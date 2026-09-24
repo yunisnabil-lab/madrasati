@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3, ChevronDown, UserRound, Sun, Moon, Languages, LogOut, Menu, Activity } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3, ChevronDown, UserRound, Sun, Moon, Languages, LogOut, Menu, Activity, ListChecks } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 
 function initials(name) {
@@ -14,6 +14,7 @@ const ITEMS = [
   { to: '/', icon: LayoutDashboard, key: 'navDashboard', end: true, hideFor: ['supervisor'], group: 'main', primary: true },
   { to: '/attendance', icon: ClipboardCheck, key: 'navAttendance', end: false, hideFor: [], group: 'attendance', primary: true },
   { to: '/lookup', icon: Search, key: 'navLookup', end: false, hideFor: [], group: 'attendance', primary: true },
+  { to: '/recording-status', icon: ListChecks, key: 'navRecordingStatus', end: false, hideFor: ['recorder'], group: 'attendance' },
   { to: '/daily-report', icon: FileText, key: 'navDailyReport', end: false, hideFor: [], group: 'reports' },
   { to: '/period-report', icon: FileBarChart, key: 'navPeriodReport', end: false, hideFor: [], group: 'reports' },
   { to: '/supervisor-report', icon: BarChart3, key: 'navSupervisorReport', end: false, hideFor: ['recorder'], group: 'reports' },

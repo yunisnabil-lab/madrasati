@@ -55,7 +55,50 @@ export default function Header() {
       setPendingViolations(count || 0);
     })();
   }, [canReview]);
-  const notifCount = (isAdmin ? requests.length : 0) + (canReview ? pendingViolations : 0);
+  // a teacher's replies: the supervisor's decisions on the violations and
+  // parent-contact requests they sent (last 14 days). "Unread" = decided after
+  // the last time the bell was opened, remembered per person in this browser.
+  const isRecorder = staff && staff.role === 'recorder';
+  const [replies, setReplies] = useState([]);
+  const [seenAt, setSeenAt] = useState(0);
+  const [seenBefore, setSeenBefore] = useState(0); // seenAt as of the last bell open, to highlight new items
+  useEffect(() => {
+    if (!isRecorder) return;
+    try { setSeenAt(Number(localStorage.getItem('madrasati-notif-seen-' + staff.id)) || 0); } catch { /* private mode: everything shows as new */ }
+    (async () => {
+      const since = new Date(Date.now() - 14 * 86400000).toISOString();
+      const [v, c] = await Promise.all([
+        supabase.from('behavior_violations')
+          .select('id, status, reviewed_at, students!behavior_violations_student_id_fkey(name_ar, name_en)')
+          .eq('staff_id', staff.id).in('status', ['approved', 'rejected']).gte('reviewed_at', since)
+          .order('reviewed_at', { ascending: false }).limit(10),
+        supabase.from('contact_requests')
+          .select('id, status, reviewed_at, students(name_ar, name_en)')
+          .eq('requested_by', staff.id).in('status', ['approved', 'rejected']).gte('reviewed_at', since)
+          .order('reviewed_at', { ascending: false }).limit(10),
+      ]);
+      const list = [
+        ...(v.data || []).map((r) => ({ key: 'v' + r.id, kind: 'violation', status: r.status, student: r.students, ts: new Date(r.reviewed_at).getTime() })),
+        ...(c.data || []).map((r) => ({ key: 'c' + r.id, kind: 'contact', status: r.status, student: r.students, ts: new Date(r.reviewed_at).getTime() })),
+      ].sort((a, b) => b.ts - a.ts).slice(0, 10);
+      setReplies(list);
+    })();
+  }, [isRecorder, staff]);
+  const unreadReplies = replies.filter((r) => r.ts > seenAt).length;
+
+  const toggleNotif = () => {
+    setNotifOpen((open) => {
+      if (!open && isRecorder) {
+        setSeenBefore(seenAt);
+        const now = Date.now();
+        setSeenAt(now);
+        try { localStorage.setItem('madrasati-notif-seen-' + staff.id, String(now)); } catch { /* ignore */ }
+      }
+      return !open;
+    });
+  };
+
+  const notifCount = (isAdmin ? requests.length : 0) + (canReview ? pendingViolations : 0) + (isRecorder ? unreadReplies : 0);
 
   return (
     <header className={`no-print sticky top-0 z-20 backdrop-blur-md border-b shadow-lg transition-colors duration-300 ${dark ? 'bg-gradient-to-b from-navy-soft to-navy/80 border-royal/20' : 'bg-gradient-to-b from-white to-pearl-soft/70 border-royal/10'}`}>
@@ -124,7 +167,7 @@ export default function Header() {
           {/* Notifications */}
           <div className="relative">
             <button
-              onClick={() => setNotifOpen((v) => !v)}
+              onClick={toggleNotif}
               className={`relative h-10 w-10 rounded-full flex items-center justify-center transition-colors ${dark ? 'bg-royal/15 text-royal-light hover:bg-royal/25' : 'bg-royal/10 text-royal hover:bg-royal/20'}`}
             >
               <Bell size={18} />
@@ -157,9 +200,22 @@ export default function Header() {
                         <span className="font-medium">{r.full_name}</span>
                       </div>
                     ))
-                  ) : notifCount === 0 ? (
-                    <div className={`px-3.5 py-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noNotifications}</div>
                   ) : null}
+                  {isRecorder && replies.map((r) => {
+                    const name = r.student ? (lang === 'ar' ? (r.student.name_ar || r.student.name_en) : (r.student.name_en || r.student.name_ar)) : '—';
+                    const text = (r.kind === 'violation'
+                      ? (r.status === 'approved' ? t.replyViolationApproved : t.replyViolationRejected)
+                      : (r.status === 'approved' ? t.replyContactApproved : t.replyContactRejected)).replace('{s}', name);
+                    const isNew = r.ts > seenBefore;
+                    return (
+                      <div key={r.key} className={`px-3.5 py-2 text-xs ${isNew ? (dark ? 'bg-royal/10' : 'bg-royal/5') : ''}`}>
+                        <span className={r.status === 'approved' ? 'text-emerald-500 font-medium' : 'text-rose-500 font-medium'}>{text}</span>
+                      </div>
+                    );
+                  })}
+                  {notifCount === 0 && (!isRecorder || replies.length === 0) && (
+                    <div className={`px-3.5 py-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noNotifications}</div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

@@ -12,6 +12,7 @@ import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { CYCLE_KEYS, SUBJECT_KEYS } from '../lib/i18n';
 import { staffCycles, staffSubjects, shownSubjects, namesOf } from '../lib/staffInfo';
 import { fetchAllRows } from '../lib/fetchAll';
+import BackupExport from '../components/BackupExport';
 import ChipMultiSelect from '../components/ChipMultiSelect';
 import SectionChecklistModal from '../components/SectionChecklistModal';
 
@@ -590,6 +591,7 @@ export default function Dashboard() {
 
           {canManageStaff && <StaffManagement t={t} lang={lang} dark={dark} currentStaffId={staff.id} schoolId={staff.school_id} />}
 
+          {isAdmin && <BackupExport t={t} lang={lang} dark={dark} />}
           {isAdmin && <ResetAttendanceZone t={t} lang={lang} dark={dark} school_id={staff.school_id} />}
         </main>
       </div>

@@ -17,7 +17,7 @@ Full detail: `PROJECT_DOCUMENTATION.md`. The old "madrasati-school-system" skill
 - `src/lib/Dialogs.jsx` — `useDialogs()` → `confirm()` (async) and `notify(msg, type)`; use these, not `window.confirm/alert`. (`confirmLeave` in AppContext stays native — it is synchronous.)
 - `src/lib/sections.js` (grade/stream/section labels, `gradeLabel` auto-translates grades), `search.js` (`searchStudents`, first-name matches rank first), `staffInfo.js` (cycles/subjects), `fetchAll.js` (1000-row paging), `attendanceDerive.js`, `whatsapp.js`.
 - Pages in `src/pages`, shared UI in `src/components` (Sidebar with groups + phone "More" menu, Header, SectionPicker, ContactParentPanel, BulkContactModal, EmptyState, SectionChecklistModal, ChipMultiSelect).
-- Routes/role guards: `src/App.jsx`. Activity log: `supabase/activity_log.sql` (triggers -> `activity_log`, admin-only RPC `staff_activity_summary`) + `pages/ActivityLog.jsx`; keep new important write paths covered by a trigger.
+- Routes/role guards: `src/App.jsx`. PWA: `public/manifest.webmanifest` + `favicon.svg`. Backups: `components/BackupExport.jsx` (admin dashboard). Teacher bell replies: `components/Header.jsx`. Activity log: `supabase/activity_log.sql` (triggers -> `activity_log`, admin-only RPC `staff_activity_summary`) + `pages/ActivityLog.jsx`; keep new important write paths covered by a trigger.
 
 ## Rules that matter
 - Roles: admin, edari (إداري), supervisor (مشرف), recorder (معلم). Edari: everything except attendance delete, reset attendance, staff management/assignments, contact-request approval. Supervisor/admin approve teacher violation reports and parent-contact requests. Teachers/supervisors are scoped to `staff_sections`.

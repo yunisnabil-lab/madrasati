@@ -118,7 +118,7 @@ create or replace function public.trg_log_violation()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare v_name text; r public.behavior_violations;
 begin
-  r := case when tg_op = 'DELETE' then old else new end;
+  if tg_op = 'DELETE' then r := old; else r := new; end if;
   select name_ar into v_name from students where id = r.student_id;
   if tg_op = 'INSERT' then
     perform log_activity('violation_add', 'violation', jsonb_build_object('student', v_name, 'type', r.violation_type, 'status', r.status));
@@ -142,7 +142,7 @@ create or replace function public.trg_log_lateness()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare v_name text; r public.morning_lateness;
 begin
-  r := case when tg_op = 'DELETE' then old else new end;
+  if tg_op = 'DELETE' then r := old; else r := new; end if;
   select name_ar into v_name from students where id = r.student_id;
   perform log_activity(case when tg_op = 'DELETE' then 'lateness_delete' else 'lateness_add' end, 'lateness',
     jsonb_build_object('student', v_name, 'date', r.date));

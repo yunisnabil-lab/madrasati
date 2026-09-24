@@ -70,7 +70,9 @@ export default function Attendance() {
         .from('sections')
         .select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
       let list = data || [];
-      if (staff.role === 'recorder') {
+      // a supervisor now also takes attendance, scoped to the sections
+      // they've been assigned — same mechanism as a recorder (teacher).
+      if (staff.role === 'recorder' || staff.role === 'supervisor') {
         const { data: assigned } = await supabase.from('staff_sections').select('section_id').eq('staff_id', staff.id);
         const allowed = new Set((assigned || []).map((a) => a.section_id));
         list = list.filter((s) => allowed.has(s.id));

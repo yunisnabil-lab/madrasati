@@ -33,7 +33,7 @@ function daysAgoStr(n) {
 
 export default function Violations() {
   const { t, lang, dark, staff } = useApp();
-  const canManage = staff && (staff.role === 'admin' || staff.role === 'supervisor');
+  const canManage = staff && (staff.role === 'admin' || staff.role === 'supervisor' || staff.role === 'edari');
 
   const [sections, setSections] = useState([]);
   const [grade, setGrade] = useState('');

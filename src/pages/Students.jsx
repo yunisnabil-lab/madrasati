@@ -26,6 +26,11 @@ const emptyForm = {
 export default function Students() {
   const { t, lang, dark, staff } = useApp();
   const isAdmin = staff && staff.role === 'admin';
+  // "edari" staff can add/edit students and sections (same as admin), but
+  // deactivating/reactivating a student — individually or in bulk — stays an
+  // admin-only action, per the explicit exclusion.
+  const canManageStudents = staff && (staff.role === 'admin' || staff.role === 'edari');
+  const canDeactivate = isAdmin;
 
   const [sections, setSections] = useState([]);
   const [students, setStudents] = useState([]);
@@ -128,7 +133,7 @@ export default function Students() {
   };
 
   const handleSave = async () => {
-    if (!isAdmin) return;
+    if (!canManageStudents) return;
     if (!form.sis_no.trim() || !form.name_ar.trim() || !form.section_id) {
       setFormError(t.requiredFieldsMsg);
       return;
@@ -226,7 +231,7 @@ export default function Students() {
   };
 
   const saveBulk = async () => {
-    if (!isAdmin) return;
+    if (!canManageStudents) return;
     setBulkError('');
     setBulkResult(null);
 
@@ -304,7 +309,7 @@ export default function Students() {
   const clearSelection = () => { setSelectedIds(new Set()); setSelectLimitMsg(''); };
 
   const bulkDeactivate = async () => {
-    if (!isAdmin || selectedIds.size === 0) return;
+    if (!canDeactivate || selectedIds.size === 0) return;
     setBulkDeactivating(true);
     const { error } = await supabase.from('students').update({ is_active: false }).in('id', [...selectedIds]);
     setBulkDeactivating(false);
@@ -316,7 +321,7 @@ export default function Students() {
   };
 
   const handleAddSection = async () => {
-    if (!isAdmin) return;
+    if (!canManageStudents) return;
     if (!sectionForm.grade_name.trim() || !sectionForm.section_number) {
       setSectionError(t.requiredFieldsMsg);
       return;
@@ -355,7 +360,7 @@ export default function Students() {
   };
 
   const handleDelete = async () => {
-    if (!isAdmin || !deleteTarget) return;
+    if (!canDeactivate || !deleteTarget) return;
     setDeleting(true);
     const { error } = await supabase.from('students').update({ is_active: false }).eq('id', deleteTarget.id);
     setDeleting(false);
@@ -369,7 +374,7 @@ export default function Students() {
   };
 
   const handleRestore = async (student) => {
-    if (!isAdmin) return;
+    if (!canDeactivate) return;
     const { error } = await supabase.from('students').update({ is_active: true }).eq('id', student.id);
     if (error) {
       console.error('Restore student error:', error);
@@ -393,7 +398,7 @@ export default function Students() {
               <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.studentsTitle}</h1>
             </div>
             <div className="flex gap-2">
-              {isAdmin && (
+              {canManageStudents && (
                 <>
                   <button
                     onClick={() => setSectionModalOpen(true)}
@@ -447,7 +452,7 @@ export default function Students() {
               onSectionChange={setFilterSection}
               inputCls={inputCls}
             />
-            {isAdmin && (
+            {canDeactivate && (
               <label className={`flex items-center gap-2 text-xs font-medium w-fit cursor-pointer ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
                 <input type="checkbox" checked={showInactive} onChange={(e) => { setShowInactive(e.target.checked); clearSelection(); }} className="accent-royal" />
                 {t.showInactiveStudents}
@@ -455,7 +460,7 @@ export default function Students() {
             )}
           </div>
 
-          {isAdmin && selectedIds.size > 0 && !showInactive && (
+          {canDeactivate && selectedIds.size > 0 && !showInactive && (
             <div className={cardFloating(dark, 'p-3.5 mb-4 flex flex-wrap items-center gap-3')}>
               <span className="text-sm font-medium">{t.selectedCount.replace('{n}', selectedIds.size).replace('{max}', MAX_BULK_SELECT)}</span>
               {!confirmBulkDeactivate ? (
@@ -500,7 +505,7 @@ export default function Students() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className={`border-b text-xs ${dark ? 'border-slate-800 text-slate-500' : 'border-slate-100 text-slate-400'}`}>
-                      {isAdmin && !showInactive && <th className="w-10 px-4 py-3"></th>}
+                      {canDeactivate && !showInactive && <th className="w-10 px-4 py-3"></th>}
                       <th className="text-start font-medium px-4 py-3">{t.sisNo}</th>
                       <th className="text-start font-medium px-4 py-3">{t.nameAr}</th>
                       <th className="text-start font-medium px-4 py-3 hidden sm:table-cell">{t.section}</th>
@@ -510,7 +515,7 @@ export default function Students() {
                   <tbody className={`divide-y ${dark ? 'divide-slate-800/60' : 'divide-slate-100'}`}>
                     {filtered.map((s) => (
                       <tr key={s.id} className={`transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50/70'}`}>
-                        {isAdmin && !showInactive && (
+                        {canDeactivate && !showInactive && (
                           <td className="px-4 py-3">
                             <input
                               type="checkbox"
@@ -524,24 +529,28 @@ export default function Students() {
                         <td className="px-4 py-3 font-medium">{lang === 'ar' ? s.name_ar : (s.name_en || s.name_ar)}</td>
                         <td className={`px-4 py-3 hidden sm:table-cell ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{fmtSectionLabel(sectionMap[s.section_id], lang)}</td>
                         <td className="px-4 py-3">
-                          {isAdmin && (
-                            <div className="flex items-center gap-1 justify-end">
-                              {showInactive ? (
+                          <div className="flex items-center gap-1 justify-end">
+                            {showInactive ? (
+                              canDeactivate && (
                                 <button onClick={() => handleRestore(s)} className={`text-xs font-medium px-3 py-1.5 rounded-lg ${dark ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'bg-emerald-50 text-emerald-700 hover:bg-emerald-100'}`}>
                                   {t.restoreStudent}
                                 </button>
-                              ) : (
-                                <>
+                              )
+                            ) : (
+                              <>
+                                {canManageStudents && (
                                   <button onClick={() => openEdit(s)} className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors ${dark ? 'hover:bg-white/10 text-slate-400' : 'hover:bg-slate-100 text-slate-500'}`}>
                                     <Pencil size={14} />
                                   </button>
+                                )}
+                                {canDeactivate && (
                                   <button onClick={() => setDeleteTarget(s)} className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors text-rose-500 ${dark ? 'hover:bg-rose-500/10' : 'hover:bg-rose-50'}`}>
                                     <Trash2 size={14} />
                                   </button>
-                                </>
-                              )}
-                            </div>
-                          )}
+                                )}
+                              </>
+                            )}
+                          </div>
                         </td>
                       </tr>
                     ))}

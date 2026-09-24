@@ -36,6 +36,9 @@ function CustomTooltip({ active, payload, label, dark }) {
 export default function Dashboard() {
   const { t, lang, dark, staff } = useApp();
   const isAdmin = staff && staff.role === 'admin';
+  // "edari" (administrative) staff manage staff and approve registration
+  // requests same as admin — only resetting attendance stays admin-only.
+  const canManageStaff = staff && (staff.role === 'admin' || staff.role === 'edari');
 
   const [kpi, setKpi] = useState({ students: null, staffCount: null, sections: null });
   const [gradeData, setGradeData] = useState([]);
@@ -113,7 +116,7 @@ export default function Dashboard() {
   }, []);
 
   const loadRequests = useCallback(async () => {
-    if (!isAdmin) { setRequestsLoading(false); return; }
+    if (!canManageStaff) { setRequestsLoading(false); return; }
     setRequestsLoading(true);
     const { data } = await supabase
       .from('staff')
@@ -122,7 +125,7 @@ export default function Dashboard() {
       .order('created_at', { ascending: false });
     setRequests(data || []);
     setRequestsLoading(false);
-  }, [isAdmin]);
+  }, [canManageStaff]);
 
   useEffect(() => {
     loadStats();
@@ -161,6 +164,21 @@ export default function Dashboard() {
   };
 
   async function approve(id, role) {
+    // the school may only ever have one admin account — block approving
+    // someone as admin while another admin already exists, instead of
+    // silently creating a second one.
+    if (role === 'admin') {
+      const { count } = await supabase
+        .from('staff')
+        .select('id', { count: 'exact', head: true })
+        .eq('school_id', staff.school_id)
+        .eq('role', 'admin')
+        .eq('status', 'approved');
+      if (count > 0) {
+        window.alert(lang === 'ar' ? 'يوجد أدمن واحد بالفعل في هذه المدرسة. لا يمكن تعيين أدمن آخر.' : 'This school already has an admin. You cannot assign another one.');
+        return;
+      }
+    }
     const { error } = await supabase.from('staff').update({ status: 'approved', role }).eq('id', id);
     if (error) { window.alert(lang === 'ar' ? 'تعذّرت الموافقة، حاول مرة أخرى.' : 'Could not approve. Please try again.'); return; }
     setRequests((r) => r.filter((row) => row.id !== id));
@@ -177,7 +195,7 @@ export default function Dashboard() {
     { label: t.totalStudents, value: kpi.students, icon: GraduationCap, hint: lang === 'ar' ? 'مسجّلون في النظام' : 'enrolled in the system', accent: dark ? 'bg-royal/20 text-royal-light' : 'bg-royal/10 text-royal' },
     { label: t.staffMembers, value: kpi.staffCount, icon: Users, hint: lang === 'ar' ? 'حسابات معتمدة' : 'approved accounts', accent: dark ? 'bg-gold/20 text-gold-light' : 'bg-gold/10 text-gold' },
     { label: t.sections, value: kpi.sections, icon: SchoolIcon, hint: lang === 'ar' ? 'صف دراسي نشط' : 'active sections', accent: dark ? 'bg-emerald-500/20 text-emerald-400' : 'bg-emerald-500/10 text-emerald-600' },
-    ...(isAdmin ? [{ label: t.pendingReq, value: requests.length, icon: Clock, hint: lang === 'ar' ? 'بانتظار المراجعة' : 'awaiting review', accent: dark ? 'bg-rose-500/20 text-rose-400' : 'bg-rose-500/10 text-rose-600' }] : []),
+    ...(canManageStaff ? [{ label: t.pendingReq, value: requests.length, icon: Clock, hint: lang === 'ar' ? 'بانتظار المراجعة' : 'awaiting review', accent: dark ? 'bg-rose-500/20 text-rose-400' : 'bg-rose-500/10 text-rose-600' }] : []),
   ];
 
   return (
@@ -409,7 +427,7 @@ export default function Dashboard() {
             </motion.div>
           </div>
 
-          {isAdmin && (
+          {canManageStaff && (
             <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.26 }}
               className={`${cardFloating(dark)} p-5`}>
               <div className="mb-4">
@@ -478,6 +496,7 @@ export default function Dashboard() {
                                 <option value="viewer">{t.roleNames.viewer}</option>
                                 <option value="recorder">{t.roleNames.recorder}</option>
                                 <option value="supervisor">{t.roleNames.supervisor}</option>
+                                <option value="edari">{t.roleNames.edari}</option>
                                 <option value="admin">{t.roleNames.admin}</option>
                               </select>
                               <button
@@ -506,7 +525,7 @@ export default function Dashboard() {
             </motion.div>
           )}
 
-          {isAdmin && <StaffManagement t={t} lang={lang} dark={dark} currentStaffId={staff.id} />}
+          {canManageStaff && <StaffManagement t={t} lang={lang} dark={dark} currentStaffId={staff.id} schoolId={staff.school_id} />}
 
           {isAdmin && <ResetAttendanceZone t={t} lang={lang} dark={dark} school_id={staff.school_id} />}
         </main>
@@ -515,7 +534,7 @@ export default function Dashboard() {
   );
 }
 
-function StaffManagement({ t, lang, dark, currentStaffId }) {
+function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
   const [staffList, setStaffList] = useState(null);
   const [savingId, setSavingId] = useState(null);
   const [confirmRevokeId, setConfirmRevokeId] = useState(null);
@@ -534,6 +553,19 @@ function StaffManagement({ t, lang, dark, currentStaffId }) {
   const staffSaveError = () => window.alert(lang === 'ar' ? 'تعذّر الحفظ، حاول مرة أخرى.' : 'Could not save. Please try again.');
 
   const changeRole = async (id, role) => {
+    // the school may only ever have one admin account.
+    if (role === 'admin') {
+      const { count } = await supabase
+        .from('staff')
+        .select('id', { count: 'exact', head: true })
+        .eq('school_id', schoolId)
+        .eq('role', 'admin')
+        .eq('status', 'approved');
+      if (count > 0) {
+        window.alert(lang === 'ar' ? 'يوجد أدمن واحد بالفعل في هذه المدرسة. لا يمكن تعيين أدمن آخر.' : 'This school already has an admin. You cannot assign another one.');
+        return;
+      }
+    }
     setSavingId(id);
     const { error } = await supabase.from('staff').update({ role }).eq('id', id);
     setSavingId(null);
@@ -610,6 +642,7 @@ function StaffManagement({ t, lang, dark, currentStaffId }) {
                     <option value="recorder">{t.roleNames.recorder}</option>
                     <option value="viewer">{t.roleNames.viewer}</option>
                     <option value="supervisor">{t.roleNames.supervisor}</option>
+                    <option value="edari">{t.roleNames.edari}</option>
                     <option value="admin">{t.roleNames.admin}</option>
                   </select>
 

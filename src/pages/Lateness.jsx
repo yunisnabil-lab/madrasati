@@ -35,7 +35,7 @@ function initials(name) {
 // of the class-period attendance system (attendance_records / period 1).
 export default function Lateness() {
   const { t, lang, dark, staff } = useApp();
-  const canManage = staff && (staff.role === 'admin' || staff.role === 'supervisor');
+  const canManage = staff && (staff.role === 'admin' || staff.role === 'supervisor' || staff.role === 'edari');
 
   const [sections, setSections] = useState([]);
   const [grade, setGrade] = useState('');

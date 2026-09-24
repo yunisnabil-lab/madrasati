@@ -77,7 +77,8 @@ export default function StudentLookup() {
         .from('sections')
         .select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
       let list = data || [];
-      if (staff.role === 'recorder') {
+      // a supervisor looks students up scoped to their own assigned sections too.
+      if (staff.role === 'recorder' || staff.role === 'supervisor') {
         const { data: assigned } = await supabase.from('staff_sections').select('section_id').eq('staff_id', staff.id);
         const allowed = new Set((assigned || []).map((a) => a.section_id));
         list = list.filter((s) => allowed.has(s.id));
@@ -127,9 +128,10 @@ export default function StudentLookup() {
     const { data } = await fetchAllRows(() => supabase
       .from('students')
       .select('id, sis_no, name_ar, name_en, section_id, email, parent_email, emirates_id, moe_username, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)'));
-    // a recorder (teacher) only searches within their own assigned sections —
-    // "sections" here is already pre-scoped to those for that role (see above)
-    const searchScope = staff?.role === 'recorder' ? new Set(sections.map((s) => s.id)) : null;
+    // a recorder (teacher) or supervisor only searches within their own
+    // assigned sections — "sections" here is already pre-scoped to those for
+    // that role (see above)
+    const searchScope = (staff?.role === 'recorder' || staff?.role === 'supervisor') ? new Set(sections.map((s) => s.id)) : null;
     const matched = (data || [])
       .filter((s) => !searchScope || searchScope.has(s.section_id))
       .filter((s) => matchesStudentSearch(s, q));
@@ -320,8 +322,11 @@ function StudentProfileCard({
   fromDate, toDate, setFromDate, setToDate, inputCls, onBack, onOverrideSaved,
 }) {
   const name = lang === 'ar' ? (student.name_ar || student.name_en) : (student.name_en || student.name_ar);
-  const canOverride = staff && (staff.role === 'admin' || staff.role === 'viewer');
-  const isAdmin = staff && staff.role === 'admin';
+  const canOverride = staff && (staff.role === 'admin' || staff.role === 'viewer' || staff.role === 'edari');
+  // deleting a date-ranged batch of attendance records for one student is a
+  // targeted correction, not the same thing as the school-wide "reset
+  // attendance" action — so "edari" gets this too, unlike reset attendance.
+  const canDeleteRecords = staff && (staff.role === 'admin' || staff.role === 'edari');
 
   // The print title/filename used to always say today's date, even when a
   // from/to filter was applied — so a report printed for, say, last month
@@ -445,7 +450,7 @@ function StudentProfileCard({
         </div>
       )}
 
-      {isAdmin && (
+      {canDeleteRecords && (
         <div className="no-print">
           <DeleteRecordsPanel student={student} t={t} lang={lang} dark={dark} inputCls={inputCls} onDeleted={onOverrideSaved} />
         </div>

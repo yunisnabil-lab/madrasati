@@ -29,7 +29,10 @@ export default function StaffAssignments() {
   const loadAll = useCallback(async () => {
     setLoading(true);
     const [teachRes, secRes, asgRes] = await Promise.all([
-      supabase.from('staff').select('id, full_name, email, cycle, subject').eq('role', 'recorder').eq('status', 'approved').order('full_name'),
+      // supervisors are now assignable to sections too — they take
+      // attendance/view reports scoped to their assigned sections, same as
+      // a recorder (teacher).
+      supabase.from('staff').select('id, full_name, email, cycle, subject').in('role', ['recorder', 'supervisor']).eq('status', 'approved').order('full_name'),
       supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number'),
       supabase.from('staff_sections').select('staff_id, section_id'),
     ]);

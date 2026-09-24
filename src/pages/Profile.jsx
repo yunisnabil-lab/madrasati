@@ -39,12 +39,173 @@ function firstOfMonthStr() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-01`;
 }
 
+// Lets the user pick which part of the chosen photo becomes the avatar,
+// instead of the browser's blind center-crop (object-cover) that was
+// cutting off faces on non-square photos. Renders the photo at "cover"
+// size by default (matching the old behavior), then lets the user drag to
+// reposition and use a slider to zoom in — exactly what's visible in the
+// square viewport is what gets uploaded.
+function AvatarCropperModal({ imageSrc, dark, t, onCancel, onConfirm, saving }) {
+  const CROP_SIZE = 260;
+  const imgElRef = useRef(null);
+  const [natural, setNatural] = useState(null);
+  const [zoom, setZoom] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragRef = useRef(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    const img = new Image();
+    img.onload = () => { if (!cancelled) setNatural({ w: img.naturalWidth, h: img.naturalHeight }); };
+    img.src = imageSrc;
+    return () => { cancelled = true; };
+  }, [imageSrc]);
+
+  useEffect(() => () => {
+    window.removeEventListener('mousemove', handlePointerMoveRef.current);
+    window.removeEventListener('mouseup', handlePointerUpRef.current);
+    window.removeEventListener('touchmove', handlePointerMoveRef.current);
+    window.removeEventListener('touchend', handlePointerUpRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const handlePointerMoveRef = useRef(() => {});
+  const handlePointerUpRef = useRef(() => {});
+
+  if (!natural) {
+    return (
+      <div className="fixed inset-0 z-[100] bg-black/60 flex items-center justify-center">
+        <Loader2 className="animate-spin text-white" size={28} />
+      </div>
+    );
+  }
+
+  const aspect = natural.w / natural.h;
+  const baseW = aspect >= 1 ? CROP_SIZE * aspect : CROP_SIZE;
+  const baseH = aspect >= 1 ? CROP_SIZE : CROP_SIZE / aspect;
+  const dispW = baseW * zoom;
+  const dispH = baseH * zoom;
+  const maxOffsetX = Math.max(0, (dispW - CROP_SIZE) / 2);
+  const maxOffsetY = Math.max(0, (dispH - CROP_SIZE) / 2);
+  const clamp = (v, max) => Math.min(max, Math.max(-max, v));
+
+  function handlePointerDown(e) {
+    e.preventDefault();
+    const point = e.touches ? e.touches[0] : e;
+    dragRef.current = { startX: point.clientX, startY: point.clientY, origin: offset };
+    const move = (ev) => handlePointerMove(ev);
+    const up = () => handlePointerUp();
+    handlePointerMoveRef.current = move;
+    handlePointerUpRef.current = up;
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
+    window.addEventListener('touchmove', move, { passive: false });
+    window.addEventListener('touchend', up);
+  }
+  function handlePointerMove(e) {
+    if (!dragRef.current) return;
+    if (e.cancelable) e.preventDefault();
+    const point = e.touches ? e.touches[0] : e;
+    const dx = point.clientX - dragRef.current.startX;
+    const dy = point.clientY - dragRef.current.startY;
+    setOffset({
+      x: clamp(dragRef.current.origin.x + dx, maxOffsetX),
+      y: clamp(dragRef.current.origin.y + dy, maxOffsetY),
+    });
+  }
+  function handlePointerUp() {
+    dragRef.current = null;
+    window.removeEventListener('mousemove', handlePointerMoveRef.current);
+    window.removeEventListener('mouseup', handlePointerUpRef.current);
+    window.removeEventListener('touchmove', handlePointerMoveRef.current);
+    window.removeEventListener('touchend', handlePointerUpRef.current);
+  }
+
+  function handleZoomChange(newZoom) {
+    const newDispW = baseW * newZoom;
+    const newDispH = baseH * newZoom;
+    const newMaxX = Math.max(0, (newDispW - CROP_SIZE) / 2);
+    const newMaxY = Math.max(0, (newDispH - CROP_SIZE) / 2);
+    setZoom(newZoom);
+    setOffset((o) => ({ x: clamp(o.x, newMaxX), y: clamp(o.y, newMaxY) }));
+  }
+
+  function handleConfirm() {
+    const OUTPUT = 512;
+    const canvas = document.createElement('canvas');
+    canvas.width = OUTPUT;
+    canvas.height = OUTPUT;
+    const ctx = canvas.getContext('2d');
+    const scale = natural.w / dispW;
+    const topLeftX = CROP_SIZE / 2 - dispW / 2 + offset.x;
+    const topLeftY = CROP_SIZE / 2 - dispH / 2 + offset.y;
+    let sSize = CROP_SIZE * scale;
+    let sx = -topLeftX * scale;
+    let sy = -topLeftY * scale;
+    sx = Math.max(0, Math.min(sx, natural.w - sSize));
+    sy = Math.max(0, Math.min(sy, natural.h - sSize));
+    ctx.drawImage(imgElRef.current, sx, sy, sSize, sSize, 0, 0, OUTPUT, OUTPUT);
+    canvas.toBlob((blob) => { if (blob) onConfirm(blob); }, 'image/jpeg', 0.92);
+  }
+
+  return (
+    <div className="fixed inset-0 z-[100] bg-black/70 flex items-center justify-center p-4" onClick={(e) => e.target === e.currentTarget && onCancel()}>
+      <div className={`w-full max-w-sm rounded-2xl p-5 ${dark ? 'bg-navy-soft' : 'bg-white'}`}>
+        <h3 className={`text-sm font-bold mb-3 ${dark ? 'text-white' : 'text-navy'}`}>{t.cropAvatarTitle}</h3>
+        <div
+          className="relative mx-auto overflow-hidden rounded-2xl cursor-move select-none"
+          style={{ width: CROP_SIZE, height: CROP_SIZE, background: '#111', touchAction: 'none' }}
+          onMouseDown={handlePointerDown}
+          onTouchStart={handlePointerDown}
+        >
+          <img
+            ref={imgElRef}
+            src={imageSrc}
+            alt=""
+            draggable={false}
+            crossOrigin="anonymous"
+            style={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              width: dispW,
+              height: dispH,
+              maxWidth: 'none',
+              transform: `translate(-50%, -50%) translate(${offset.x}px, ${offset.y}px)`,
+            }}
+          />
+        </div>
+        <div className="flex items-center gap-2 mt-4">
+          <span className={`text-xs ${dark ? 'text-slate-300' : 'text-slate-500'}`}>−</span>
+          <input
+            type="range" min="1" max="3" step="0.01" value={zoom}
+            onChange={(e) => handleZoomChange(parseFloat(e.target.value))}
+            className="flex-1"
+          />
+          <span className={`text-xs ${dark ? 'text-slate-300' : 'text-slate-500'}`}>+</span>
+        </div>
+        <p className={`text-[11px] mt-2 text-center ${dark ? 'text-slate-400' : 'text-slate-400'}`}>{t.cropAvatarHint}</p>
+        <div className="flex gap-2 mt-5">
+          <button onClick={onCancel} className={`flex-1 text-sm font-medium px-4 py-2.5 rounded-lg transition-colors ${dark ? 'bg-white/10 text-slate-200 hover:bg-white/15' : 'bg-slate-100 text-slate-600 hover:bg-slate-200'}`}>
+            {t.cancel}
+          </button>
+          <button onClick={handleConfirm} disabled={saving} className="flex-1 flex items-center justify-center gap-2 text-sm font-medium px-4 py-2.5 rounded-lg bg-royal hover:bg-royal-light text-white transition-colors disabled:opacity-60">
+            {saving ? <Loader2 size={14} className="animate-spin" /> : <Check size={14} />}
+            {t.save}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Profile() {
   const { t, lang, setLang, dark, setDark, staff, signOut, refreshStaff } = useApp();
   const fileRef = useRef(null);
 
   const [uploading, setUploading] = useState(false);
   const [avatarMsg, setAvatarMsg] = useState(null);
+  const [cropSrc, setCropSrc] = useState(null);
   const [editingName, setEditingName] = useState(false);
   const [nameDraft, setNameDraft] = useState(staff?.full_name || '');
   const [savingName, setSavingName] = useState(false);
@@ -74,18 +235,24 @@ export default function Profile() {
     })();
   }, [staff]);
 
-  async function handleAvatarChange(e) {
+  function handleAvatarChange(e) {
     const file = e.target.files[0];
+    e.target.value = ''; // allow re-selecting the same file later
     if (!file || !staff) return;
-    setUploading(true);
     setAvatarMsg(null);
-    const ext = file.name.split('.').pop();
-    const path = `${staff.id}/avatar.${ext}`;
-    const { error: upErr } = await supabase.storage.from('avatars').upload(path, file, { upsert: true });
+    setCropSrc(URL.createObjectURL(file));
+  }
+
+  async function handleCropConfirm(blob) {
+    if (!staff) return;
+    setUploading(true);
+    const path = `${staff.id}/avatar.jpg`;
+    const { error: upErr } = await supabase.storage.from('avatars').upload(path, blob, { upsert: true, contentType: 'image/jpeg' });
     if (upErr) {
       console.error('Avatar upload error:', upErr);
       setAvatarMsg({ type: 'err', text: t.saveError });
       setUploading(false);
+      closeCropper();
       return;
     }
     const { data: pub } = supabase.storage.from('avatars').getPublicUrl(path);
@@ -94,10 +261,17 @@ export default function Profile() {
       console.error('Avatar save error:', updErr);
       setAvatarMsg({ type: 'err', text: t.saveError });
       setUploading(false);
+      closeCropper();
       return;
     }
     await refreshStaff();
     setUploading(false);
+    closeCropper();
+  }
+
+  function closeCropper() {
+    if (cropSrc) URL.revokeObjectURL(cropSrc);
+    setCropSrc(null);
   }
 
   async function saveName() {
@@ -316,6 +490,16 @@ export default function Profile() {
           </button>
         </main>
       </div>
+      {cropSrc && (
+        <AvatarCropperModal
+          imageSrc={cropSrc}
+          dark={dark}
+          t={t}
+          saving={uploading}
+          onCancel={closeCropper}
+          onConfirm={handleCropConfirm}
+        />
+      )}
     </div>
   );
 }

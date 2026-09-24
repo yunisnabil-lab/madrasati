@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
-import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3, ChevronDown, UserRound, Sun, Moon, Languages, LogOut } from 'lucide-react';
+import { LayoutDashboard, ClipboardCheck, GraduationCap, Search, UsersRound, FileBarChart, FileText, AlertTriangle, Clock3, MessageCircle, BarChart3, ChevronDown, UserRound, Sun, Moon, Languages, LogOut, Menu } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 
 function initials(name) {
@@ -8,19 +8,24 @@ function initials(name) {
   return ((parts[0] ? parts[0][0] : '') + (parts[1] ? parts[1][0] : '')).toUpperCase();
 }
 
+// group: which heading the item sits under in the sidebar ('main' has none).
+// primary: shown directly in the phone's bottom bar; the rest go under "More".
 const ITEMS = [
-  { to: '/', icon: LayoutDashboard, key: 'navDashboard', end: true, hideFor: ['supervisor'] },
-  { to: '/attendance', icon: ClipboardCheck, key: 'navAttendance', end: false, hideFor: [] },
-  { to: '/lookup', icon: Search, key: 'navLookup', end: false, hideFor: [] },
-  { to: '/daily-report', icon: FileText, key: 'navDailyReport', end: false, hideFor: [] },
-  { to: '/period-report', icon: FileBarChart, key: 'navPeriodReport', end: false, hideFor: [] },
-  { to: '/students', icon: GraduationCap, key: 'navStudents', end: false, hideFor: ['recorder', 'supervisor'] },
-  { to: '/violations', icon: AlertTriangle, key: 'navViolations', end: false, hideFor: [] },
-  { to: '/lateness', icon: Clock3, key: 'navLateness', end: false, hideFor: ['recorder'] },
-  { to: '/supervisor-report', icon: BarChart3, key: 'navSupervisorReport', end: false, hideFor: ['recorder'] },
-  { to: '/contact-requests', icon: MessageCircle, key: 'navContactRequests', end: false, hideFor: ['recorder', 'edari'] },
-  { to: '/staff-assignments', icon: UsersRound, key: 'navAssignments', end: false, hideFor: ['recorder', 'supervisor', 'edari'] },
+  { to: '/', icon: LayoutDashboard, key: 'navDashboard', end: true, hideFor: ['supervisor'], group: 'main', primary: true },
+  { to: '/attendance', icon: ClipboardCheck, key: 'navAttendance', end: false, hideFor: [], group: 'attendance', primary: true },
+  { to: '/lookup', icon: Search, key: 'navLookup', end: false, hideFor: [], group: 'attendance', primary: true },
+  { to: '/daily-report', icon: FileText, key: 'navDailyReport', end: false, hideFor: [], group: 'reports' },
+  { to: '/period-report', icon: FileBarChart, key: 'navPeriodReport', end: false, hideFor: [], group: 'reports' },
+  { to: '/supervisor-report', icon: BarChart3, key: 'navSupervisorReport', end: false, hideFor: ['recorder'], group: 'reports' },
+  { to: '/violations', icon: AlertTriangle, key: 'navViolations', end: false, hideFor: [], group: 'behavior', primary: true },
+  { to: '/lateness', icon: Clock3, key: 'navLateness', end: false, hideFor: ['recorder'], group: 'behavior' },
+  { to: '/contact-requests', icon: MessageCircle, key: 'navContactRequests', end: false, hideFor: ['recorder', 'edari'], group: 'behavior' },
+  { to: '/students', icon: GraduationCap, key: 'navStudents', end: false, hideFor: ['recorder', 'supervisor'], group: 'admin' },
+  { to: '/staff-assignments', icon: UsersRound, key: 'navAssignments', end: false, hideFor: ['recorder', 'supervisor', 'edari'], group: 'admin' },
 ];
+
+const GROUP_ORDER = ['main', 'attendance', 'reports', 'behavior', 'admin'];
+const GROUP_LABEL_KEYS = { attendance: 'navGroupAttendance', reports: 'navGroupReports', behavior: 'navGroupBehavior', admin: 'navGroupAdmin' };
 
 function visibleItems(role) {
   return ITEMS.filter((item) => !item.hideFor || !item.hideFor.includes(role));
@@ -31,36 +36,77 @@ export { ITEMS, visibleItems };
 export function MobileNav() {
   const { t, dark, staff, confirmLeave } = useApp();
   const guardNav = (e) => { if (!confirmLeave()) e.preventDefault(); };
+  const [moreOpen, setMoreOpen] = useState(false);
   const items = visibleItems(staff?.role);
+  const main = items.filter((i) => i.primary);
+  const more = items.filter((i) => !i.primary);
+
+  const itemCls = (isActive) =>
+    `flex-1 min-w-0 flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium ${
+      isActive
+        ? dark ? 'text-royal-light' : 'text-royal'
+        : dark ? 'text-slate-200' : 'text-slate-500'
+    }`;
+
   return (
-    <nav
-      className={`no-print md:hidden fixed bottom-0 inset-x-0 z-30 flex items-stretch overflow-x-auto border-t transition-colors duration-300 ${
-        dark ? 'bg-navy border-slate-800' : 'bg-white border-slate-200'
-      }`}
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-    >
-      {items.map((item) => {
-        const Icon = item.icon;
-        return (
-          <NavLink
-            key={item.to}
-            to={item.to}
-            end={item.end}
-            onClick={guardNav}
-            className={({ isActive }) =>
-              `flex-1 min-w-[68px] flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium ${
-                isActive
-                  ? dark ? 'text-royal-light' : 'text-royal'
-                  : dark ? 'text-slate-200' : 'text-slate-500'
-              }`
-            }
-          >
-            <Icon size={19} />
-            <span className="truncate max-w-[64px]">{t[item.key]}</span>
-          </NavLink>
-        );
-      })}
-    </nav>
+    <>
+      {moreOpen && (
+        <div className="no-print md:hidden fixed inset-0 z-30" onClick={() => setMoreOpen(false)} />
+      )}
+      {moreOpen && (
+        <div
+          className={`no-print md:hidden fixed inset-x-3 z-40 rounded-2xl border shadow-2xl p-2 ${dark ? 'bg-navy-soft border-slate-700' : 'bg-white border-slate-200'}`}
+          style={{ bottom: 'calc(64px + env(safe-area-inset-bottom))' }}
+        >
+          {more.map((item) => {
+            const Icon = item.icon;
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                onClick={(e) => { guardNav(e); setMoreOpen(false); }}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-3 py-3 rounded-xl text-sm font-medium ${
+                    isActive ? (dark ? 'bg-royal/20 text-royal-light' : 'bg-royal/10 text-royal') : (dark ? 'text-slate-200' : 'text-slate-700')
+                  }`
+                }
+              >
+                <Icon size={18} /> {t[item.key]}
+              </NavLink>
+            );
+          })}
+        </div>
+      )}
+      <nav
+        className={`no-print md:hidden fixed bottom-0 inset-x-0 z-40 flex items-stretch border-t transition-colors duration-300 ${
+          dark ? 'bg-navy border-slate-800' : 'bg-white border-slate-200'
+        }`}
+        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      >
+        {main.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              onClick={guardNav}
+              className={({ isActive }) => itemCls(isActive)}
+            >
+              <Icon size={19} />
+              <span className="truncate max-w-[72px]">{t[item.key]}</span>
+            </NavLink>
+          );
+        })}
+        {more.length > 0 && (
+          <button type="button" onClick={() => setMoreOpen((v) => !v)} className={itemCls(moreOpen)}>
+            <Menu size={19} />
+            <span>{t.navMore}</span>
+          </button>
+        )}
+      </nav>
+    </>
   );
 }
 
@@ -152,8 +198,18 @@ export default function Sidebar() {
         )}
       </div>
 
-      <nav className="flex-1 min-h-0 overflow-y-auto px-3 pt-4 pb-4 space-y-1">
-        {items.map((item) => {
+      <nav className="flex-1 min-h-0 overflow-y-auto px-3 pt-3 pb-4">
+        {GROUP_ORDER.map((groupKey) => {
+          const groupItems = items.filter((i) => i.group === groupKey);
+          if (groupItems.length === 0) return null;
+          return (
+            <div key={groupKey} className="mb-2 space-y-1">
+              {GROUP_LABEL_KEYS[groupKey] && (
+                <div className={`px-3 pt-3 pb-1 text-xs font-semibold tracking-wide ${dark ? 'text-slate-300' : 'text-slate-500'}`}>
+                  {t[GROUP_LABEL_KEYS[groupKey]]}
+                </div>
+              )}
+              {groupItems.map((item) => {
           const Icon = item.icon;
           return (
             <NavLink
@@ -176,6 +232,9 @@ export default function Sidebar() {
               <Icon size={17} />
               {t[item.key]}
             </NavLink>
+          );
+              })}
+            </div>
           );
         })}
       </nav>

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Users, Layers, CheckCircle2, Flag, ClipboardCheck, Search, AlertTriangle } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
+import EmptyState from '../components/EmptyState';
 import { supabase } from '../lib/supabase';
 import { sectionLabel as fmtSectionLabel, sortSections } from '../lib/sections';
 import { STATUS_META } from '../lib/status';
@@ -261,7 +262,7 @@ export default function RecorderDashboard() {
                     </div>
                   ))
                 ) : recentMine.length === 0 ? (
-                  <div className={`text-sm py-4 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noRecentEntries}</div>
+                  <EmptyState icon={ClipboardCheck} text={t.noRecentEntries} dark={dark} compact />
                 ) : (
                   recentMine.map((r, i) => {
                     const s = r.students || {};
@@ -293,7 +294,7 @@ export default function RecorderDashboard() {
               {loading ? (
                 <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className={skeleton(dark, 'h-11 w-full')} />)}</div>
               ) : needsAttention.length === 0 ? (
-                <div className={`text-sm py-4 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noNeedsAttention}</div>
+                <EmptyState icon={Flag} text={t.noNeedsAttention} dark={dark} compact />
               ) : (
                 <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                   {needsAttention.map((s) => (

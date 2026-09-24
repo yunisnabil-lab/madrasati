@@ -216,8 +216,8 @@ export default function PeriodReport() {
   }, [grade, stream, sectionSel, sections, lang]);
 
   const exportCsv = () => {
-    const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGrade, t.colPresentDays, t.colAbsentDays, t.colLateDays, t.colExcusedDays, t.colNotRecordedDays, t.colRate, t.colFlag];
-    const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.grade, r.present, r.absent, r.lateDays, r.excused, r.notRecorded, r.rate == null ? '—' : `${r.rate}%`, r.flagged ? t.frequentAbsence : '']);
+    const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGradeSection, t.colPresentDays, t.colAbsentDays, t.colLateDays, t.colExcusedDays, t.colNotRecordedDays, t.colRate, t.colFlag];
+    const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.section_label, r.present, r.absent, r.lateDays, r.excused, r.notRecorded, r.rate == null ? '—' : `${r.rate}%`, r.flagged ? t.frequentAbsence : '']);
     exportXlsx(`period-report-${scopeLabel}-${fromDate}-to-${toDate}.xlsx`, [header, ...body], { lang });
   };
 

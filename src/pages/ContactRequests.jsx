@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { MessageCircle, Mail, Check, X, Loader2, Inbox, History, ChevronDown } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
+import EmptyState from '../components/EmptyState';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionLabel as fmtSectionLabel } from '../lib/sections';
@@ -181,7 +182,7 @@ export default function ContactRequests() {
             {pending === null ? (
               <div className="space-y-2 mt-3">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-16 w-full')} />)}</div>
             ) : pending.length === 0 ? (
-              <p className={`text-sm mt-3 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noPendingRequests}</p>
+              <EmptyState icon={Inbox} text={t.noPendingRequests} dark={dark} />
             ) : (
               <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                 {pending.map((r) => <Row key={r.id} r={r} />)}

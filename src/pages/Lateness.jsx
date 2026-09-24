@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Loader2, Trash2, Clock3, AlertTriangle, Check, MessageCircle } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
+import EmptyState from '../components/EmptyState';
 import { useDialogs } from '../lib/Dialogs';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -397,7 +398,7 @@ export default function Lateness() {
                 {aggLoading ? (
                   <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
                 ) : repeated.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noLatenessRecords}</p>
+                  <EmptyState icon={Clock3} text={t.noLatenessRecords} dark={dark} compact />
                 ) : (
                   <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                     {repeated.map((r) => <AggRow key={r.id} r={r} />)}
@@ -413,7 +414,7 @@ export default function Lateness() {
                 {aggLoading ? (
                   <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
                 ) : rest.length === 0 && repeated.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noLatenessRecords}</p>
+                  <EmptyState icon={Clock3} text={t.noLatenessRecords} dark={dark} compact />
                 ) : rest.length === 0 ? (
                   <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>—</p>
                 ) : (

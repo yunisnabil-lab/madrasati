@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Search, Loader2, Trash2, AlertTriangle, Inbox, Check, X, MessageCircle } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
+import EmptyState from '../components/EmptyState';
 import { useDialogs } from '../lib/Dialogs';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -477,7 +478,7 @@ export default function Violations() {
                   {pendingList === null ? (
                     <div className="space-y-2 mt-3">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-16 w-full')} />)}</div>
                   ) : pendingList.length === 0 ? (
-                    <p className={`text-sm mt-2 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noPendingViolations}</p>
+                    <EmptyState icon={Inbox} text={t.noPendingViolations} dark={dark} compact />
                   ) : (
                     <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                       {pendingList.map((v) => {
@@ -628,7 +629,7 @@ export default function Violations() {
                   {myReports === null ? (
                     <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
                   ) : myReports.length === 0 ? (
-                    <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noReportedViolations}</p>
+                    <EmptyState icon={AlertTriangle} text={t.noReportedViolations} dark={dark} compact />
                   ) : (
                     <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                       {myReports.map((v) => {

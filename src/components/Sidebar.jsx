@@ -71,7 +71,11 @@ export default function Sidebar() {
         dark ? 'bg-navy border-slate-800' : 'bg-white border-slate-200/60'
       }`}
     >
-      <nav className="h-full overflow-y-auto px-3 pt-5 pb-4 space-y-1">
+      {/* Capped so the nav list can never grow into the centered account
+          card below it (that was silently hiding "المخالفات السلوكية" behind
+          the card on shorter screens) — it just scrolls internally once it
+          would reach that halfway point instead. */}
+      <nav className="overflow-y-auto px-3 pt-5 pb-4 space-y-1" style={{ maxHeight: 'calc(50% - 60px)' }}>
         {items.map((item) => {
           const Icon = item.icon;
           return (

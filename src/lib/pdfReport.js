@@ -32,6 +32,30 @@ export async function sheetToPdfBase64(sheet) {
   const holder = document.createElement('div');
   holder.style.cssText = 'position:fixed;left:-10000px;top:0;width:794px;padding:36px 30px;background:#fff;z-index:-1';
   holder.dir = document.documentElement.dir || 'rtl';
+  // html2canvas draws Arabic text taller than the browser lays it out, so the
+  // tight print spacing makes lines overlap; loosen it for the capture only
+  const style = document.createElement('style');
+  style.textContent = `
+    .pdf-cap .ps-sheet { font-size: 12px; line-height: 1.7; }
+    .pdf-cap .ps-head { padding-bottom: 10px; margin-bottom: 16px; }
+    .pdf-cap .ps-school { font-size: 16px; line-height: 1.7; }
+    .pdf-cap .ps-muted { line-height: 1.7; }
+    .pdf-cap .ps-title { font-size: 20px; line-height: 1.8; margin: 0 0 12px; }
+    .pdf-cap .ps-h2 { line-height: 1.8; margin: 18px 0 8px; }
+    .pdf-cap .ps-meta { line-height: 1.8; margin-bottom: 14px; }
+    .pdf-cap .ps-stats { margin-bottom: 16px; }
+    .pdf-cap .ps-stat { padding: 8px 4px; }
+    .pdf-cap .ps-stat-value { line-height: 1.6; }
+    .pdf-cap .ps-stat-label { font-size: 11px; line-height: 1.7; }
+    .pdf-cap .ps-info { gap: 10px 14px; padding: 10px 12px; margin-bottom: 16px; }
+    .pdf-cap .ps-info div span, .pdf-cap .ps-info div b { line-height: 1.7; }
+    .pdf-cap .ps-table th, .pdf-cap .ps-table td { padding: 8px 8px; line-height: 1.7; }
+    .pdf-cap .ps-pill { font-size: 11px; line-height: 1.8; padding: 2px 10px; }
+    .pdf-cap .ps-signs { margin-top: 44px; }
+    .pdf-cap .ps-sign { line-height: 1.7; }
+  `;
+  holder.classList.add('pdf-cap');
+  holder.appendChild(style);
   const copy = sheet.cloneNode(true);
   copy.classList.remove('hidden', 'print:block');
   copy.style.display = 'block';

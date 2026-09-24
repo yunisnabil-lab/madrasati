@@ -130,17 +130,40 @@ Deno.serve(async (req) => {
       body: JSON.stringify({
         personalizations: [{ to: [{ email: to }] }],
         from: { email: 'noreply@madrasati.app', name: 'مدرستي' },
-        subject: subject || `تقرير حضور — ${student.name_ar}`,
-        content: [{
-          type: 'text/html',
-          value: `<!DOCTYPE html>
+        subject: subject || `تقرير حضور الطالب: ${student.name_ar} — مجمع زايد التعليمي`,
+        content: [
+          { type: 'text/plain', value: message },
+          {
+            type: 'text/html',
+            value: `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
-  <head><meta charset="utf-8" /></head>
-  <body style="font-family: Tahoma, Arial, sans-serif; font-size: 15px; color: #1a1a1a; white-space: pre-wrap;">
-    ${escapeHtml(message)}
+  <head><meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" /></head>
+  <body style="margin:0; padding:0; background:#eef2f7;">
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#eef2f7; padding:24px 12px;">
+      <tr><td align="center">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #dbe3ee;">
+          <tr>
+            <td style="background:#0f1b3c; padding:22px 26px; font-family:Tahoma, Arial, sans-serif; direction:rtl; text-align:right;">
+              <div style="font-size:19px; font-weight:bold; color:#ffffff;">مجمع زايد التعليمي — الخوانيج</div>
+              <div style="font-size:13px; color:#c7d2e6; margin-top:4px;">تقرير رسمي صادر من نظام مدرستي</div>
+            </td>
+          </tr>
+          <tr><td style="height:4px; background:#e0b04a; font-size:0; line-height:0;">&nbsp;</td></tr>
+          <tr>
+            <td style="padding:26px; font-family:Tahoma, Arial, sans-serif; font-size:15px; line-height:1.9; color:#1a2233; direction:rtl; text-align:right; white-space:pre-wrap;">${escapeHtml(message)}</td>
+          </tr>
+          <tr>
+            <td style="padding:16px 26px; background:#f6f8fb; border-top:1px solid #e3e9f2; font-family:Tahoma, Arial, sans-serif; font-size:12px; color:#7a869a; direction:rtl; text-align:right;">
+              هذه رسالة آلية من نظام مدرستي، يرجى عدم الرد عليها مباشرة. للاستفسار تواصل مع إدارة المدرسة.
+            </td>
+          </tr>
+        </table>
+      </td></tr>
+    </table>
   </body>
 </html>`,
-        }],
+          },
+        ],
         ...(sgAttachments ? { attachments: sgAttachments } : {}),
       }),
     });

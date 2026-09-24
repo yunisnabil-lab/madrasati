@@ -613,6 +613,13 @@ function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, d
     ? `📋 تقرير حضور الطالب - ${t.school} - ${t.schoolSub}\n━━━━━━━━━━━━━━━━━━\n👤 الاسم: ${name}\n🔢 رقم الطالب: ${student.sis_no}\n🏫 الصف - الشعبة: ${sectionLabel}\n━━━━━━━━━━━━━━━━━━\n📊 نسبة الحضور: ${rateText}\n✅ أيام الحضور: ${stats.present}   ❌ أيام الغياب: ${stats.absent}   ⏰ أيام التأخير: ${stats.late}\n━━━━━━━━━━━━━━━━━━\n📅 السجل الكامل:\n${recordLines || '—'}\n━━━━━━━━━━━━━━━━━━\nيرجى مراجعة سجل الحضور والغياب الخاص بالطالب مع إدارة المدرسة.`
     : `📋 Attendance Report - ${t.school} - ${t.schoolSub}\n━━━━━━━━━━━━━━━━━━\n👤 Name: ${name}\n🔢 Student ID: ${student.sis_no}\n🏫 Grade - Section: ${sectionLabel}\n━━━━━━━━━━━━━━━━━━\n📊 Attendance rate: ${rateText}\n✅ Days present: ${stats.present}   ❌ Days absent: ${stats.absent}   ⏰ Days late: ${stats.late}\n━━━━━━━━━━━━━━━━━━\n📅 Full record:\n${recordLines || '—'}\n━━━━━━━━━━━━━━━━━━\nPlease reach out to the school administration for more details.`;
 
+  const pdfBody = t.emailPdfBody
+    .replace('{name}', name)
+    .replace('{rate}', rateText)
+    .replace('{present}', stats.present)
+    .replace('{absent}', stats.absent)
+    .replace('{late}', stats.late);
+
   const link = buildWhatsAppLink(phone, message);
 
   const sendEmail = async () => {
@@ -632,7 +639,7 @@ function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, d
       }
     }
     const { data, error } = await supabase.functions.invoke('send-report-email', {
-      body: { studentId: student.id, to: email.trim(), message: attachment ? t.emailPdfBody : message, attachment },
+      body: { studentId: student.id, to: email.trim(), message: attachment ? pdfBody : message, attachment },
     });
     setSendingEmail(false);
     if (error || (data && data.error)) {

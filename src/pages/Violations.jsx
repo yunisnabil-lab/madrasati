@@ -30,13 +30,6 @@ function todayStr() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function daysAgoStr(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  const pad = (x) => String(x).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
 export default function Violations() {
   const { t, lang, dark, staff } = useApp();
   const { confirm, notify } = useDialogs();
@@ -95,7 +88,7 @@ export default function Violations() {
   // Filterable-by-day list with a per-student repeat count, so repeat
   // offenders surface at the top instead of being buried in a flat feed —
   // mirrors the same pattern already used on the Lateness page.
-  const [fromDate, setFromDate] = useState(daysAgoStr(30));
+  const [fromDate, setFromDate] = useState(todayStr());
   const [toDate, setToDate] = useState(todayStr());
   const [aggLoading, setAggLoading] = useState(true);
   const [aggRaw, setAggRaw] = useState([]);

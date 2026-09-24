@@ -21,13 +21,6 @@ function todayStr() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function daysAgoStr(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  const pad = (x) => String(x).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
 function initials(name) {
   const parts = (name || '').trim().split(/\s+/);
   return ((parts[0] ? parts[0][0] : '') + (parts[1] ? parts[1][0] : '')).toUpperCase();
@@ -36,7 +29,7 @@ function initials(name) {
 export default function SupervisorReport() {
   const { t, lang, dark, staff } = useApp();
 
-  const [fromDate, setFromDate] = useState(daysAgoStr(30));
+  const [fromDate, setFromDate] = useState(todayStr());
   const [toDate, setToDate] = useState(todayStr());
   const [dateError, setDateError] = useState('');
   const [loading, setLoading] = useState(false);

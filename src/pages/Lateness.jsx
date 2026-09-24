@@ -12,7 +12,7 @@ import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
 import SectionPicker from '../components/SectionPicker';
 import ContactParentPanel from '../components/ContactParentPanel';
 import BulkContactModal from '../components/BulkContactModal';
-import { RangeChips, useContactChannels, SentMarks, todayStr, daysAgoStr } from '../components/ListFilters';
+import { RangeChips, useContactChannels, SentMarks, todayStr } from '../components/ListFilters';
 
 const REPEAT_THRESHOLD = 3;
 
@@ -59,7 +59,7 @@ export default function Lateness() {
   const [studentLateness, setStudentLateness] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
-  const [fromDate, setFromDate] = useState(daysAgoStr(30));
+  const [fromDate, setFromDate] = useState(todayStr());
   const [toDate, setToDate] = useState(todayStr());
   const [listFilter, setListFilter] = useState('');
   const [aggLoading, setAggLoading] = useState(true);

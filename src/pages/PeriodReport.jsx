@@ -20,13 +20,6 @@ function todayStr() {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function weekAgoStr() {
-  const d = new Date();
-  d.setDate(d.getDate() - 7);
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
 // School days in the range: Monday–Friday minus the official holidays and
 // breaks (lib/schoolCalendar.js) — used to tell a real "not recorded" gap (a
 // school day nobody took attendance on) apart from a weekend or holiday, so
@@ -53,7 +46,7 @@ export default function PeriodReport() {
   const [grade, setGrade] = useState('');
   const [stream, setStream] = useState('');
   const [sectionSel, setSectionSel] = useState('__ALL__');
-  const [fromDate, setFromDate] = useState(weekAgoStr());
+  const [fromDate, setFromDate] = useState(todayStr());
   const [toDate, setToDate] = useState(todayStr());
 
   const [rows, setRows] = useState(null);

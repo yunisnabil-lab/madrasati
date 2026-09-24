@@ -59,7 +59,7 @@ export default function Header() {
           </div>
           <div className="hidden md:block leading-tight">
             <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.school}</div>
-            <div className={`text-[11px] ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
+            <div className={`text-[11px] ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
           </div>
         </div>
 
@@ -109,12 +109,12 @@ export default function Header() {
                   {isAdmin && requests.length > 0 ? (
                     requests.map((r) => (
                       <div key={r.id} className="px-3.5 py-2 text-xs">
-                        <span className={dark ? 'text-slate-400' : 'text-slate-500'}>{t.newRequestNotif}</span>{' '}
+                        <span className={dark ? 'text-slate-200' : 'text-slate-500'}>{t.newRequestNotif}</span>{' '}
                         <span className="font-medium">{r.full_name}</span>
                       </div>
                     ))
                   ) : (
-                    <div className={`px-3.5 py-2 text-xs ${dark ? 'text-slate-500' : 'text-slate-400'}`}>{t.noNotifications}</div>
+                    <div className={`px-3.5 py-2 text-xs ${dark ? 'text-slate-200' : 'text-slate-400'}`}>{t.noNotifications}</div>
                   )}
                 </motion.div>
               )}

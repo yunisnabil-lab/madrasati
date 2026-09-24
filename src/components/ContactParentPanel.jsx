@@ -81,18 +81,18 @@ export default function ContactParentPanel({ student, name, sectionLabel, defaul
         {isRequest ? <Clock3 size={16} className="text-amber-500" /> : <Send size={16} className={dark ? 'text-royal-light' : 'text-royal'} />}
         <h3 className="text-sm font-semibold">{isRequest ? t.requestContactTitle : t.contactParentTitle}</h3>
       </div>
-      <p className={`text-xs -mt-2 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>
+      <p className={`text-xs -mt-2 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
         {isRequest ? t.requestContactSub : t.contactParentSub}
       </p>
 
       <div>
-        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{lang === 'ar' ? 'نص الرسالة' : 'Message text'}</label>
+        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{lang === 'ar' ? 'نص الرسالة' : 'Message text'}</label>
         <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4} className={inputCls} />
       </div>
 
       <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
         <div className="flex-1">
-          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.parentPhone}</label>
+          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.parentPhone}</label>
           <input type="tel" value={phone} onChange={(e) => setPhone(e.target.value)} placeholder={t.parentPhonePlaceholder} className={`${inputCls} font-en`} dir="ltr" />
         </div>
         {isRequest ? (
@@ -119,7 +119,7 @@ export default function ContactParentPanel({ student, name, sectionLabel, defaul
 
       <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
         <div className="flex-1">
-          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-400' : 'text-slate-500'}`}>{t.parentEmail}</label>
+          <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.parentEmail}</label>
           <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="parent@example.com" className={`${inputCls} font-en`} dir="ltr" />
         </div>
         <button

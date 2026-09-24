@@ -48,7 +48,7 @@ export function MobileNav() {
               `flex-1 min-w-[68px] flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium ${
                 isActive
                   ? dark ? 'text-royal-light' : 'text-royal'
-                  : dark ? 'text-slate-500' : 'text-slate-400'
+                  : dark ? 'text-slate-200' : 'text-slate-400'
               }`
             }
           >
@@ -67,41 +67,15 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`no-print hidden md:flex flex-col w-56 shrink-0 min-h-screen sticky top-0 border-e transition-colors duration-300 ${
+      className={`no-print hidden md:flex flex-col w-56 shrink-0 fixed top-0 start-0 h-screen z-40 overflow-y-auto border-e transition-colors duration-300 ${
         dark ? 'bg-navy border-slate-800' : 'bg-white border-slate-200/60'
       }`}
     >
-      <nav className="px-3 pt-5 space-y-1">
-        {items.map((item) => {
-          const Icon = item.icon;
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) =>
-                `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
-                  isActive
-                    ? dark
-                      ? 'bg-royal/20 text-royal-light'
-                      : 'bg-royal/10 text-royal'
-                    : dark
-                    ? 'text-slate-400 hover:bg-white/5 hover:text-slate-200'
-                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
-                }`
-              }
-            >
-              <Icon size={17} />
-              {t[item.key]}
-            </NavLink>
-          );
-        })}
-      </nav>
-
-      {/* Account — the only place the name shows now (removed from the header to avoid duplicating it).
-          Centered in the leftover space below the nav so it isn't just stranded at the top.
+      {/* Account — pinned at the very top so it's always visible right away,
+          not stranded below the nav where it could end up looking buried
+          near the bottom on a tall nav/short viewport.
           dir="ltr" is intentional: the photo stays to the left of the name in both Arabic and English. */}
-      <div className="flex-1 flex items-center justify-center px-3">
+      <div className={`shrink-0 p-3 border-b ${dark ? 'border-slate-800' : 'border-slate-200/60'}`}>
         <Link
           to="/profile"
           dir="ltr"
@@ -120,12 +94,39 @@ export default function Sidebar() {
             <div className={`text-sm font-bold truncate ${dark ? 'text-white' : 'text-navy'}`}>
               {staff ? staff.full_name : '...'}
             </div>
-            <div className={`text-[11px] mt-0.5 truncate ${dark ? 'text-slate-500' : 'text-slate-400'}`}>
+            <div className={`text-[11px] mt-0.5 truncate ${dark ? 'text-slate-200' : 'text-slate-400'}`}>
               {staff ? t.roleNames[staff.role] : ''}
             </div>
           </div>
         </Link>
       </div>
+
+      <nav className="px-3 py-5 space-y-1 overflow-y-auto">
+        {items.map((item) => {
+          const Icon = item.icon;
+          return (
+            <NavLink
+              key={item.to}
+              to={item.to}
+              end={item.end}
+              className={({ isActive }) =>
+                `flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors ${
+                  isActive
+                    ? dark
+                      ? 'bg-royal/20 text-royal-light'
+                      : 'bg-royal/10 text-royal'
+                    : dark
+                    ? 'text-slate-200 hover:bg-white/5 hover:text-slate-200'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-800'
+                }`
+              }
+            >
+              <Icon size={17} />
+              {t[item.key]}
+            </NavLink>
+          );
+        })}
+      </nav>
     </aside>
   );
 }

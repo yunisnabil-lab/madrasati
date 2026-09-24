@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Loader2, Trash2, Clock3, AlertTriangle, Check, MessageCircle } from 'lucide-react';
+import { Search, Loader2, Trash2, Clock3, AlertTriangle, Check, MessageCircle, X, ClipboardPlus, ListFilter } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import EmptyState from '../components/EmptyState';
 import { useDialogs } from '../lib/Dialogs';
@@ -12,21 +12,9 @@ import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
 import SectionPicker from '../components/SectionPicker';
 import ContactParentPanel from '../components/ContactParentPanel';
 import BulkContactModal from '../components/BulkContactModal';
+import { RangeChips, useContactChannels, SentMarks, todayStr, daysAgoStr } from '../components/ListFilters';
 
 const REPEAT_THRESHOLD = 3;
-
-function daysAgoStr(n) {
-  const d = new Date();
-  d.setDate(d.getDate() - n);
-  const pad = (x) => String(x).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
-function todayStr() {
-  const d = new Date();
-  const pad = (n) => String(n).padStart(2, '0');
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
 
 function initials(name) {
   const parts = (name || '').trim().split(/\s+/);
@@ -36,10 +24,17 @@ function initials(name) {
 // Morning lateness recorded here (morning_lateness table) is a manual entry
 // made by the supervisor at the gate/entrance — it is entirely independent
 // of the class-period attendance system (attendance_records / period 1).
+//
+// The page opens with a choice: "record lateness" (pick several students and
+// record them in one go, then message their parents) or "look up lateness"
+// (the list of late / repeat-late students with filters).
 export default function Lateness() {
   const { t, lang, dark, staff } = useApp();
   const { confirm } = useDialogs();
   const canManage = staff && (staff.role === 'admin' || staff.role === 'supervisor' || staff.role === 'edari');
+
+  // null = ask on entry; staff who can't record go straight to the list
+  const [mode, setMode] = useState(() => (canManage ? null : 'inquiry'));
 
   const [sections, setSections] = useState([]);
   const [grade, setGrade] = useState('');
@@ -57,20 +52,27 @@ export default function Lateness() {
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null);
 
+  // record mode: several students recorded in one go
+  const [batch, setBatch] = useState(new Map()); // id -> student
+  const [batchResult, setBatchResult] = useState(null); // { saved: [students], skipped: n }
+
   const [studentLateness, setStudentLateness] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
 
   const [fromDate, setFromDate] = useState(daysAgoStr(30));
   const [toDate, setToDate] = useState(todayStr());
+  const [listFilter, setListFilter] = useState('');
   const [aggLoading, setAggLoading] = useState(true);
   const [aggRows, setAggRows] = useState([]);
+  const [channels, reloadChannels] = useContactChannels('lateness', fromDate);
 
   const loadAggregate = useCallback(async (from, to) => {
     setAggLoading(true);
     const { data } = await fetchAllRows(() => {
       let q = supabase
         .from('morning_lateness')
-        .select('id, student_id, date, students(name_ar, name_en, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order))');
+        .select('id, student_id, date, students(name_ar, name_en, sis_no, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order))')
+        .order('id');
       if (from) q = q.gte('date', from);
       if (to) q = q.lte('date', to);
       return q;
@@ -88,12 +90,12 @@ export default function Lateness() {
       }
     });
 
-    const list = Array.from(byStudent.values()).sort((a, b) => b.count - a.count);
+    const list = Array.from(byStudent.values()).sort((a, b) => b.count - a.count || (b.lastDate > a.lastDate ? 1 : -1));
     setAggRows(list);
     setAggLoading(false);
   }, []);
 
-  useEffect(() => { if (!selected) loadAggregate(fromDate, toDate); }, [fromDate, toDate, selected, loadAggregate]);
+  useEffect(() => { if (!selected && mode === 'inquiry') loadAggregate(fromDate, toDate); }, [fromDate, toDate, selected, loadAggregate, mode]);
 
   useEffect(() => {
     (async () => {
@@ -176,7 +178,8 @@ export default function Lateness() {
     const { data } = await fetchAllRows(() => supabase
       .from('students')
       .select('id, sis_no, name_ar, name_en, section_id, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)')
-      .eq('is_active', true));
+      .eq('is_active', true)
+      .order('id'));
     const found = (data || []).filter((s) => matchesStudentSearch(s, q));
     found.sort((a, b) => studentMatchRank(a, q) - studentMatchRank(b, q) || (a.sections?.grade_order ?? 999) - (b.sections?.grade_order ?? 999));
     setMatches(found);
@@ -190,21 +193,56 @@ export default function Lateness() {
     setDate(todayStr());
   };
 
-  const selectFromAgg = (r) => {
-    selectStudent({ id: r.id, ...r.student });
-  };
-
   const reset = () => {
     setSelected(null);
-    setQuery('');
-    setMatches(null);
     setSaveMsg(null);
   };
 
+  const chooseMode = (m) => {
+    setMode(m);
+    setSelected(null);
+    setQuery('');
+    setMatches(null);
+    setBatchResult(null);
+    setSaveMsg(null);
+  };
+
+  // ---------- record mode ----------
+  const toggleBatch = (s) => setBatch((prev) => {
+    const next = new Map(prev);
+    if (next.has(s.id)) next.delete(s.id); else next.set(s.id, s);
+    return next;
+  });
+
+  const saveBatch = async () => {
+    if (batch.size === 0) return;
+    setSaving(true);
+    setSaveMsg(null);
+    const ids = [...batch.keys()];
+    // skip students whose lateness for that day is already recorded
+    const { data: existing } = await supabase.from('morning_lateness').select('student_id').eq('date', date).in('student_id', ids);
+    const already = new Set((existing || []).map((r) => r.student_id));
+    const toSave = [...batch.values()].filter((s) => !already.has(s.id));
+    let error = null;
+    if (toSave.length) {
+      ({ error } = await supabase.from('morning_lateness').insert(toSave.map((s) => ({
+        school_id: staff.school_id,
+        student_id: s.id,
+        staff_id: staff.id,
+        description: description.trim() || null,
+        date,
+      }))));
+    }
+    setSaving(false);
+    if (error) { setSaveMsg({ type: 'err', text: t.saveError }); return; }
+    setBatchResult({ saved: toSave, skipped: already.size });
+    setBatch(new Map());
+    setDescription('');
+  };
+
+  // ---------- single student (from the inquiry list) ----------
   const save = async () => {
     if (!selected) return;
-    // catch an accidental double-entry for the same student on the same
-    // day before it hits the database, instead of only after a refresh
     if ((studentLateness || []).some((l) => l.date === date)) {
       if (!(await confirm(t.duplicateLatenessConfirm))) return;
     }
@@ -241,44 +279,53 @@ export default function Lateness() {
   const inputCls = `w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${
     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
   }`;
+  const labelCls = `block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`;
+  const nameOf = (s) => (lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar));
 
   const fmtDate = (d) => (d ? new Date(d + 'T00:00:00').toLocaleDateString(lang === 'ar' ? 'ar-u-nu-latn' : 'en-US') : '—');
 
-  const repeated = aggRows.filter((r) => r.count >= REPEAT_THRESHOLD);
-  const rest = aggRows.filter((r) => r.count < REPEAT_THRESHOLD);
+  const filteredRows = useMemo(() => {
+    const q = listFilter.trim();
+    return q ? aggRows.filter((r) => matchesStudentSearch(r.student, q)) : aggRows;
+  }, [aggRows, listFilter]);
+  const repeated = filteredRows.filter((r) => r.count >= REPEAT_THRESHOLD);
+  const rest = filteredRows.filter((r) => r.count < REPEAT_THRESHOLD);
 
   // "select several" mode: rows toggle a checkmark instead of opening the
   // student, and a bar at the bottom opens the bulk parent-contact window
   const [selectMode, setSelectMode] = useState(false);
   const [picked, setPicked] = useState(new Map()); // student id -> { id, name, sectionLabel }
-  const [bulkOpen, setBulkOpen] = useState(false);
+  const [bulkStudents, setBulkStudents] = useState(null);
+  const [bulkNote, setBulkNote] = useState('');
   const togglePick = (id, s) => {
     setPicked((prev) => {
       const next = new Map(prev);
       if (next.has(id)) next.delete(id);
-      else next.set(id, { id, name: lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar), sectionLabel: s.sections ? fmtSectionLabel(s.sections, lang) : '' });
+      else next.set(id, { id, name: nameOf(s), sectionLabel: s.sections ? fmtSectionLabel(s.sections, lang) : '' });
       return next;
     });
   };
   const exitSelectMode = () => { setSelectMode(false); setPicked(new Map()); };
-  const pickMark = (id) => selectMode && (
-    <span className={`h-5 w-5 rounded-md border flex items-center justify-center shrink-0 ${picked.has(id) ? 'bg-royal border-royal text-white' : (dark ? 'border-slate-500' : 'border-slate-300')}`}>
-      {picked.has(id) && <Check size={13} />}
+  const pickMark = (on) => (
+    <span className={`h-5 w-5 rounded-md border flex items-center justify-center shrink-0 ${on ? 'bg-royal border-royal text-white' : (dark ? 'border-slate-500' : 'border-slate-300')}`}>
+      {on && <Check size={13} />}
     </span>
   );
 
+  const openBulk = (students, note) => { setBulkNote(note); setBulkStudents(students); };
+
   function AggRow({ r }) {
     const s = r.student;
-    const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
+    const name = nameOf(s);
     return (
       <li>
-        <button onClick={() => (selectMode ? togglePick(r.id, s) : selectFromAgg(r))} className={`w-full flex items-center gap-3 py-3 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
-          {pickMark(r.id)}
+        <button onClick={() => (selectMode ? togglePick(r.id, s) : selectStudent({ id: r.id, ...s }))} className={`w-full flex items-center gap-3 py-3 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+          {selectMode && pickMark(picked.has(r.id))}
           <div className="h-9 w-9 rounded-full bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0 text-xs font-semibold">
             {initials(name)}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">{name}</div>
+            <div className="text-sm font-medium truncate flex items-center gap-2">{name} <SentMarks channels={channels.get(r.id)} t={t} /></div>
             <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
               {s.sections ? fmtSectionLabel(s.sections, lang) : '—'}
             </div>
@@ -292,108 +339,196 @@ export default function Lateness() {
     );
   }
 
+  // search block shared by both modes: section picker + name search + results
+  const searchBlock = (onPick, isOn) => (
+    <>
+      <div className={cardFloating(dark, 'p-4 mb-4 space-y-3')}>
+        <SectionPicker
+          sections={sections} lang={lang} dark={dark}
+          grade={grade} stream={stream} sectionId={sectionSel}
+          allowAll
+          onGradeChange={(g) => { setGrade(g); setStream(''); setSectionSel(''); }}
+          onStreamChange={(s) => { setStream(s); setSectionSel(''); }}
+          onSectionChange={setSectionSel}
+          inputCls={inputCls}
+        />
+        <div className="flex gap-2">
+          <div className={`flex-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm border ${dark ? 'bg-navy border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+            <Search size={15} />
+            <input
+              value={query}
+              onChange={(e) => { setQuery(e.target.value); if (!e.target.value.trim() && sectionRoster === null) setMatches(null); }}
+              onKeyDown={(e) => { if (e.key === 'Enter') runSearch(); }}
+              placeholder={t.lookupPlaceholder}
+              className="bg-transparent outline-none w-full text-sm placeholder:text-inherit"
+              style={{ color: dark ? '#e2e8f0' : '#334155' }}
+            />
+          </div>
+          <button onClick={runSearch} disabled={searching} className="flex items-center gap-1.5 text-sm font-medium px-5 py-2.5 rounded-lg bg-royal hover:bg-royal-light text-white transition-colors disabled:opacity-60">
+            {searching ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />} {lang === 'ar' ? 'بحث' : 'Search'}
+          </button>
+        </div>
+        {sectionRoster !== null && (
+          <button onClick={clearSectionFilter} className={`text-xs font-medium px-4 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+            {t.clearClassFilter}
+          </button>
+        )}
+      </div>
+
+      {results !== null && (
+        <div className={cardFloating(dark, 'overflow-hidden mb-5')}>
+          {results.length === 0 ? (
+            <div className="p-8 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.lookupNoResults}</p></div>
+          ) : (
+            <ul className={`divide-y max-h-[420px] overflow-y-auto ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+              {results.map((s) => {
+                const name = nameOf(s);
+                const on = isOn(s.id);
+                return (
+                  <li key={s.id}>
+                    <button onClick={() => onPick(s)} className={`w-full flex items-center gap-3 px-4 py-3 text-start transition-colors ${on ? (dark ? 'bg-royal/15' : 'bg-royal/5') : ''} ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+                      {mode === 'record' || selectMode ? pickMark(on) : null}
+                      <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials(name)}</div>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm font-semibold truncate">{name}</div>
+                        <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.sisNo}: {s.sis_no}</div>
+                      </div>
+                      <span className={`text-xs px-2.5 py-1 rounded-full shrink-0 ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>{fmtSectionLabel(s.sections, lang)}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </div>
+      )}
+    </>
+  );
+
+  const modeTabs = (
+    <div className={`inline-flex rounded-xl p-1 mb-5 ${dark ? 'bg-black/20' : 'bg-slate-200/60'}`}>
+      {[['record', t.latenessModeRecord, ClipboardPlus], ['inquiry', t.latenessModeInquiry, ListFilter]].map(([m, label, Icon]) => (
+        <button
+          key={m}
+          onClick={() => chooseMode(m)}
+          className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${mode === m ? (dark ? 'bg-navy-soft text-white shadow' : 'bg-white text-navy shadow-sm') : (dark ? 'text-slate-200' : 'text-slate-600')}`}
+        >
+          <Icon size={15} /> {label}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className={lang === 'ar' ? 'font-ar' : 'font-en'}>
       <div className={`min-h-screen transition-colors duration-300 ${pageBg(dark)} ${dark ? 'text-slate-100' : 'text-slate-800'}`}>
         <main className="max-w-5xl mx-auto px-5 py-7">
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-5">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.latenessTitle}</h1>
             <p className={`text-sm mt-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.latenessSub}</p>
           </motion.div>
 
-          {!selected ? (
-            <>
-              {canManage && (
-                <div className="flex justify-end mb-3">
-                  <button
-                    onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
-                    className={`text-xs font-medium px-4 py-2 rounded-lg border ${selectMode ? 'bg-royal text-white border-transparent' : (dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50')}`}
-                  >
-                    {selectMode ? t.cancelSelectBtn : t.selectManyBtn}
+          {mode && !selected && canManage && modeTabs}
+
+          {/* ---------------- record several students ---------------- */}
+          {mode === 'record' && !selected && (
+            batchResult ? (
+              <div className={cardFloating(dark, 'p-6 text-center')}>
+                <div className="h-12 w-12 rounded-full bg-emerald-500/15 text-emerald-500 flex items-center justify-center mx-auto mb-3"><Check size={22} /></div>
+                <p className="text-sm font-semibold">{t.batchSaved.replace('{n}', batchResult.saved.length)}</p>
+                {batchResult.skipped > 0 && <p className={`text-xs mt-1 ${dark ? 'text-amber-200' : 'text-amber-700'}`}>{t.batchSkipped.replace('{n}', batchResult.skipped)}</p>}
+                <div className="flex flex-wrap justify-center gap-2.5 mt-5">
+                  {canManage && batchResult.saved.length > 0 && (
+                    <button
+                      onClick={() => openBulk(batchResult.saved.map((s) => ({ id: s.id, name: nameOf(s), sectionLabel: s.sections ? fmtSectionLabel(s.sections, lang) : '' })), t.latenessTodayNote)}
+                      className="flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-lg bg-royal hover:bg-royal-light text-white"
+                    >
+                      <MessageCircle size={15} /> {t.batchMessage}
+                    </button>
+                  )}
+                  <button onClick={() => setBatchResult(null)} className={`text-sm font-medium px-5 py-2.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                    {t.batchNew}
                   </button>
                 </div>
-              )}
-              <div className={cardFloating(dark, 'p-4 mb-5 flex flex-col sm:flex-row gap-3 sm:items-end')}>
-                <div className="flex-1">
-                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.fromDate}</label>
-                  <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={inputCls + ' font-en'} />
-                </div>
-                <div className="flex-1">
-                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.toDate}</label>
-                  <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputCls + ' font-en'} />
-                </div>
-                {(fromDate || toDate) && (
-                  <button onClick={() => { setFromDate(''); setToDate(''); }} className={`text-xs font-medium px-4 py-2.5 rounded-lg border whitespace-nowrap ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
-                    {t.showAll}
-                  </button>
-                )}
               </div>
+            ) : (
+              <>
+                {searchBlock(toggleBatch, (id) => batch.has(id))}
 
-              <div className={cardFloating(dark, 'p-4 mb-5 space-y-3')}>
-                <SectionPicker
-                  sections={sections} lang={lang} dark={dark}
-                  grade={grade} stream={stream} sectionId={sectionSel}
-                  allowAll
-                  onGradeChange={(g) => { setGrade(g); setStream(''); setSectionSel(''); }}
-                  onStreamChange={(s) => { setStream(s); setSectionSel(''); }}
-                  onSectionChange={setSectionSel}
-                  inputCls={inputCls}
-                />
-                {sectionRoster !== null && (
-                  <button onClick={clearSectionFilter} className={`text-xs font-medium px-4 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
-                    {t.clearClassFilter}
-                  </button>
-                )}
-              </div>
-
-              <div className={cardFloating(dark, 'p-4 mb-5 flex gap-2')}>
-                <div className={`flex-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm border ${dark ? 'bg-navy border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
-                  <Search size={15} />
-                  <input
-                    value={query}
-                    onChange={(e) => { setQuery(e.target.value); if (!e.target.value.trim() && sectionRoster === null) setMatches(null); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') runSearch(); }}
-                    placeholder={t.lookupPlaceholder}
-                    className="bg-transparent outline-none w-full text-sm placeholder:text-inherit"
-                    style={{ color: dark ? '#e2e8f0' : '#334155' }}
-                  />
-                </div>
-                <button onClick={runSearch} disabled={searching} className="flex items-center gap-1.5 text-sm font-medium px-5 py-2.5 rounded-lg bg-royal hover:bg-royal-light text-white transition-colors disabled:opacity-60">
-                  {searching ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />} {lang === 'ar' ? 'بحث' : 'Search'}
-                </button>
-              </div>
-
-              {results !== null && (
-                <div className={cardFloating(dark, 'overflow-hidden mb-5')}>
-                  {results.length === 0 ? (
-                    <div className="p-8 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.lookupNoResults}</p></div>
+                <div className={cardFloating(dark, 'p-5 mb-5')}>
+                  <h2 className={`text-sm font-semibold mb-3 ${dark ? 'text-white' : 'text-slate-900'}`}>{t.batchTitle.replace('{n}', batch.size)}</h2>
+                  {batch.size === 0 ? (
+                    <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.batchEmpty}</p>
                   ) : (
-                    <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                      {results.map((s) => {
-                        const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
-                        return (
-                          <li key={s.id}>
-                            <button onClick={() => (selectMode ? togglePick(s.id, s) : selectStudent(s))} className={`w-full flex items-center gap-3 px-4 py-3 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
-                              {pickMark(s.id)}
-                              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials(name)}</div>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-semibold truncate">{name}</div>
-                                <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.sisNo}: {s.sis_no}</div>
-                              </div>
-                              <span className={`text-xs px-2.5 py-1 rounded-full shrink-0 ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>{fmtSectionLabel(s.sections, lang)}</span>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                    <div className="flex flex-wrap gap-2 mb-4">
+                      {[...batch.values()].map((s) => (
+                        <span key={s.id} className={`flex items-center gap-1.5 text-xs font-medium ps-3 pe-1.5 py-1.5 rounded-full ${dark ? 'bg-amber-500/15 text-amber-200' : 'bg-amber-50 text-amber-800'}`}>
+                          {nameOf(s)}
+                          <button onClick={() => toggleBatch(s)} className="rounded-full p-0.5 hover:bg-black/10" aria-label="remove"><X size={13} /></button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+                  {batch.size > 0 && (
+                    <div className="space-y-3">
+                      <div className="grid sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className={labelCls}>{t.latenessDate}</label>
+                          <input type="date" value={date} max={todayStr()} onChange={(e) => setDate(e.target.value || todayStr())} className={inputCls + ' font-en'} />
+                        </div>
+                      </div>
+                      <div>
+                        <label className={labelCls}>{t.latenessDescription}</label>
+                        <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} rows={2} placeholder={t.latenessDescriptionPlaceholder} className={inputCls} />
+                      </div>
+                      {saveMsg && <p className={`text-xs ${saveMsg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{saveMsg.text}</p>}
+                      <button onClick={saveBatch} disabled={saving} className="flex items-center gap-2 text-sm font-medium px-5 py-2.5 rounded-lg bg-amber-500 hover:bg-amber-600 text-white transition-colors disabled:opacity-60">
+                        {saving ? <Loader2 size={14} className="animate-spin" /> : <Clock3 size={14} />} {t.batchSave.replace('{n}', batch.size)}
+                      </button>
+                    </div>
                   )}
                 </div>
-              )}
+              </>
+            )
+          )}
+
+          {/* ---------------- look up lateness ---------------- */}
+          {mode === 'inquiry' && !selected && (
+            <>
+              <div className={cardFloating(dark, 'p-4 mb-5 space-y-3')}>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <RangeChips from={fromDate} to={toDate} onChange={(f, tt) => { setFromDate(f); setToDate(tt); }} t={t} dark={dark} />
+                  {canManage && (
+                    <button
+                      onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+                      className={`text-xs font-medium px-4 py-2 rounded-lg border ${selectMode ? 'bg-royal text-white border-transparent' : (dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50')}`}
+                    >
+                      {selectMode ? t.cancelSelectBtn : t.selectManyBtn}
+                    </button>
+                  )}
+                </div>
+                <div className="grid sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className={labelCls}>{t.fromDate}</label>
+                    <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={inputCls + ' font-en'} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>{t.toDate}</label>
+                    <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputCls + ' font-en'} />
+                  </div>
+                  <div>
+                    <label className={labelCls}>{t.filterListPlaceholder}</label>
+                    <input value={listFilter} onChange={(e) => setListFilter(e.target.value)} className={inputCls} />
+                  </div>
+                </div>
+                <p className={`text-xs ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{t.sentLegend}</p>
+              </div>
 
               <div className={cardFloating(dark, 'p-5 mb-5')}>
                 <div className="flex items-center gap-2 mb-3">
                   <AlertTriangle size={16} className="text-rose-500" />
                   <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>{t.repeatedLatenessTitle}</h2>
+                  {!aggLoading && <span className={`text-xs ${dark ? 'text-slate-300' : 'text-slate-500'}`}>({repeated.length})</span>}
                 </div>
                 {aggLoading ? (
                   <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
@@ -410,6 +545,7 @@ export default function Lateness() {
                 <div className="flex items-center gap-2 mb-3">
                   <Clock3 size={16} className={dark ? 'text-royal-light' : 'text-royal'} />
                   <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>{t.allLatenessTitle}</h2>
+                  {!aggLoading && <span className={`text-xs ${dark ? 'text-slate-300' : 'text-slate-500'}`}>({rest.length})</span>}
                 </div>
                 {aggLoading ? (
                   <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
@@ -424,15 +560,18 @@ export default function Lateness() {
                 )}
               </div>
             </>
-          ) : (
+          )}
+
+          {/* ---------------- one student ---------------- */}
+          {selected && (
             <>
               <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cardFloating(dark, 'p-5 mb-5')}>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="h-11 w-11 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-sm font-semibold shrink-0">
-                    {initials(lang === 'ar' ? (selected.name_ar || selected.name_en) : (selected.name_en || selected.name_ar))}
+                    {initials(nameOf(selected))}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <div className="font-semibold truncate">{lang === 'ar' ? (selected.name_ar || selected.name_en) : (selected.name_en || selected.name_ar)}</div>
+                    <div className="font-semibold truncate">{nameOf(selected)}</div>
                     <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{fmtSectionLabel(selected.sections, lang)}</div>
                   </div>
                   <button onClick={reset} className={`text-xs font-medium ${dark ? 'text-royal-light' : 'text-royal'}`}>{t.backToResults}</button>
@@ -442,12 +581,12 @@ export default function Lateness() {
                   <div className="space-y-3 mb-2">
                     <div className="grid sm:grid-cols-2 gap-3">
                       <div>
-                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.latenessDate}</label>
+                        <label className={labelCls}>{t.latenessDate}</label>
                         <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className={inputCls + ' font-en'} />
                       </div>
                     </div>
                     <div>
-                      <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.latenessDescription}</label>
+                      <label className={labelCls}>{t.latenessDescription}</label>
                       <textarea value={description} onChange={(e) => setDescription(e.target.value)} maxLength={2000} rows={2} placeholder={t.latenessDescriptionPlaceholder} className={inputCls} />
                     </div>
                     {saveMsg && <p className={`text-xs ${saveMsg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{saveMsg.text}</p>}
@@ -467,14 +606,14 @@ export default function Lateness() {
               {canManage && (
                 <ContactParentPanel
                   student={selected}
-                  name={lang === 'ar' ? (selected.name_ar || selected.name_en) : (selected.name_en || selected.name_ar)}
+                  name={nameOf(selected)}
                   sectionLabel={fmtSectionLabel(selected.sections, lang)}
                   defaultNote={lang === 'ar'
                     ? 'لاحظنا تكرار تأخر هذا الطالب في الحضور الصباحي، ونرجو منكم متابعة الأمر معه.'
                     : "We've noticed repeated morning lateness for this student — we'd like to bring this to your attention."}
                   mode="direct"
                   contextType="lateness"
-                  onSent={() => loadLastContact(selected.id)}
+                  onSent={() => { loadLastContact(selected.id); reloadChannels(); }}
                   staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls}
                 />
               )}
@@ -514,10 +653,35 @@ export default function Lateness() {
         </main>
       </div>
 
-      {selectMode && picked.size > 0 && (
+      {/* the choice shown when the page opens */}
+      {mode === null && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className={`w-full max-w-md rounded-2xl p-6 shadow-2xl ${dark ? 'bg-navy-soft text-slate-100' : 'bg-white text-slate-800'}`}>
+            <h2 className={`text-lg font-bold mb-4 text-center ${dark ? 'text-white' : 'text-navy'}`}>{t.chooseActionTitle}</h2>
+            <div className="grid gap-3">
+              {[['record', t.latenessModeRecord, t.latenessModeRecordHint, ClipboardPlus, 'bg-amber-500/15 text-amber-600'],
+                ['inquiry', t.latenessModeInquiry, t.latenessModeInquiryHint, ListFilter, dark ? 'bg-royal/20 text-royal-light' : 'bg-royal/10 text-royal']].map(([m, title, hint, Icon, accent]) => (
+                <button
+                  key={m}
+                  onClick={() => chooseMode(m)}
+                  className={`flex items-center gap-4 rounded-xl border p-4 text-start transition-colors ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
+                >
+                  <span className={`h-11 w-11 rounded-full flex items-center justify-center shrink-0 ${accent}`}><Icon size={20} /></span>
+                  <span>
+                    <span className="block text-sm font-semibold">{title}</span>
+                    <span className={`block text-xs mt-0.5 ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{hint}</span>
+                  </span>
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {mode === 'inquiry' && selectMode && picked.size > 0 && !selected && (
         <div className="no-print fixed bottom-16 md:bottom-4 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
           <button
-            onClick={() => setBulkOpen(true)}
+            onClick={() => openBulk([...picked.values()], t.bulkContactDefaultNote)}
             className="pointer-events-auto flex items-center gap-2 text-sm font-medium px-6 py-3 rounded-full bg-royal hover:bg-royal-light text-white shadow-xl"
           >
             <MessageCircle size={16} /> {t.sendToSelectedBtn.replace('{n}', picked.size)}
@@ -525,13 +689,14 @@ export default function Lateness() {
         </div>
       )}
 
-      {bulkOpen && (
+      {bulkStudents && (
         <BulkContactModal
-          students={[...picked.values()]}
+          students={bulkStudents}
           contextType="lateness"
-          defaultNote={t.bulkContactDefaultNote}
+          defaultNote={bulkNote}
           staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls}
-          onClose={() => setBulkOpen(false)}
+          onSent={reloadChannels}
+          onClose={() => setBulkStudents(null)}
         />
       )}
     </div>

@@ -14,18 +14,20 @@ export default function SectionPicker({
 }) {
   const grades = distinctGrades(sections);
   const streams = grade ? distinctStreams(sections, grade) : [];
-  const options = grade ? sectionsFor(sections, grade, streams.length ? stream : null) : [];
+  // Only a grade with an Advanced track needs a stream choice. Every other
+  // grade is "General" (its sections may still be "General - 3rd Language"),
+  // so the stream is shown fixed and all its sections are listed right away.
+  const needsStream = streams.some((s) => /advanced/i.test(s));
+  const options = grade ? sectionsFor(sections, grade, needsStream ? stream : null) : [];
 
-  // Grades that don't have an "Advanced" track only ever have a single
-  // stream value (e.g. "General" or "General - 3rd Language"). Don't make
-  // the user open and pick from a dropdown that has exactly one option —
-  // select it automatically as soon as the grade (and its one stream) are known.
+  // A grade whose only track is Advanced: select it automatically instead of
+  // making the user open a dropdown that has exactly one option.
   useEffect(() => {
-    if (streams.length === 1 && stream !== streams[0]) {
+    if (needsStream && streams.length === 1 && stream !== streams[0]) {
       onStreamChange(streams[0]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [grade, streams.length === 1 ? streams[0] : null]);
+  }, [grade, needsStream && streams.length === 1 ? streams[0] : null]);
 
   const t = {
     chooseGrade: lang === 'ar' ? '— اختر الصف —' : '— Choose grade —',
@@ -48,22 +50,28 @@ export default function SectionPicker({
         ))}
       </select>
 
-      <select
-        value={stream}
-        onChange={(e) => onStreamChange(e.target.value)}
-        disabled={!grade || streams.length === 0}
-        className={`${inputCls} disabled:opacity-50`}
-      >
-        <option value="">{streams.length ? t.chooseStream : '—'}</option>
-        {streams.map((s) => (
-          <option key={s} value={s}>{streamLabel(s, lang)}</option>
-        ))}
-      </select>
+      {grade && !needsStream ? (
+        <select value="General" disabled className={`${inputCls} disabled:opacity-70`}>
+          <option value="General">{streamLabel('General', lang)}</option>
+        </select>
+      ) : (
+        <select
+          value={stream}
+          onChange={(e) => onStreamChange(e.target.value)}
+          disabled={!grade || streams.length === 0}
+          className={`${inputCls} disabled:opacity-50`}
+        >
+          <option value="">{streams.length ? t.chooseStream : '—'}</option>
+          {streams.map((s) => (
+            <option key={s} value={s}>{streamLabel(s, lang)}</option>
+          ))}
+        </select>
+      )}
 
       <select
         value={sectionId}
         onChange={(e) => onSectionChange(e.target.value)}
-        disabled={!grade || (streams.length > 0 && !stream)}
+        disabled={!grade || (needsStream && !stream)}
         className={`${inputCls} disabled:opacity-50`}
       >
         <option value="">{t.chooseSection}</option>

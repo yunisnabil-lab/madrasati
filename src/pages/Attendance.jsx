@@ -77,6 +77,8 @@ export default function Attendance() {
   const [recordMap, setRecordMap] = useState({}); // student_id -> attendance_records.id
 
   const draftRef = useRef(draft);
+  // for one chosen section: which periods of the day are already fully recorded
+  const [periodDone, setPeriodDone] = useState({});
   const [saving, setSaving] = useState(false);
   const [saveMsg, setSaveMsg] = useState(null); // { type: 'ok' | 'err', text }
 
@@ -127,6 +129,32 @@ export default function Attendance() {
     sections.forEach((s) => { m[s.id] = s; });
     return m;
   }, [sections]);
+
+  // period buttons: a period counts as recorded once every student of the
+  // section has a record for it that day
+  const singleSectionId = sectionSel && sectionSel !== '__ALL__' ? sectionSel : null;
+  const [periodsReload, setPeriodsReload] = useState(0);
+  useEffect(() => {
+    if (!singleSectionId) { setPeriodDone({}); return undefined; }
+    let cancelled = false;
+    (async () => {
+      const { data: studs } = await supabase.from('students').select('id').eq('section_id', singleSectionId).eq('is_active', true);
+      const ids = (studs || []).map((x) => x.id);
+      if (ids.length === 0) { if (!cancelled) setPeriodDone({}); return; }
+      const { data: recs } = await fetchAllRows(() => supabase
+        .from('attendance_records').select('id, student_id, period').eq('date', date).in('student_id', ids).order('id'));
+      const per = {};
+      (recs || []).forEach((r) => {
+        if (r.period == null) return;
+        if (!per[r.period]) per[r.period] = new Set();
+        per[r.period].add(r.student_id);
+      });
+      const done = {};
+      Object.keys(per).forEach((p) => { done[p] = per[p].size >= ids.length ? 'done' : 'partial'; });
+      if (!cancelled) setPeriodDone(done);
+    })();
+    return () => { cancelled = true; };
+  }, [singleSectionId, date, periodsReload]);
 
   // load students + existing attendance whenever section(s), date, or period changes
   const loadRoster = useCallback(async () => {
@@ -312,6 +340,7 @@ export default function Attendance() {
       setSaveMsg({ type: 'err', text: t.saveError });
     } else {
       setSaveMsg({ type: 'ok', text: t.savedSuccess });
+      setPeriodsReload((n) => n + 1);
       loadRoster();
     }
   };
@@ -420,6 +449,39 @@ export default function Attendance() {
               )}
             </div>
           </div>
+
+          {/* one tap on the period: shown as soon as a single section is chosen */}
+          {singleSectionId && (
+            <div className={cardFloating(dark, 'p-4 mb-6')}>
+              <div className={`text-xs font-medium mb-2.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.quickPeriodTitle}</div>
+              <div className="flex flex-wrap gap-2">
+                {[...Array(periodsForDate(date))].map((_, i) => i + 1).map((p) => {
+                  const state = periodDone[p];
+                  const on = String(period) === String(p);
+                  return (
+                    <button
+                      key={p}
+                      type="button"
+                      onClick={() => { if (!on) guarded(setPeriod)(String(p)); }}
+                      className={`h-11 min-w-[3.25rem] px-3 rounded-xl border text-sm font-semibold font-en flex items-center justify-center gap-1.5 transition-colors ${
+                        on
+                          ? 'bg-royal border-royal text-white'
+                          : state === 'done'
+                            ? (dark ? 'border-emerald-500/40 bg-emerald-500/10 text-emerald-300' : 'border-emerald-300 bg-emerald-50 text-emerald-700')
+                            : state === 'partial'
+                              ? (dark ? 'border-amber-500/40 bg-amber-500/10 text-amber-300' : 'border-amber-300 bg-amber-50 text-amber-700')
+                              : (dark ? 'border-slate-700 text-slate-200 hover:bg-white/5' : 'border-slate-200 text-slate-700 hover:bg-slate-50')
+                      }`}
+                    >
+                      {state === 'done' && !on && <Check size={14} />}
+                      {p}
+                    </button>
+                  );
+                })}
+              </div>
+              <p className={`text-[11px] mt-2 ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{t.quickPeriodHint}</p>
+            </div>
+          )}
 
           {/* roster */}
           {activeSectionIds.length === 0 || !period ? (

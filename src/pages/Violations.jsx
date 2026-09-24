@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { Search, Loader2, Trash2, AlertTriangle, Inbox, Check, X, MessageCircle } from 'lucide-react';
+import { Search, Loader2, Trash2, AlertTriangle, Inbox, Check, X, MessageCircle, ClipboardPlus, ListFilter } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import EmptyState from '../components/EmptyState';
 import { useDialogs } from '../lib/Dialogs';
@@ -15,6 +15,7 @@ import { shownSubjects, namesOf } from '../lib/staffInfo';
 import SectionPicker from '../components/SectionPicker';
 import ContactParentPanel from '../components/ContactParentPanel';
 import BulkContactModal from '../components/BulkContactModal';
+import { RangeChips, useContactChannels, SentMarks } from '../components/ListFilters';
 
 const REPEAT_THRESHOLD = 3;
 
@@ -48,6 +49,9 @@ export default function Violations() {
   const isRecorder = staff?.role === 'recorder';
   const canReview = staff && (staff.role === 'admin' || staff.role === 'supervisor');
   const canReport = canManage || isRecorder;
+  // admin / supervisor / edari choose on entry between recording a violation
+  // and looking up the recorded ones; a teacher only ever records (reports)
+  const [mode, setMode] = useState(() => (canManage ? null : 'record'));
 
   const [pendingList, setPendingList] = useState(null); // reports awaiting review
   const [reviewingId, setReviewingId] = useState(null);
@@ -94,7 +98,10 @@ export default function Violations() {
   const [fromDate, setFromDate] = useState(daysAgoStr(30));
   const [toDate, setToDate] = useState(todayStr());
   const [aggLoading, setAggLoading] = useState(true);
-  const [aggRows, setAggRows] = useState([]);
+  const [aggRaw, setAggRaw] = useState([]);
+  const [typeFilter, setTypeFilter] = useState('');
+  const [listFilter, setListFilter] = useState('');
+  const [channels, reloadChannels] = useContactChannels('violation', fromDate);
 
   const loadAggregate = useCallback(async (from, to) => {
     setAggLoading(true);
@@ -104,7 +111,7 @@ export default function Violations() {
         // qualified with the explicit FK name: behavior_violations now has a
         // second FK to students (affected_student_id), so an unqualified
         // "students(...)" embed is ambiguous to PostgREST.
-        .select('id, student_id, violation_type, date, students!behavior_violations_student_id_fkey(name_ar, name_en, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order))')
+        .select('id, student_id, violation_type, date, students!behavior_violations_student_id_fkey(name_ar, name_en, sis_no, is_active, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order))')
         // pending (not yet reviewed) and rejected teacher reports don't count
         .eq('status', 'approved')
         .order('id');
@@ -112,10 +119,16 @@ export default function Violations() {
       if (to) q = q.lte('date', to);
       return q;
     });
+    setAggRaw(data || []);
+    setAggLoading(false);
+  }, []);
 
+  // one row per student with how many violations they have in the period
+  // (optionally of one type only, or matching a name), repeat offenders first
+  const aggRows = useMemo(() => {
     const byStudent = new Map();
-    (data || []).forEach((r) => {
-      if (!r.students) return;
+    aggRaw.forEach((r) => {
+      if (!r.students || (typeFilter && r.violation_type !== typeFilter)) return;
       const existing = byStudent.get(r.student_id);
       if (existing) {
         existing.count += 1;
@@ -124,13 +137,13 @@ export default function Violations() {
         byStudent.set(r.student_id, { id: r.student_id, student: r.students, count: 1, lastDate: r.date, lastType: r.violation_type });
       }
     });
+    let list = Array.from(byStudent.values());
+    const q = listFilter.trim();
+    if (q) list = list.filter((r) => matchesStudentSearch(r.student, q));
+    return list.sort((a, b) => b.count - a.count || (b.lastDate > a.lastDate ? 1 : -1));
+  }, [aggRaw, typeFilter, listFilter]);
 
-    const list = Array.from(byStudent.values()).sort((a, b) => b.count - a.count);
-    setAggRows(list);
-    setAggLoading(false);
-  }, []);
-
-  useEffect(() => { if (!selected && canManage) loadAggregate(fromDate, toDate); }, [fromDate, toDate, selected, loadAggregate, canManage]);
+  useEffect(() => { if (!selected && canManage && mode === 'inquiry') loadAggregate(fromDate, toDate); }, [fromDate, toDate, selected, loadAggregate, canManage, mode]);
 
   const STUDENT_EMBED = 'students!behavior_violations_student_id_fkey(id, sis_no, name_ar, name_en, section_id, is_active, parent_email, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order))';
 
@@ -324,7 +337,7 @@ export default function Violations() {
     setAffectedStudent(null);
     setTeacherAction('');
     setSupervisorAction('');
-    setShowReportForm(isRecorder);
+    setShowReportForm(isRecorder || mode === 'record');
   };
 
   const selectFromAgg = (r) => {
@@ -427,6 +440,15 @@ export default function Violations() {
     });
   };
   const exitSelectMode = () => { setSelectMode(false); setPicked(new Map()); };
+  const chooseMode = (m) => {
+    setMode(m);
+    setSelected(null);
+    setQuery('');
+    setMatches(null);
+    setSaveMsg(null);
+    setApprovedViolation(null);
+    exitSelectMode();
+  };
   const pickMark = (id) => selectMode && (
     <span className={`h-5 w-5 rounded-md border flex items-center justify-center shrink-0 ${picked.has(id) ? 'bg-royal border-royal text-white' : (dark ? 'border-slate-500' : 'border-slate-300')}`}>
       {picked.has(id) && <Check size={13} />}
@@ -444,7 +466,7 @@ export default function Violations() {
             {initials(name)}
           </div>
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium truncate">{name}</div>
+            <div className="text-sm font-medium truncate flex items-center gap-2">{name} <SentMarks channels={channels.get(r.id)} t={t} /></div>
             <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
               {s.sections ? fmtSectionLabel(s.sections, lang) : '—'}{r.lastType ? ' · ' + (t.violationTypeNames[r.lastType] || r.lastType) : ''}
             </div>
@@ -468,229 +490,260 @@ export default function Violations() {
 
           {!selected ? (
             <>
-              {canReview && (
-                <div className={cardFloating(dark, 'p-5 mb-5 border-2 border-amber-300/70')}>
-                  <div className="flex items-center gap-2 mb-1">
-                    <Inbox size={16} className="text-amber-500" />
-                    <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>
-                      {t.pendingViolationsTitle}{pendingList && pendingList.length > 0 ? ` (${pendingList.length})` : ''}
-                    </h2>
-                  </div>
-                  {pendingList === null ? (
-                    <div className="space-y-2 mt-3">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-16 w-full')} />)}</div>
-                  ) : pendingList.length === 0 ? (
-                    <EmptyState icon={Inbox} text={t.noPendingViolations} dark={dark} compact />
-                  ) : (
-                    <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                      {pendingList.map((v) => {
-                        const s = v.students || {};
-                        const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
-                        return (
-                          <li key={v.id} className="py-3.5">
-                            <div className="flex flex-wrap items-center gap-2">
-                              <span className="text-sm font-semibold">{name}</span>
-                              {s.sections && (
-                                <span className={`text-xs px-2 py-0.5 rounded-full ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>{fmtSectionLabel(s.sections, lang)}</span>
-                              )}
-                              <span className="text-xs font-semibold text-rose-500">{t.violationTypeNames[v.violation_type] || v.violation_type}</span>
-                            </div>
-                            <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
-                              {fmtDate(v.date)} · {dayName(v.date)}{v.period ? ' · ' + t.periodN.replace('{n}', v.period) : ''}{v.staff?.full_name ? ' · ' + t.recordedBy + ' ' + v.staff.full_name : ''}
-                            </div>
-                            {v.description && <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{v.description}</div>}
-                            {v.affected_student && (
-                              <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{t.affectedStudentDisplayLabel}: {affectedStudentName(v.affected_student)}</div>
-                            )}
-                            {v.teacher_action && (
-                              <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{t.teacherActionDisplayLabel}: {v.teacher_action}</div>
-                            )}
-                            <div className="flex gap-2 mt-2.5">
-                              <button
-                                onClick={() => reviewViolation(v, true)}
-                                disabled={reviewingId === v.id}
-                                className="flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-60"
-                              >
-                                {reviewingId === v.id ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} {t.approveViolation}
-                              </button>
-                              <button
-                                onClick={() => reviewViolation(v, false)}
-                                disabled={reviewingId === v.id}
-                                className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border disabled:opacity-60 ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
-                              >
-                                <X size={13} /> {t.rejectViolation}
-                              </button>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
+              {canManage && mode && (
+                <div className={`inline-flex rounded-xl p-1 mb-5 ${dark ? 'bg-black/20' : 'bg-slate-200/60'}`}>
+                  {[['record', t.violationModeRecord, ClipboardPlus], ['inquiry', t.violationModeInquiry, ListFilter]].map(([m, label, Icon]) => (
+                    <button
+                      key={m}
+                      onClick={() => chooseMode(m)}
+                      className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${mode === m ? (dark ? 'bg-navy-soft text-white shadow' : 'bg-white text-navy shadow-sm') : (dark ? 'text-slate-200' : 'text-slate-600')}`}
+                    >
+                      <Icon size={15} /> {label}
+                      {m === 'inquiry' && canReview && pendingList && pendingList.length > 0 && (
+                        <span className="text-[11px] font-bold font-en px-1.5 rounded-full bg-amber-500 text-white">{pendingList.length}</span>
+                      )}
+                    </button>
+                  ))}
                 </div>
               )}
 
-              {isRecorder && (
-                <div className={cardFloating(dark, 'p-4 mb-5')}>
-                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{t.reportViolationHint}</p>
-                </div>
-              )}
-
-              {canManage && (
-                <div className="flex justify-end mb-3">
-                  <button
-                    onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
-                    className={`text-xs font-medium px-4 py-2 rounded-lg border ${selectMode ? 'bg-royal text-white border-transparent' : (dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50')}`}
-                  >
-                    {selectMode ? t.cancelSelectBtn : t.selectManyBtn}
-                  </button>
-                </div>
-              )}
-
-              {canManage && (
-              <div className={cardFloating(dark, 'p-4 mb-5 flex flex-col sm:flex-row gap-3 sm:items-end')}>
-                <div className="flex-1">
-                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.fromDate}</label>
-                  <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={inputCls + ' font-en'} />
-                </div>
-                <div className="flex-1">
-                  <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.toDate}</label>
-                  <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputCls + ' font-en'} />
-                </div>
-                {(fromDate || toDate) && (
-                  <button onClick={() => { setFromDate(''); setToDate(''); }} className={`text-xs font-medium px-4 py-2.5 rounded-lg border whitespace-nowrap ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
-                    {t.showAll}
-                  </button>
-                )}
-              </div>
-              )}
-
-              <div className={cardFloating(dark, 'p-4 mb-5 space-y-3')}>
-                <SectionPicker
-                  sections={sections} lang={lang} dark={dark}
-                  grade={grade} stream={stream} sectionId={sectionSel}
-                  allowAll
-                  onGradeChange={(g) => { setGrade(g); setStream(''); setSectionSel(''); }}
-                  onStreamChange={(s) => { setStream(s); setSectionSel(''); }}
-                  onSectionChange={setSectionSel}
-                  inputCls={inputCls}
-                />
-                {sectionRoster !== null && (
-                  <button onClick={clearSectionFilter} className={`text-xs font-medium px-4 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
-                    {t.clearClassFilter}
-                  </button>
-                )}
-              </div>
-
-              <div className={cardFloating(dark, 'p-4 mb-5 flex gap-2')}>
-                <div className={`flex-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm border ${dark ? 'bg-navy border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
-                  <Search size={15} />
-                  <input
-                    value={query}
-                    onChange={(e) => { setQuery(e.target.value); if (!e.target.value.trim() && sectionRoster === null) setMatches(null); }}
-                    onKeyDown={(e) => { if (e.key === 'Enter') runSearch(); }}
-                    placeholder={t.lookupPlaceholder}
-                    className="bg-transparent outline-none w-full text-sm placeholder:text-inherit"
-                    style={{ color: dark ? '#e2e8f0' : '#334155' }}
-                  />
-                </div>
-                <button onClick={runSearch} disabled={searching} className="flex items-center gap-1.5 text-sm font-medium px-5 py-2.5 rounded-lg bg-royal hover:bg-royal-light text-white transition-colors disabled:opacity-60">
-                  {searching ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />} {lang === 'ar' ? 'بحث' : 'Search'}
-                </button>
-              </div>
-
-              {results !== null && (
-                <div className={cardFloating(dark, 'overflow-hidden mb-5')}>
-                  {results.length === 0 ? (
-                    <div className="p-8 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.lookupNoResults}</p></div>
-                  ) : (
-                    <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                      {results.map((s) => {
-                        const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
-                        return (
-                          <li key={s.id}>
-                            <button onClick={() => (selectMode ? togglePick(s.id, s) : selectStudent(s))} className={`w-full flex items-center gap-3 px-4 py-3 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
-                              {pickMark(s.id)}
-                              <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials(name)}</div>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-semibold truncate">{name}</div>
-                                <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.sisNo}: {s.sis_no}</div>
-                              </div>
-                              <span className={`text-xs px-2.5 py-1 rounded-full shrink-0 ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>{fmtSectionLabel(s.sections, lang)}</span>
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  )}
-                </div>
-              )}
-
-              {isRecorder && (
-                <div className={cardFloating(dark, 'p-5')}>
-                  <h2 className={`text-sm font-semibold mb-3 ${dark ? 'text-white' : 'text-slate-900'}`}>{t.myReportedViolationsTitle}</h2>
-                  {myReports === null ? (
-                    <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
-                  ) : myReports.length === 0 ? (
-                    <EmptyState icon={AlertTriangle} text={t.noReportedViolations} dark={dark} compact />
-                  ) : (
-                    <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                      {myReports.map((v) => {
-                        const s = v.students || {};
-                        const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
-                        const approvedChip = v.status === 'approved'
-                          ? <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${dark ? 'bg-emerald-500/15 text-emerald-300' : 'bg-emerald-50 text-emerald-700'}`}>{t.violationStatusApproved}</span>
-                          : statusChip(v.status);
-                        return (
-                          <li key={v.id}>
-                            <button onClick={() => v.students && selectStudent({ ...v.students, id: v.student_id })} className={`w-full flex items-center gap-3 py-3 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
-                              <div className="flex-1 min-w-0">
-                                <div className="text-sm font-medium truncate">{name || '—'}</div>
-                                <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
-                                  {t.violationTypeNames[v.violation_type] || v.violation_type} · {fmtDate(v.date)}
+              {mode === 'inquiry' && (
+                <>
+                  {canReview && (
+                    <div className={cardFloating(dark, 'p-5 mb-5 border-2 border-amber-300/70')}>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Inbox size={16} className="text-amber-500" />
+                        <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>
+                          {t.pendingViolationsTitle}{pendingList && pendingList.length > 0 ? ` (${pendingList.length})` : ''}
+                        </h2>
+                      </div>
+                      {pendingList === null ? (
+                        <div className="space-y-2 mt-3">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-16 w-full')} />)}</div>
+                      ) : pendingList.length === 0 ? (
+                        <EmptyState icon={Inbox} text={t.noPendingViolations} dark={dark} compact />
+                      ) : (
+                        <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+                          {pendingList.map((v) => {
+                            const s = v.students || {};
+                            const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
+                            return (
+                              <li key={v.id} className="py-3.5">
+                                <div className="flex flex-wrap items-center gap-2">
+                                  <span className="text-sm font-semibold">{name}</span>
+                                  {s.sections && (
+                                    <span className={`text-xs px-2 py-0.5 rounded-full ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>{fmtSectionLabel(s.sections, lang)}</span>
+                                  )}
+                                  <span className="text-xs font-semibold text-rose-500">{t.violationTypeNames[v.violation_type] || v.violation_type}</span>
                                 </div>
-                              </div>
-                              {approvedChip}
-                            </button>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                                <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
+                                  {fmtDate(v.date)} · {dayName(v.date)}{v.period ? ' · ' + t.periodN.replace('{n}', v.period) : ''}{v.staff?.full_name ? ' · ' + t.recordedBy + ' ' + v.staff.full_name : ''}
+                                </div>
+                                {v.description && <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{v.description}</div>}
+                                {v.affected_student && (
+                                  <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{t.affectedStudentDisplayLabel}: {affectedStudentName(v.affected_student)}</div>
+                                )}
+                                {v.teacher_action && (
+                                  <div className={`text-xs mt-1 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{t.teacherActionDisplayLabel}: {v.teacher_action}</div>
+                                )}
+                                <div className="flex gap-2 mt-2.5">
+                                  <button
+                                    onClick={() => reviewViolation(v, true)}
+                                    disabled={reviewingId === v.id}
+                                    className="flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white disabled:opacity-60"
+                                  >
+                                    {reviewingId === v.id ? <Loader2 size={13} className="animate-spin" /> : <Check size={13} />} {t.approveViolation}
+                                  </button>
+                                  <button
+                                    onClick={() => reviewViolation(v, false)}
+                                    disabled={reviewingId === v.id}
+                                    className={`flex items-center gap-1.5 text-xs font-medium px-3.5 py-2 rounded-lg border disabled:opacity-60 ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
+                                  >
+                                    <X size={13} /> {t.rejectViolation}
+                                  </button>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
                   )}
-                </div>
+
+                  <div className={cardFloating(dark, 'p-4 mb-5 space-y-3')}>
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <RangeChips from={fromDate} to={toDate} onChange={(fr, to2) => { setFromDate(fr); setToDate(to2); }} t={t} dark={dark} />
+                      <button
+                        onClick={() => (selectMode ? exitSelectMode() : setSelectMode(true))}
+                        className={`text-xs font-medium px-4 py-2 rounded-lg border ${selectMode ? 'bg-royal text-white border-transparent' : (dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50')}`}
+                      >
+                        {selectMode ? t.cancelSelectBtn : t.selectManyBtn}
+                      </button>
+                    </div>
+                    <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      <div>
+                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.fromDate}</label>
+                        <input type="date" value={fromDate} onChange={(e) => setFromDate(e.target.value)} className={inputCls + ' font-en'} />
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.toDate}</label>
+                        <input type="date" value={toDate} onChange={(e) => setToDate(e.target.value)} className={inputCls + ' font-en'} />
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.violationType}</label>
+                        <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className={inputCls}>
+                          <option value="">{t.allViolationTypes}</option>
+                          {VIOLATION_TYPE_KEYS.map((k) => <option key={k} value={k}>{t.violationTypeNames[k]}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.filterListPlaceholder}</label>
+                        <input value={listFilter} onChange={(e) => setListFilter(e.target.value)} className={inputCls} />
+                      </div>
+                    </div>
+                    <p className={`text-xs ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{t.sentLegend}</p>
+                  </div>
+
+                  {canManage && (
+                  <>
+                  <div className={cardFloating(dark, 'p-5 mb-5')}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <AlertTriangle size={16} className="text-rose-500" />
+                      <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>{t.repeatedViolationsTitle}</h2>
+                    </div>
+                    {aggLoading ? (
+                      <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
+                    ) : repeated.length === 0 ? (
+                      <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noViolationsInPeriod}</p>
+                    ) : (
+                      <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+                        {repeated.map((r) => <AggRow key={r.id} r={r} />)}
+                      </ul>
+                    )}
+                  </div>
+
+                  <div className={cardFloating(dark, 'p-5')}>
+                    <h2 className={`text-sm font-semibold mb-3 ${dark ? 'text-white' : 'text-slate-900'}`}>{t.allViolationsTitle}</h2>
+                    {aggLoading ? (
+                      <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
+                    ) : rest.length === 0 && repeated.length === 0 ? (
+                      <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noViolationsInPeriod}</p>
+                    ) : rest.length === 0 ? (
+                      <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>—</p>
+                    ) : (
+                      <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+                        {rest.map((r) => <AggRow key={r.id} r={r} />)}
+                      </ul>
+                    )}
+                  </div>
+                  </>
+                  )}
+                </>
               )}
 
-              {canManage && (
-              <>
-              <div className={cardFloating(dark, 'p-5 mb-5')}>
-                <div className="flex items-center gap-2 mb-3">
-                  <AlertTriangle size={16} className="text-rose-500" />
-                  <h2 className={`text-sm font-semibold ${dark ? 'text-white' : 'text-slate-900'}`}>{t.repeatedViolationsTitle}</h2>
-                </div>
-                {aggLoading ? (
-                  <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
-                ) : repeated.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noViolationsInPeriod}</p>
-                ) : (
-                  <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                    {repeated.map((r) => <AggRow key={r.id} r={r} />)}
-                  </ul>
-                )}
-              </div>
+              {mode === 'record' && (
+                <>
+                  {isRecorder && (
+                    <div className={cardFloating(dark, 'p-4 mb-5')}>
+                      <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{t.reportViolationHint}</p>
+                    </div>
+                  )}
 
-              <div className={cardFloating(dark, 'p-5')}>
-                <h2 className={`text-sm font-semibold mb-3 ${dark ? 'text-white' : 'text-slate-900'}`}>{t.allViolationsTitle}</h2>
-                {aggLoading ? (
-                  <div className="space-y-2">{[0, 1, 2].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
-                ) : rest.length === 0 && repeated.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.noViolationsInPeriod}</p>
-                ) : rest.length === 0 ? (
-                  <p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>—</p>
-                ) : (
-                  <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
-                    {rest.map((r) => <AggRow key={r.id} r={r} />)}
-                  </ul>
-                )}
-              </div>
-              </>
+                  <div className={cardFloating(dark, 'p-4 mb-5 space-y-3')}>
+                    <SectionPicker
+                      sections={sections} lang={lang} dark={dark}
+                      grade={grade} stream={stream} sectionId={sectionSel}
+                      allowAll
+                      onGradeChange={(g) => { setGrade(g); setStream(''); setSectionSel(''); }}
+                      onStreamChange={(s) => { setStream(s); setSectionSel(''); }}
+                      onSectionChange={setSectionSel}
+                      inputCls={inputCls}
+                    />
+                    {sectionRoster !== null && (
+                      <button onClick={clearSectionFilter} className={`text-xs font-medium px-4 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}>
+                        {t.clearClassFilter}
+                      </button>
+                    )}
+                  </div>
+
+                  <div className={cardFloating(dark, 'p-4 mb-5 flex gap-2')}>
+                    <div className={`flex-1 flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm border ${dark ? 'bg-navy border-slate-700 text-slate-400' : 'bg-slate-50 border-slate-200 text-slate-400'}`}>
+                      <Search size={15} />
+                      <input
+                        value={query}
+                        onChange={(e) => { setQuery(e.target.value); if (!e.target.value.trim() && sectionRoster === null) setMatches(null); }}
+                        onKeyDown={(e) => { if (e.key === 'Enter') runSearch(); }}
+                        placeholder={t.lookupPlaceholder}
+                        className="bg-transparent outline-none w-full text-sm placeholder:text-inherit"
+                        style={{ color: dark ? '#e2e8f0' : '#334155' }}
+                      />
+                    </div>
+                    <button onClick={runSearch} disabled={searching} className="flex items-center gap-1.5 text-sm font-medium px-5 py-2.5 rounded-lg bg-royal hover:bg-royal-light text-white transition-colors disabled:opacity-60">
+                      {searching ? <Loader2 size={15} className="animate-spin" /> : <Search size={15} />} {lang === 'ar' ? 'بحث' : 'Search'}
+                    </button>
+                  </div>
+
+                  {results !== null && (
+                    <div className={cardFloating(dark, 'overflow-hidden mb-5')}>
+                      {results.length === 0 ? (
+                        <div className="p-8 text-center"><p className={`text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.lookupNoResults}</p></div>
+                      ) : (
+                        <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+                          {results.map((s) => {
+                            const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
+                            return (
+                              <li key={s.id}>
+                                <button onClick={() => (selectMode ? togglePick(s.id, s) : selectStudent(s))} className={`w-full flex items-center gap-3 px-4 py-3 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+                                  {pickMark(s.id)}
+                                  <div className="h-9 w-9 rounded-full bg-gradient-to-br from-royal to-royal-light flex items-center justify-center text-white text-xs font-semibold shrink-0">{initials(name)}</div>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-semibold truncate">{name}</div>
+                                    <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.sisNo}: {s.sis_no}</div>
+                                  </div>
+                                  <span className={`text-xs px-2.5 py-1 rounded-full shrink-0 ${dark ? 'bg-gold/10 text-gold' : 'bg-amber-50 text-amber-700'}`}>{fmtSectionLabel(s.sections, lang)}</span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+
+                  {isRecorder && (
+                    <div className={cardFloating(dark, 'p-5')}>
+                      <h2 className={`text-sm font-semibold mb-3 ${dark ? 'text-white' : 'text-slate-900'}`}>{t.myReportedViolationsTitle}</h2>
+                      {myReports === null ? (
+                        <div className="space-y-2">{[0, 1].map((i) => <div key={i} className={skeleton(dark, 'h-12 w-full')} />)}</div>
+                      ) : myReports.length === 0 ? (
+                        <EmptyState icon={AlertTriangle} text={t.noReportedViolations} dark={dark} compact />
+                      ) : (
+                        <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
+                          {myReports.map((v) => {
+                            const s = v.students || {};
+                            const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
+                            const approvedChip = v.status === 'approved'
+                              ? <span className={`text-xs font-semibold px-2 py-0.5 rounded-full ${dark ? 'bg-emerald-500/15 text-emerald-300' : 'bg-emerald-50 text-emerald-700'}`}>{t.violationStatusApproved}</span>
+                              : statusChip(v.status);
+                            return (
+                              <li key={v.id}>
+                                <button onClick={() => v.students && selectStudent({ ...v.students, id: v.student_id })} className={`w-full flex items-center gap-3 py-3 text-start transition-colors ${dark ? 'hover:bg-white/5' : 'hover:bg-slate-50'}`}>
+                                  <div className="flex-1 min-w-0">
+                                    <div className="text-sm font-medium truncate">{name || '—'}</div>
+                                    <div className={`text-xs ${dark ? 'text-slate-200' : 'text-slate-500'}`}>
+                                      {t.violationTypeNames[v.violation_type] || v.violation_type} · {fmtDate(v.date)}
+                                    </div>
+                                  </div>
+                                  {approvedChip}
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </div>
+                  )}
+
+                </>
               )}
             </>
           ) : (
@@ -830,7 +883,7 @@ export default function Violations() {
                   mode="direct"
                   contextType="violation"
                   contextId={approvedViolation?.id || null}
-                  onSent={() => loadStudentViolations(selected.id)}
+                  onSent={() => { loadStudentViolations(selected.id); reloadChannels(); }}
                   staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls}
                 />
               )}
@@ -911,7 +964,34 @@ export default function Violations() {
         </main>
       </div>
 
-      {selectMode && picked.size > 0 && (
+      {mode === null && canManage && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+          <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className={`w-full max-w-md rounded-2xl p-6 shadow-2xl ${dark ? 'bg-navy-soft text-slate-100' : 'bg-white text-slate-800'}`}>
+            <h2 className={`text-lg font-bold mb-4 text-center ${dark ? 'text-white' : 'text-navy'}`}>{t.chooseActionTitle}</h2>
+            <div className="grid gap-3">
+              {[['record', t.violationModeRecord, t.violationModeRecordHint, ClipboardPlus, 'bg-rose-500/15 text-rose-500'],
+                ['inquiry', t.violationModeInquiry, t.violationModeInquiryHint, ListFilter, dark ? 'bg-royal/20 text-royal-light' : 'bg-royal/10 text-royal']].map(([m, title, hint, Icon, accent]) => (
+                <button
+                  key={m}
+                  onClick={() => chooseMode(m)}
+                  className={`flex items-center gap-4 rounded-xl border p-4 text-start transition-colors ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
+                >
+                  <span className={`h-11 w-11 rounded-full flex items-center justify-center shrink-0 ${accent}`}><Icon size={20} /></span>
+                  <span className="flex-1">
+                    <span className="block text-sm font-semibold">{title}</span>
+                    <span className={`block text-xs mt-0.5 ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{hint}</span>
+                  </span>
+                  {m === 'inquiry' && canReview && pendingList && pendingList.length > 0 && (
+                    <span className="text-xs font-semibold px-2 py-1 rounded-full bg-amber-500 text-white shrink-0">{t.pendingReviewCount.replace('{n}', pendingList.length)}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {selectMode && picked.size > 0 && !selected && (
         <div className="no-print fixed bottom-16 md:bottom-4 inset-x-0 z-30 flex justify-center px-4 pointer-events-none">
           <button
             onClick={() => setBulkOpen(true)}
@@ -927,6 +1007,7 @@ export default function Violations() {
           students={[...picked.values()]}
           contextType="violation"
           defaultNote={t.bulkContactDefaultNote}
+          onSent={reloadChannels}
           staff={staff} t={t} lang={lang} dark={dark} inputCls={inputCls}
           onClose={() => setBulkOpen(false)}
         />

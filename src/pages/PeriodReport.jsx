@@ -8,9 +8,9 @@ import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionLabel as fmtSectionLabel, sectionsFor, streamLabel, gradeLabel } from '../lib/sections';
 import { isSchoolDay } from '../lib/schoolCalendar';
 import { fetchAllRowsByIds } from '../lib/fetchAll';
-import { deriveByStudentAndDate } from '../lib/attendanceDerive';
-import { exportXlsx } from '../lib/exportXlsx';
-import { printWithTitle, reportName, rangeLabel, groupRowsBySection, printSectionLabel } from '../lib/print';
+import { deriveByStudentAndDate, periodsForDate } from '../lib/attendanceDerive';
+import { exportXlsxSheets } from '../lib/exportXlsx';
+import { printWithTitle, reportName, rangeLabel, groupRowsBySection, printSectionLabel, weekdayName } from '../lib/print';
 import { PrintSheet, PrintTable, StatusPill } from '../components/PrintSheet';
 import SectionPicker from '../components/SectionPicker';
 
@@ -50,6 +50,7 @@ export default function PeriodReport() {
   const [toDate, setToDate] = useState(todayStr());
 
   const [rows, setRows] = useState(null);
+  const [dayDetail, setDayDetail] = useState({}); // student id -> [[date, { status, periods }]] (for the Excel details sheet)
   const [loading, setLoading] = useState(false);
   const [printSelection, setPrintSelection] = useState(new Set());
 
@@ -161,6 +162,12 @@ export default function PeriodReport() {
     });
 
     result.sort((a, b) => a.name.localeCompare(b.name, lang === 'ar' ? 'ar' : 'en'));
+    const detailMap = {};
+    list.forEach((s) => {
+      const dm = derived.get(s.id);
+      detailMap[s.id] = dm ? [...dm.entries()].sort((a, b) => a[0].localeCompare(b[0])) : [];
+    });
+    setDayDetail(detailMap);
     setRows(result);
     setPrintSelection(new Set());
     setLoading(false);
@@ -212,9 +219,38 @@ export default function PeriodReport() {
   const fileTitle = reportName(t.periodReportTitle, scopeLabel, rangeLabel(lang, fromDate, toDate));
 
   const exportCsv = () => {
-    const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGradeSection, t.colPresentDays, t.colAbsentDays, t.colLateDays, t.colExcusedDays, t.colNotRecordedDays, t.colRate, t.colFlag];
-    const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.section_label, r.present, r.absent, r.lateDays, r.excused, r.notRecorded, r.rate == null ? '—' : `${r.rate}%`, r.flagged ? t.frequentAbsence : '']);
-    exportXlsx(`${fileTitle}.xlsx`, [header, ...body], { lang });
+    // sheet 1: one row per student for the whole range (with the range itself)
+    const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGradeSection, t.fromDate, t.toDate, t.colPresentDays, t.colAbsentDays, t.colLateDays, t.colExcusedDays, t.colNotRecordedDays, t.colRate, t.colFlag];
+    const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.section_label, fromDate, toDate, r.present, r.absent, r.lateDays, r.excused, r.notRecorded, r.rate == null ? '—' : `${r.rate}%`, r.flagged ? t.frequentAbsence : '']);
+
+    // sheet 2: one row per student per recorded day — date, weekday, the day's
+    // status, the status of every period, and how many periods were missed / late
+    const stName = { present: t.statusPresent, absent: t.statusAbsent, late: t.statusLate, excused: t.statusExcused };
+    const periodNums = [1, 2, 3, 4, 5, 6, 7, 8];
+    const detailHeader = [
+      t.colStudentNo, t.colStudentName, t.colGradeSection, t.dateLabel, t.colDay, t.colStatus,
+      ...periodNums.map((p) => t.periodN.replace('{n}', p)),
+      t.statusAbsent, t.statusLate,
+    ];
+    const detailBody = [];
+    printRows.forEach((r) => {
+      (dayDetail[r.id] || []).forEach(([date, info]) => {
+        const per = info.periods || {};
+        const n = periodsForDate(date);
+        const vals = periodNums.map((p) => (p <= n ? per[p] : undefined));
+        detailBody.push([
+          r.sis_no, r.name, r.section_label, date, weekdayName(date, lang),
+          info.status ? (stName[info.status] || '') : t.statusNotRecorded,
+          ...vals.map((st) => (st ? (stName[st] || '') : '')),
+          vals.filter((st) => st === 'absent').length,
+          vals.filter((st) => st === 'late').length,
+        ]);
+      });
+    });
+    exportXlsxSheets(`${fileTitle}.xlsx`, [
+      { name: t.xlsxSheetSummary, rows: [header, ...body] },
+      { name: t.xlsxSheetDetails, rows: [detailHeader, ...detailBody] },
+    ], { lang });
   };
 
   // printed / PDF version (components/PrintSheet.jsx): grouped by section

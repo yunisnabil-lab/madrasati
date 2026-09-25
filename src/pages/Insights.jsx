@@ -6,7 +6,7 @@ import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { fetchAllRows } from '../lib/fetchAll';
 import { sortSections, sectionLabel as fmtSectionLabel } from '../lib/sections';
-import { exportXlsx } from '../lib/exportXlsx';
+import { exportXlsxSheets } from '../lib/exportXlsx';
 import { printWithTitle, reportName, rangeLabel } from '../lib/print';
 import { PrintSheet, PrintHeading, PrintTable } from '../components/PrintSheet';
 import EmptyState from '../components/EmptyState';
@@ -65,7 +65,7 @@ export default function Insights() {
       secs = secs.filter((s) => allowed.has(s.id));
     }
     const [studRes, sumRes, vioRes, latRes] = await Promise.all([
-      fetchAllRows(() => supabase.from('students').select('id, name_ar, name_en, section_id').eq('is_active', true).order('id')),
+      fetchAllRows(() => supabase.from('students').select('id, sis_no, name_ar, name_en, section_id').eq('is_active', true).order('id')),
       supabase.rpc('student_attendance_summary', { p_from: range.from, p_to: range.to }),
       fetchAllRows(() => supabase.from('behavior_violations').select('id, student_id, violation_type').eq('status', 'approved').gte('date', range.from).lte('date', range.to).order('id')),
       fetchAllRows(() => supabase.from('morning_lateness').select('id, student_id').gte('date', range.from).lte('date', range.to).order('id')),
@@ -169,12 +169,42 @@ export default function Insights() {
 
   const exportMonth = () => {
     const ar = lang === 'ar';
+    // sheet 1: one row per section (with the date range the numbers cover)
     const rows = [
-      [ar ? 'الصف والشعبة' : 'Grade & section', ar ? 'الطلاب' : 'Students', ar ? 'نسبة الحضور %' : 'Attendance %', ar ? 'أيام الغياب' : 'Absent days', ar ? 'حصص التأخر' : 'Late periods', ar ? 'المخالفات' : 'Violations', ar ? 'التأخر الصباحي' : 'Morning lateness'],
-      ...monthly.rows.map((r) => [fmtSectionLabel(r.sec, lang), r.count, r.rate == null ? '' : Number(r.rate.toFixed(1)), r.absent, r.latePeriods, r.vio, r.lat]),
-      [ar ? 'الإجمالي' : 'Total', monthly.total.count, monthly.total.rate == null ? '' : Number(monthly.total.rate.toFixed(1)), monthly.total.absent, monthly.total.latePeriods, monthly.total.vio, monthly.total.lat],
+      [ar ? 'الصف والشعبة' : 'Grade & section', t.fromDate, t.toDate, ar ? 'الطلاب' : 'Students', ar ? 'نسبة الحضور %' : 'Attendance %', ar ? 'أيام الغياب' : 'Absent days', ar ? 'حصص التأخر' : 'Late periods', ar ? 'المخالفات' : 'Violations', ar ? 'التأخر الصباحي' : 'Morning lateness'],
+      ...monthly.rows.map((r) => [fmtSectionLabel(r.sec, lang), range.from, range.to, r.count, r.rate == null ? '' : Number(r.rate.toFixed(1)), r.absent, r.latePeriods, r.vio, r.lat]),
+      [ar ? 'الإجمالي' : 'Total', range.from, range.to, monthly.total.count, monthly.total.rate == null ? '' : Number(monthly.total.rate.toFixed(1)), monthly.total.absent, monthly.total.latePeriods, monthly.total.vio, monthly.total.lat],
     ];
-    exportXlsx(`${reportName(t.monthlyReportTitle, monthTitle)}.xlsx`, rows, { lang, sheetName: month });
+    // sheet 2: one row per student — the same numbers, student by student,
+    // those with the most absences first
+    const studentRows = students
+      .map((s) => {
+        const r = summary[s.id] || {};
+        return {
+          s,
+          sec: sectionMap[s.section_id],
+          present: r.present_days || 0,
+          absent: r.absent_days || 0,
+          late: r.late_periods || 0,
+          vio: vioByStudent[s.id] || 0,
+          lat: latByStudent[s.id] || 0,
+        };
+      })
+      .filter((x) => x.sec)
+      .sort((a, b) => b.absent - a.absent || b.vio - a.vio || b.lat - a.lat);
+    const studentSheet = [
+      [t.colStudentNo, t.colStudentName, ar ? 'الصف والشعبة' : 'Grade & section', ar ? 'أيام الحضور' : 'Present days', ar ? 'أيام الغياب' : 'Absent days', ar ? 'حصص التأخر' : 'Late periods', ar ? 'المخالفات' : 'Violations', ar ? 'التأخر الصباحي' : 'Morning lateness'],
+      ...studentRows.map((x) => [
+        x.s.sis_no || '',
+        ar ? (x.s.name_ar || x.s.name_en) : (x.s.name_en || x.s.name_ar),
+        fmtSectionLabel(x.sec, lang),
+        x.present, x.absent, x.late, x.vio, x.lat,
+      ]),
+    ];
+    exportXlsxSheets(`${reportName(t.monthlyReportTitle, monthTitle)}.xlsx`, [
+      { name: t.xlsxSheetSummary, rows },
+      { name: t.xlsxSheetStudents, rows: studentSheet },
+    ], { lang });
   };
 
   // printed / PDF versions (components/PrintSheet.jsx)

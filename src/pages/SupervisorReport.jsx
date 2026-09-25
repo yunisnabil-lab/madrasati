@@ -8,7 +8,7 @@ import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionLabel as fmtSectionLabel } from '../lib/sections';
 import { fetchAllRows } from '../lib/fetchAll';
 import { exportXlsx } from '../lib/exportXlsx';
-import { printWithTitle, reportName, rangeLabel } from '../lib/print';
+import { printWithTitle, reportName, rangeLabel, weekdayName } from '../lib/print';
 import { PrintSheet, PrintHeading, PrintTable, StatusPill } from '../components/PrintSheet';
 import { VIOLATION_TYPE_KEYS } from '../lib/i18n';
 
@@ -48,7 +48,7 @@ export default function SupervisorReport() {
         // qualified with the explicit FK name: behavior_violations now has a
         // second FK to students (affected_student_id), so an unqualified
         // "students(...)" embed is ambiguous to PostgREST.
-        .select('id, student_id, violation_type, description, date, created_at, students!behavior_violations_student_id_fkey(name_ar, name_en, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)), staff(full_name)')
+        .select('id, student_id, violation_type, description, date, created_at, period, teacher_action, supervisor_action, students!behavior_violations_student_id_fkey(sis_no, name_ar, name_en, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)), staff(full_name)')
         // teacher reports only count once the supervisor has approved them
         .eq('status', 'approved')
         .gte('date', fromDate)
@@ -56,7 +56,7 @@ export default function SupervisorReport() {
         .order('id')),
       fetchAllRows(() => supabase
         .from('morning_lateness')
-        .select('id, student_id, description, date, created_at, students(name_ar, name_en, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)), staff(full_name)')
+        .select('id, student_id, description, date, created_at, students(sis_no, name_ar, name_en, sections(grade_name, grade_name_en, section_name, stream, section_number, grade_order)), staff(full_name)')
         .gte('date', fromDate)
         .lte('date', toDate)),
     ]);
@@ -68,6 +68,9 @@ export default function SupervisorReport() {
       violationType: v.violation_type,
       detail: t.violationTypeNames[v.violation_type] || v.violation_type,
       description: v.description,
+      period: v.period,
+      teacherAction: v.teacher_action,
+      supervisorAction: v.supervisor_action,
       date: v.date,
       created_at: v.created_at,
       student: v.students,
@@ -152,17 +155,27 @@ export default function SupervisorReport() {
   const fileTitle = reportName(t.supervisorReportTitle, typeFilter === 'all' ? '' : typeFilterLabel, rangeLabel(lang, fromDate, toDate));
 
   const exportCsv = () => {
-    const header = [t.colNo, t.colStudentName, t.colSection, 'Date', t.colIncidentType, t.colDetail, t.recordedBy];
+    const header = [
+      t.colNo, t.colStudentNo, t.colStudentName, t.colSection, t.dateLabel, t.colDay,
+      t.colIncidentType, t.colDetail, t.colDescription, t.colPeriod,
+      t.teacherActionDisplayLabel, t.supervisorActionDisplayLabel, t.recordedBy,
+    ];
     const body = filteredIncidents.map((r, i) => {
       const s = r.student || {};
       const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
       return [
         i + 1,
+        s.sis_no || '',
         name || '—',
         s.sections ? fmtSectionLabel(s.sections, lang) : '—',
         r.date,
+        weekdayName(r.date, lang),
         r.type === 'violation' ? t.incidentTypeViolation : t.incidentTypeLateness,
-        r.type === 'violation' ? r.detail : (r.description || ''),
+        r.type === 'violation' ? r.detail : '',
+        r.description || '',
+        r.period || '',
+        r.teacherAction || '',
+        r.supervisorAction || '',
         r.staffName || '—',
       ];
     });

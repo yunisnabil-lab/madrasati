@@ -35,11 +35,35 @@ export default function TodaySummary({ t, lang, dark }) {
       const from = new Date();
       from.setDate(from.getDate() - 30);
       const fromStr = fmt(from);
+      // fast path: today's numbers are counted inside the database
+      // (supabase/dashboard_speed.sql); the old way below downloads every row
+      const periodsToday = periodsForDate(today);
+      const [fastRes, sumFast, vioFast] = await Promise.all([
+        supabase.rpc('dashboard_today', { p_date: today, p_periods: periodsToday }),
+        supabase.rpc('student_attendance_summary', { p_from: fromStr, p_to: today }),
+        fetchAllRows(() => supabase.from('behavior_violations').select('id, student_id').eq('status', 'approved').gte('date', fromStr).lte('date', today).order('id')),
+      ]);
+      if (cancelled) return;
+      const fastRow = !fastRes.error && Array.isArray(fastRes.data) ? fastRes.data[0] : null;
+      if (fastRow) {
+        let warnFast = null;
+        if (!sumFast.error) {
+          const vio = {};
+          (vioFast.data || []).forEach((v) => { vio[v.student_id] = (vio[v.student_id] || 0) + 1; });
+          const flagged = new Set();
+          (sumFast.data || []).forEach((r) => { if (r.absent_days >= 3) flagged.add(String(r.student_id)); });
+          Object.keys(vio).forEach((id) => { if (vio[id] >= 3) flagged.add(String(id)); });
+          warnFast = flagged.size;
+        }
+        setData({ done: Number(fastRow.done), total: Number(fastRow.total), absent: Number(fastRow.absent), warn: warnFast });
+        return;
+      }
+
       const [studRes, recRes, sumRes, vioRes] = await Promise.all([
         fetchAllRows(() => supabase.from('students').select('id, section_id').eq('is_active', true).order('id')),
         fetchAllRows(() => supabase.from('attendance_records').select('id, student_id, period, status').eq('date', today).order('id')),
-        supabase.rpc('student_attendance_summary', { p_from: fromStr, p_to: today }),
-        fetchAllRows(() => supabase.from('behavior_violations').select('id, student_id').eq('status', 'approved').gte('date', fromStr).lte('date', today).order('id')),
+        Promise.resolve(sumFast),
+        Promise.resolve(vioFast),
       ]);
       if (cancelled) return;
 

@@ -100,35 +100,38 @@ export default function Dashboard() {
       const s = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
       if (isSchoolDay(s)) days.unshift(s);
     }
-    // 7 days x up to 8 periods x every student is far past the 1000-row
-    // response cap, so page through all rows instead of one request
-    const { data: recs } = await fetchAllRows(() => supabase
-      .from('attendance_records')
-      .select('student_id, date, status, period')
-      .gte('date', days[0])
-      .lte('date', days[days.length - 1])
-      .order('id'));
-
-    // derive one status per student per day (see lib/attendanceDerive:
-    // absent once 3+ periods are absent, present once all 8 periods are
-    // recorded and that threshold wasn't hit, otherwise no verdict yet)
-    // instead of counting raw per-period rows, which previously
-    // over/under-counted whenever a student had more than one record for
-    // the same day (per-period rows plus an override, or several periods)
-    const derived = deriveByStudentAndDate(recs || []);
     const byDay = {};
     days.forEach((d) => { byDay[d] = { total: 0, absent: 0 }; });
-    derived.forEach((dayMap) => {
-      dayMap.forEach((info, date) => {
-        if (!byDay[date]) return;
-        // Skip days with no decisive verdict yet (attendanceDerive.js
-        // returns status: null for a day that's too partially recorded to
-        // call) — otherwise a still-in-progress day dilutes the %.
-        if (info.status == null) return;
-        byDay[date].total += 1;
-        if (info.status === 'absent') byDay[date].absent += 1;
+
+    // counted inside the database (supabase/dashboard_speed.sql) — one quick call
+    const { data: series, error: seriesErr } = await supabase.rpc('dashboard_absence_series', { p_from: days[0], p_to: days[days.length - 1] });
+    if (!seriesErr && Array.isArray(series)) {
+      series.forEach((r) => {
+        if (byDay[r.day]) byDay[r.day] = { total: Number(r.total), absent: Number(r.absent) };
       });
-    });
+    } else {
+      // fallback while that function isn't installed: 7 days x up to 8 periods x
+      // every student is far past the 1000-row response cap, so page through all rows
+      const { data: recs } = await fetchAllRows(() => supabase
+        .from('attendance_records')
+        .select('student_id, date, status, period')
+        .gte('date', days[0])
+        .lte('date', days[days.length - 1])
+        .order('id'));
+
+      // derive one status per student per day (see lib/attendanceDerive); days
+      // with no decisive verdict yet (status null) are skipped so a day still
+      // being recorded doesn't dilute the %
+      const derived = deriveByStudentAndDate(recs || []);
+      derived.forEach((dayMap) => {
+        dayMap.forEach((info, date) => {
+          if (!byDay[date]) return;
+          if (info.status == null) return;
+          byDay[date].total += 1;
+          if (info.status === 'absent') byDay[date].absent += 1;
+        });
+      });
+    }
     // a day with no decisive attendance yet gets no bar (null), not 0%
     const rows = days.map((d) => ({
       name: `${new Intl.DateTimeFormat(lang === 'ar' ? 'ar-u-nu-latn' : 'en', { weekday: 'short' }).format(new Date(`${d}T00:00:00`))} ${Number(d.slice(8))}/${Number(d.slice(5, 7))}`,

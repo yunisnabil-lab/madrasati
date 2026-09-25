@@ -206,8 +206,27 @@ export default function DailyReport() {
   const fileTitle = reportName(t.dailyReportTitle, scopeLabel, `${weekdayName(date, lang)} ${date}`, view === 'day' ? '' : periodOrDayLabel);
 
   const exportCsv = () => {
-    const header = [t.colNo, t.colStudentNo, t.colStudentName, t.colGrade, t.colSection, t.colStatus];
-    const body = printRows.map((r, i) => [i + 1, r.sis_no, r.name, r.grade, r.section?.section_name ?? '', t[STATUS_META[statusFor(r, view)].key]]);
+    // one row per student: date and weekday, the day's status, then the status of
+    // every period (blank = not recorded) and how many periods were missed / late
+    const n = periodsForDate(date);
+    const periodNums = Array.from({ length: n }, (_, i) => i + 1);
+    const header = [
+      t.colNo, t.colStudentNo, t.colStudentName, t.colGrade, t.colSection,
+      t.dateLabel, t.colDay, t.colStatus,
+      ...periodNums.map((p) => t.periodN.replace('{n}', p)),
+      t.statusAbsent, t.statusLate,
+    ];
+    const body = printRows.map((r, i) => {
+      const per = r.periods || {};
+      const vals = periodNums.map((p) => per[p]);
+      return [
+        i + 1, r.sis_no, r.name, r.grade, r.section?.section_name ?? '',
+        date, weekdayName(date, lang), t[STATUS_META[statusFor(r, view)].key],
+        ...vals.map((st) => (st && STATUS_META[st] ? t[STATUS_META[st].key] : '')),
+        vals.filter((st) => st === 'absent').length,
+        vals.filter((st) => st === 'late').length,
+      ];
+    });
     exportXlsx(`${fileTitle}.xlsx`, [header, ...body], { lang });
   };
 

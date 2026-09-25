@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Check, X, Clock3, FileWarning, Users, Loader2 } from 'lucide-react';
+import { Check, X, Clock3, FileWarning, Users, Loader2, Search } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { useDialogs } from '../lib/Dialogs';
 import { supabase } from '../lib/supabase';
@@ -9,6 +9,7 @@ import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionsFor, sectionLabel } from '../lib/sections';
 import { fetchAllRows } from '../lib/fetchAll';
 import { periodsForDate } from '../lib/attendanceDerive';
+import { searchStudents } from '../lib/search';
 import { nonSchoolDay } from '../lib/schoolCalendar';
 import SectionPicker from '../components/SectionPicker';
 
@@ -80,6 +81,9 @@ export default function Attendance() {
   // for one chosen section: which periods of the day are already fully recorded
   const [periodDone, setPeriodDone] = useState({});
   const [saving, setSaving] = useState(false);
+  // find one student quickly in a long list — display only, it never changes what is saved
+  const [rosterQuery, setRosterQuery] = useState('');
+  useEffect(() => { setRosterQuery(''); }, [sectionSel, period, date]); // a new list starts unfiltered
   const [saveMsg, setSaveMsg] = useState(null); // { type: 'ok' | 'err', text }
 
   // load sections once — a recorder (teacher) only sees the sections
@@ -177,7 +181,7 @@ export default function Attendance() {
     const [{ data: studs }, { data: existing }] = await Promise.all([
       supabase
         .from('students')
-        .select('id, name_ar, name_en, section_id')
+        .select('id, sis_no, name_ar, name_en, section_id')
         .in('section_id', activeSectionIds)
         .eq('is_active', true)
         .order('name_ar', { ascending: true }),
@@ -503,17 +507,35 @@ export default function Attendance() {
             </div>
           ) : (
             <div className={cardFloating(dark, 'overflow-hidden')}>
+              <div className={`flex items-center gap-2 px-4 py-2.5 border-b ${dark ? 'border-slate-800' : 'border-slate-100'}`}>
+                <Search size={16} className={dark ? 'text-royal-light' : 'text-royal'} />
+                <input
+                  type="search"
+                  value={rosterQuery}
+                  onChange={(e) => setRosterQuery(e.target.value)}
+                  placeholder={t.attendanceSearchPlaceholder}
+                  className={`flex-1 bg-transparent outline-none text-sm py-1 ${dark ? 'text-slate-100 placeholder:text-slate-400' : 'text-slate-800 placeholder:text-slate-400'}`}
+                />
+                {rosterQuery.trim() && (
+                  <button type="button" onClick={() => setRosterQuery('')} className={`text-xs font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.closeBtn}</button>
+                )}
+              </div>
+              {rosterQuery.trim() && searchStudents(students, rosterQuery).length === 0 && (
+                <p className={`px-4 py-6 text-center text-sm ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.attendanceNoMatch}</p>
+              )}
               <ul className={`divide-y ${dark ? 'divide-slate-800' : 'divide-slate-100'}`}>
                 {/* Students already saved as absent/late/excused float to the top, so a
                     late arrival can be found and corrected without scrolling through
                     everyone who's simply present. Sorted by the last-saved status, not
                     the live one — otherwise a row jumps to the top the moment it's
-                    tapped and the teacher's next tap lands on the wrong student. */}
-                {[...students].sort((a, b) => {
+                    tapped and the teacher's next tap lands on the wrong student.
+                    While a search is typed, only the matching students are listed
+                    (best matches first); the other students keep their status. */}
+                {(rosterQuery.trim() ? searchStudents(students, rosterQuery) : [...students].sort((a, b) => {
                   const aFlagged = (savedStatusMap[a.id] || 'present') !== 'present';
                   const bFlagged = (savedStatusMap[b.id] || 'present') !== 'present';
                   return aFlagged === bFlagged ? 0 : aFlagged ? -1 : 1;
-                }).map((s) => {
+                })).map((s) => {
                   const name = lang === 'ar' ? (s.name_ar || s.name_en) : (s.name_en || s.name_ar);
                   const current = statusMap[s.id] || 'present';
                   return (

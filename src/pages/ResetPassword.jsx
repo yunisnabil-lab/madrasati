@@ -20,14 +20,14 @@ export default function ResetPassword() {
     e.preventDefault();
     setError('');
     const problem = passwordProblem(password);
-    if (problem) { setError(t[problem]); return; }
-    if (password !== confirm) { setError(t.errPasswordMismatch); return; }
+    if (problem) { setError(problem); return; }
+    if (password !== confirm) { setError('errPasswordMismatch'); return; }
 
     setLoading(true);
     const { error: err } = await supabase.auth.updateUser({ password });
     setLoading(false);
 
-    if (err) { setError(t[passwordServerError(err)]); return; }
+    if (err) { setError(passwordServerError(err)); return; }
     setDone(true);
     setTimeout(() => navigate('/login'), 1800);
   }
@@ -45,7 +45,7 @@ export default function ResetPassword() {
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
             <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg px-3.5 py-3 text-sm">
-              {error}
+              {t[error]}
             </div>
           )}
           <div>

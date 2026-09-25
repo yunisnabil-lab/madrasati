@@ -29,10 +29,10 @@ export default function Register() {
     e.preventDefault();
     setError('');
 
-    if (!fullName.trim() || !email.trim() || !password || cycles.length === 0 || (isTeacher && subjects.length === 0)) { setError(t.errRequired); return; }
+    if (!fullName.trim() || !email.trim() || !password || cycles.length === 0 || (isTeacher && subjects.length === 0)) { setError('errRequired'); return; }
     const problem = passwordProblem(password);
-    if (problem) { setError(t[problem]); return; }
-    if (password !== confirmPassword) { setError(t.errPasswordMismatch); return; }
+    if (problem) { setError(problem); return; }
+    if (password !== confirmPassword) { setError('errPasswordMismatch'); return; }
 
     setLoading(true);
     const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
@@ -47,7 +47,7 @@ export default function Register() {
 
     if (signUpError) {
       const msg = String(signUpError.message || '').toLowerCase();
-      setError(msg.includes('already') || msg.includes('registered') ? t.errExists : t.errGeneric);
+      setError(msg.includes('already') || msg.includes('registered') ? 'errExists' : 'errGeneric');
       return;
     }
 
@@ -57,7 +57,7 @@ export default function Register() {
     // to detect this client-side.
     const identities = signUpData && signUpData.user ? signUpData.user.identities : null;
     if (identities && identities.length === 0) {
-      setError(t.errExists);
+      setError('errExists');
       return;
     }
 
@@ -73,7 +73,7 @@ export default function Register() {
 
           {error && (
             <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg px-3.5 py-3 text-sm mb-5">
-              {error}
+              {t[error]}
             </div>
           )}
 

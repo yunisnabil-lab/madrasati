@@ -13,7 +13,7 @@ export default function ForgotPassword() {
 
   async function handleSubmit(e) {
     e.preventDefault();
-    if (!email.trim()) { setError(t.errRequired); return; }
+    if (!email.trim()) { setError('errRequired'); return; }
     setError('');
     setLoading(true);
     const { error: err } = await supabase.auth.resetPasswordForEmail(email.trim(), {
@@ -38,7 +38,7 @@ export default function ForgotPassword() {
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
             <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg px-3.5 py-3 text-sm">
-              {error}
+              {t[error]}
             </div>
           )}
           <div>

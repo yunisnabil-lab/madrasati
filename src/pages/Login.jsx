@@ -17,13 +17,13 @@ export default function Login() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    if (!email.trim() || !password) { setError(t.errRequired); return; }
+    if (!email.trim() || !password) { setError('errRequired'); return; }
     setLoading(true);
 
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
 
     if (signInError) {
-      setError(t.errInvalid);
+      setError('errInvalid');
       setLoading(false);
       return;
     }
@@ -35,12 +35,12 @@ export default function Login() {
       .maybeSingle();
 
     if (staffError) {
-      setError(t.errGeneric);
+      setError('errGeneric');
       setLoading(false);
       return;
     }
     if (!staffRow) {
-      setError(t.errGeneric);
+      setError('errGeneric');
       setLoading(false);
       return;
     }
@@ -63,7 +63,7 @@ export default function Login() {
 
       {error && (
         <div className="bg-red-50 text-red-700 border border-red-200 rounded-lg px-3.5 py-3 text-sm mb-5">
-          {error}
+          {t[error]}
         </div>
       )}
 

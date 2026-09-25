@@ -294,15 +294,15 @@ export default function Profile() {
   async function handlePasswordUpdate() {
     setPwMsg(null);
     const problem = passwordProblem(newPassword);
-    if (problem) { setPwMsg({ type: 'err', text: t[problem] }); return; }
-    if (newPassword !== confirmPassword) { setPwMsg({ type: 'err', text: t.errPasswordMismatch }); return; }
+    if (problem) { setPwMsg({ type: 'err', text: problem }); return; }
+    if (newPassword !== confirmPassword) { setPwMsg({ type: 'err', text: 'errPasswordMismatch' }); return; }
     setPwSaving(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setPwSaving(false);
-    if (error) { setPwMsg({ type: 'err', text: t[passwordServerError(error)] }); return; }
+    if (error) { setPwMsg({ type: 'err', text: passwordServerError(error) }); return; }
     setNewPassword('');
     setConfirmPassword('');
-    setPwMsg({ type: 'ok', text: t.passwordUpdated });
+    setPwMsg({ type: 'ok', text: 'passwordUpdated' });
   }
 
   if (!staff) return null;
@@ -476,7 +476,7 @@ export default function Profile() {
                 className={`w-full rounded-lg px-3 py-2.5 text-sm outline-none border ${dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'}`}
               />
             </div>
-            {pwMsg && <p className={`text-xs mb-3 ${pwMsg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{pwMsg.text}</p>}
+            {pwMsg && <p className={`text-xs mb-3 ${pwMsg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{t[pwMsg.text]}</p>}
             <button
               onClick={handlePasswordUpdate}
               disabled={pwSaving || !newPassword}

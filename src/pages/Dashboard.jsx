@@ -711,9 +711,9 @@ function ResetAttendanceZone({ t, lang, dark, school_id }) {  const [confirmText
     setConfirming(false);
     setConfirmText('');
     if (error) {
-      setMsg({ type: 'err', text: t.saveError });
+      setMsg({ type: 'err', text: 'saveError' });
     } else {
-      setMsg({ type: 'ok', text: t.resetDone });
+      setMsg({ type: 'ok', text: 'resetDone' });
     }
   };
 
@@ -757,7 +757,7 @@ function ResetAttendanceZone({ t, lang, dark, school_id }) {  const [confirmText
           </div>
         </div>
       )}
-      {msg && <p className={`text-xs mt-2 ${msg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{msg.text}</p>}
+      {msg && <p className={`text-xs mt-2 ${msg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{t[msg.text]}</p>}
     </div>
   );
 }

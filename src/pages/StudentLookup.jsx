@@ -726,11 +726,11 @@ function DeleteRecordsPanel({ student, t, lang, dark, inputCls, onDeleted }) {
     setDeleting(false);
     setConfirming(false);
     if (error) {
-      setMsg({ type: 'err', text: t.saveError });
+      setMsg({ type: 'err', text: 'saveError' });
     } else if (!deleted || deleted.length === 0) {
-      setMsg({ type: 'err', text: t.noRecordsDeleted });
+      setMsg({ type: 'err', text: 'noRecordsDeleted' });
     } else {
-      setMsg({ type: 'ok', text: t.recordsDeleted });
+      setMsg({ type: 'ok', text: 'recordsDeleted' });
       onDeleted && onDeleted();
     }
   };
@@ -775,7 +775,7 @@ function DeleteRecordsPanel({ student, t, lang, dark, inputCls, onDeleted }) {
           </div>
         </div>
       )}
-      {msg && <p className={`text-xs mt-2 ${msg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{msg.text}</p>}
+      {msg && <p className={`text-xs mt-2 ${msg.type === 'ok' ? 'text-emerald-500' : 'text-rose-500'}`}>{t[msg.text]}</p>}
     </div>
   );
 }

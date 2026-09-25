@@ -237,10 +237,10 @@ export default function Sidebar() {
                   type="button"
                   onClick={() => toggleGroup(groupKey)}
                   aria-expanded={open}
-                  className={`w-full flex items-center gap-2 px-3 py-1.5 rounded-lg text-[13px] font-bold tracking-wide transition-colors ${
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[17px] font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-royal/40 ${
                     hasActive && !open
                       ? (dark ? 'text-royal-light' : 'text-royal')
-                      : (dark ? 'text-slate-300 hover:text-white' : 'text-slate-400 hover:text-slate-700')
+                      : (dark ? 'text-white hover:text-royal-light' : 'text-navy hover:text-royal')
                   }`}
                 >
                   <span className="flex-1 text-start">{t[GROUP_LABEL_KEYS[groupKey]]}</span>
@@ -249,7 +249,7 @@ export default function Sidebar() {
                 </button>
               )}
               {open && (
-                <div className={foldable ? 'mt-1 space-y-0.5' : 'space-y-0.5'}>
+                <div className={foldable ? `mt-1 space-y-0.5 ms-3 ps-2 border-s ${dark ? 'border-white/10' : 'border-slate-200'}` : 'space-y-0.5'}>
                   {groupItems.map((item) => {
                     const Icon = item.icon;
                     return (

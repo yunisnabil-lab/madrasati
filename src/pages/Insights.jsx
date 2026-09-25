@@ -17,6 +17,7 @@ const fmt = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate(
 const todayStr = () => fmt(new Date());
 const daysAgoStr = (n) => { const d = new Date(); d.setDate(d.getDate() - n); return fmt(d); };
 const monthStr = () => todayStr().slice(0, 7);
+const monthYears = Array.from({ length: Number(todayStr().slice(0, 4)) - 2024 }, (_, i) => String(2025 + i));
 function monthRange(ym) {
   const [y, m] = ym.split('-').map(Number);
   const last = fmt(new Date(y, m, 0));
@@ -173,10 +174,12 @@ export default function Insights() {
       ...monthly.rows.map((r) => [fmtSectionLabel(r.sec, lang), r.count, r.rate == null ? '' : Number(r.rate.toFixed(1)), r.absent, r.latePeriods, r.vio, r.lat]),
       [ar ? 'الإجمالي' : 'Total', monthly.total.count, monthly.total.rate == null ? '' : Number(monthly.total.rate.toFixed(1)), monthly.total.absent, monthly.total.latePeriods, monthly.total.vio, monthly.total.lat],
     ];
-    exportXlsx(`madrasati-monthly-${month}.xlsx`, rows, { lang, sheetName: month });
+    exportXlsx(`${reportName(t.monthlyReportTitle, monthTitle)}.xlsx`, rows, { lang, sheetName: month });
   };
 
   // printed / PDF versions (components/PrintSheet.jsx)
+  const monthName = (i) => new Date(2026, i, 1).toLocaleDateString(lang === 'ar' ? 'ar-u-nu-latn' : 'en-GB', { month: 'long' });
+  const pickMonth = (y, m) => { const ym = `${y}-${m}`; setMonth(ym > monthStr() ? monthStr() : ym); };
   const monthTitle = new Date(`${month}-01T00:00:00`).toLocaleDateString(lang === 'ar' ? 'ar-u-nu-latn' : 'en-GB', { month: 'long', year: 'numeric' });
   const printTitle = tab === 'monthly'
     ? reportName(t.monthlyReportTitle, monthTitle)
@@ -299,7 +302,17 @@ export default function Insights() {
               <>
                 <div>
                   <label className={lbl}>{t.monthLabel}</label>
-                  <input type="month" value={month} max={monthStr()} onChange={(e) => setMonth(e.target.value || monthStr())} className={inputCls} />
+                  <div className="flex gap-2">
+                    <select value={month.slice(5)} onChange={(e) => pickMonth(month.slice(0, 4), e.target.value)} className={inputCls}>
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const mm = pad(i + 1);
+                        return <option key={mm} value={mm} disabled={`${month.slice(0, 4)}-${mm}` > monthStr()}>{monthName(i)}</option>;
+                      })}
+                    </select>
+                    <select value={month.slice(0, 4)} onChange={(e) => pickMonth(e.target.value, month.slice(5))} className={inputCls}>
+                      {monthYears.map((y) => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  </div>
                 </div>
                 <div className="sm:col-span-2 sm:text-end">
                   <button

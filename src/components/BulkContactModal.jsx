@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { buildWhatsAppLink } from '../lib/whatsapp';
 import { buildDefaultMessage } from './ContactParentPanel';
 import { buildNoticePdf } from '../lib/noticePdf';
-import { emailErrorText } from '../lib/emailErrors';
+import { emailErrorText, realEmail } from '../lib/emailErrors';
 
 // Contact the parents of several students in one pass. WhatsApp can't send to
 // many people at once, so each student gets their own row (phone + send
@@ -30,7 +30,7 @@ export default function BulkContactModal({ students, contextType, defaultNote, s
       if (cancelled || !data) return;
       setRows((prev) => {
         const next = { ...prev };
-        data.forEach((d) => { if (next[d.id]) next[d.id] = { ...next[d.id], email: next[d.id].email || d.parent_email || '', sis: d.sis_no || '' }; });
+        data.forEach((d) => { if (next[d.id]) next[d.id] = { ...next[d.id], email: next[d.id].email || realEmail(d.parent_email), sis: d.sis_no || '' }; });
         return next;
       });
     })();

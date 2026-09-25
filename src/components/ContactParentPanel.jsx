@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { cardFloating } from '../lib/theme';
 import { buildWhatsAppLink } from '../lib/whatsapp';
 import { buildNoticePdf } from '../lib/noticePdf';
-import { emailErrorText } from '../lib/emailErrors';
+import { emailErrorText, realEmail } from '../lib/emailErrors';
 
 export function buildDefaultMessage({ name, sectionLabel, note, lang, t }) {
   return lang === 'ar'
@@ -22,7 +22,7 @@ export function buildDefaultMessage({ name, sectionLabel, note, lang, t }) {
 export default function ContactParentPanel({ student, name, sectionLabel, defaultNote, mode, staff, t, lang, dark, inputCls, contextType, contextId, onSent }) {
   const isRequest = mode === 'request';
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState(student?.parent_email || '');
+  const [email, setEmail] = useState(realEmail(student?.parent_email));
   const [message, setMessage] = useState(() => buildDefaultMessage({ name, sectionLabel, note: defaultNote, lang, t }));
   const [sendingWa, setSendingWa] = useState(false);
   const [sendingEmail, setSendingEmail] = useState(false);

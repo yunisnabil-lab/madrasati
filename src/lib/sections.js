@@ -67,7 +67,10 @@ export function sectionLabel(section, lang) {
   const parts = [gradeName];
   const stLabel = streamLabel(section.stream, lang);
   if (stLabel) parts.push(stLabel);
-  parts.push(section.section_name ?? '—');
+  // the section name ("5/[General]09") is isolated as left-to-right, so its
+  // digits, slash and brackets keep their order inside an Arabic line instead
+  // of being scrambled (⁦ ... ⁩ are invisible direction marks)
+  parts.push(`⁦${section.section_name ?? '—'}⁩`);
   return parts.join(' — ');
 }
 

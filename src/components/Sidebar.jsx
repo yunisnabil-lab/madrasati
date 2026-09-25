@@ -271,7 +271,7 @@ export default function Sidebar() {
                         }
                       >
                         <Icon size={20} className="shrink-0" />
-                        <span className="leading-snug truncate">{t[item.key]}</span>
+                        <span className="leading-snug">{t[item.key]}</span>
                       </NavLink>
                     );
                   })}

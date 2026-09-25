@@ -13,7 +13,7 @@ import { deriveByStudentAndDate } from '../lib/attendanceDerive';
 import { printWithTitle, reportName, rangeLabel } from '../lib/print';
 import { PrintSheet, PrintTable, StatusPill } from '../components/PrintSheet';
 import { sheetToPdfBase64 } from '../lib/pdfReport';
-import { emailErrorText } from '../lib/emailErrors';
+import { emailErrorText, realEmail } from '../lib/emailErrors';
 import { STATUS_META } from '../lib/status';
 import SectionPicker from '../components/SectionPicker';
 import PeriodBreakdown from '../components/PeriodBreakdown';
@@ -239,7 +239,7 @@ export default function StudentLookup() {
           <div><span>{t.sisNo}</span><b className="font-en">{selected.sis_no}</b></div>
           <div><span>{t.colGradeSection}</span><b>{fmtSectionLabel(selected.sections, lang)}</b></div>
           <div><span>{t.studentEmail}</span><b className="font-en">{selected.email || '—'}</b></div>
-          <div><span>{t.parentEmail}</span><b className="font-en">{selected.parent_email || '—'}</b></div>
+          <div><span>{t.parentEmail}</span><b className="font-en">{realEmail(selected.parent_email) || '—'}</b></div>
           <div><span>{t.fromDate} / {t.toDate}</span><b className="font-en">{rangeLabel(lang, fromDate, toDate) || '—'}</b></div>
         </div>
         {filteredHistory.length === 0 ? (
@@ -460,7 +460,7 @@ function StudentProfileCard({
         <div className="grid gap-3 mt-5" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))' }}>
           <InfoItem dark={dark} label={t.sisNo} value={student.sis_no} />
           <InfoItem dark={dark} label={t.studentEmail} value={student.email || '—'} />
-          <InfoItem dark={dark} label={t.parentEmail} value={student.parent_email || '—'} />
+          <InfoItem dark={dark} label={t.parentEmail} value={realEmail(student.parent_email) || '—'} />
           <InfoItem dark={dark} label={t.daysPresent} value={stats.present} valueColor="#05cd99" />
           <InfoItem dark={dark} label={t.daysAbsent} value={stats.absent} valueColor="#ee5d50" />
           <InfoItem dark={dark} label={t.daysLate} value={stats.late} valueColor="#ffb800" />
@@ -593,7 +593,7 @@ function todayStr() {
 
 function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, dark, inputCls }) {
   const [phone, setPhone] = useState('');
-  const [email, setEmail] = useState(student.parent_email || '');
+  const [email, setEmail] = useState(realEmail(student.parent_email));
   const [sendingEmail, setSendingEmail] = useState(false);
   const [emailMsg, setEmailMsg] = useState(null);
   const [attachPdf, setAttachPdf] = useState(true);

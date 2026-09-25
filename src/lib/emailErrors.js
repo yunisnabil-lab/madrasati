@@ -3,3 +3,9 @@
 export function emailErrorText(data, t) {
   return data && data.error === 'daily_limit' ? t.emailDailyLimit : t.emailSendError;
 }
+
+// Imported records sometimes carry a dummy address such as Example@example.com;
+// never offer it as the parent's real email.
+export function realEmail(e) {
+  return e && !/@example\.(com|org|net)$/i.test(String(e).trim()) ? e : '';
+}

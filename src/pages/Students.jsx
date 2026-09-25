@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Plus, Search, Pencil, Trash2, X, Loader2, FolderPlus, Users, Upload, PlusCircle, Trash } from 'lucide-react';
+import { Plus, Search, Pencil, UserX, X, Loader2, FolderPlus, Users, Upload, PlusCircle, Trash } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { useDialogs } from '../lib/Dialogs';
 import { supabase } from '../lib/supabase';
@@ -552,7 +552,7 @@ export default function Students() {
                                 )}
                                 {canDeactivate && (
                                   <button onClick={() => setDeleteTarget(s)} className={`h-8 w-8 rounded-lg flex items-center justify-center transition-colors text-rose-500 ${dark ? 'hover:bg-rose-500/10' : 'hover:bg-rose-50'}`}>
-                                    <Trash2 size={14} />
+                                    <UserX size={14} />
                                   </button>
                                 )}
                               </>

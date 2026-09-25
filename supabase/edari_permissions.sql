@@ -6,8 +6,8 @@ begin;
 create or replace function public.staff_allowed_section(sec uuid)
 returns boolean language sql stable security definer set search_path = public as $$
   select case
-    when get_my_staff_role() in ('admin', 'edari', 'viewer', 'supervisor') then true
-    when get_my_staff_role() = 'recorder' then exists (
+    when get_my_staff_role() in ('admin', 'edari', 'viewer') then true
+    when get_my_staff_role() in ('recorder', 'supervisor') then exists (
       select 1 from staff_sections ss where ss.section_id = sec and ss.staff_id = auth.uid())
     else false
   end;

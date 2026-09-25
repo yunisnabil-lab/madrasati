@@ -14,14 +14,19 @@ import * as XLSX from 'xlsx';
 // that section can silently fail to save or land somewhere unexpected.
 // Strip anything invalid in a filename on any OS.
 function sanitizeFilename(name) {
-  return String(name).replace(/[\\/:*?"<>|]/g, '-');
+  return String(name).replace(/[\u2066-\u2069]/g, '').replace(/[\\/:*?"<>|]/g, '-');
 }
+
+// Section labels carry invisible direction marks (see sections.js) that are
+// only useful on screen and in print — keep them out of spreadsheet cells.
+const stripMarks = (rows) => rows.map((r) => r.map((v) => (typeof v === 'string' ? v.replace(/[\u2066-\u2069]/g, '') : v)));
 
 // One workbook with several sheets: sheets = [{ name, rows }].
 export function exportXlsxSheets(filename, sheets, { lang = 'ar' } = {}) {
   const wb = XLSX.utils.book_new();
   wb.Workbook = { Views: sheets.map(() => ({ RTL: lang === 'ar' })) };
-  sheets.forEach(({ name, rows }) => {
+  sheets.forEach(({ name, rows: rawRows }) => {
+    const rows = stripMarks(rawRows);
     const ws = XLSX.utils.aoa_to_sheet(rows);
     const colCount = rows[0]?.length || 0;
     ws['!cols'] = Array.from({ length: colCount }, (_, c) => {
@@ -34,7 +39,8 @@ export function exportXlsxSheets(filename, sheets, { lang = 'ar' } = {}) {
   XLSX.writeFile(wb, sanitizeFilename(filename));
 }
 
-export function exportXlsx(filename, rows, { lang = 'ar', sheetName = 'Report' } = {}) {
+export function exportXlsx(filename, rawRows, { lang = 'ar', sheetName = 'Report' } = {}) {
+  const rows = stripMarks(rawRows);
   const safeFilename = sanitizeFilename(filename);
   const ws = XLSX.utils.aoa_to_sheet(rows);
 

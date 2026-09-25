@@ -34,7 +34,7 @@ export function printWithTitle(title) {
 export function reportName(...parts) {
   return parts
     .filter(Boolean)
-    .map((p) => String(p).replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim())
+    .map((p) => String(p).replace(/[\u2066-\u2069]/g, '').replace(/[\\/:*?"<>|]/g, '-').replace(/\s+/g, ' ').trim())
     .filter(Boolean)
     .join(' - ');
 }

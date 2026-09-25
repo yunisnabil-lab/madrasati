@@ -7,6 +7,7 @@ import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { sectionsFor, sectionLabel as fmtSectionLabel, streamLabel, gradeLabel } from '../lib/sections';
 import { deriveByStudentAndDate, periodsForDate } from '../lib/attendanceDerive';
+import { fetchAttendanceCompact } from '../lib/attendanceFetch';
 import { STATUS_META, STATUS_LIST } from '../lib/status';
 import { exportXlsx } from '../lib/exportXlsx';
 import { printWithTitle, reportName, weekdayName, groupRowsBySection, printSectionLabel } from '../lib/print';
@@ -84,12 +85,14 @@ export default function DailyReport() {
     const ids = list.map((s) => s.id);
     // up to 8 rows per student per day — a whole grade easily passes the
     // 1000-row response cap, so page through it instead of a single request
-    const { data: records } = await fetchAllRowsByIds(ids, (chunk) => supabase
+    // one compact answer from the database; the row-by-row download is the fallback
+    const compact = await fetchAttendanceCompact(activeSectionIds, date, date);
+    const records = compact.data ? compact.data : (await fetchAllRowsByIds(ids, (chunk) => supabase
       .from('attendance_records')
       .select('id, student_id, date, status, period')
       .eq('date', date)
       .in('student_id', chunk)
-      .order('id'));
+      .order('id'))).data;
 
     const derived = deriveByStudentAndDate(records || []);
 

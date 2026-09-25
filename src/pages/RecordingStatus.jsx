@@ -28,7 +28,7 @@ export default function RecordingStatus() {
   const [loading, setLoading] = useState(true);
   const [sections, setSections] = useState([]);
   const [students, setStudents] = useState([]);
-  const [records, setRecords] = useState([]);
+  const [dayStat, setDayStat] = useState({ counts: {}, absent: {} }); // counts[section][period], absent[student] = [periods]
 
   const [picked, setPicked] = useState(new Set());
   const [bulkOpen, setBulkOpen] = useState(false);
@@ -46,16 +46,47 @@ export default function RecordingStatus() {
       const allowed = new Set((assigned || []).map((a) => a.section_id));
       secs = secs.filter((s) => allowed.has(s.id));
     }
-    const [studRes, recRes] = await Promise.all([
+    // the per-section / per-period counts and the absentees are worked out inside
+    // the database (supabase/recording_status.sql) — one small answer instead of
+    // downloading every period row of the day; the old way is the fallback
+    const [studRes, fast] = await Promise.all([
       fetchAllRows(() => supabase.from('students').select('id, name_ar, name_en, section_id').eq('is_active', true).order('id')),
-      fetchAllRows(() => supabase.from('attendance_records').select('id, student_id, period, status').eq('date', date).order('id')),
+      supabase.rpc('recording_status_day', { p_date: date }),
     ]);
     const secIds = new Set(secs.map((s) => s.id));
     const studs = (studRes.data || []).filter((s) => secIds.has(s.section_id));
     const studIds = new Set(studs.map((s) => s.id));
+
+    const cnt = {};
+    const absentBy = {};
+    if (!fast.error && fast.data && Array.isArray(fast.data.counts)) {
+      fast.data.counts.forEach((c) => {
+        if (!secIds.has(c.section_id)) return;
+        if (!cnt[c.section_id]) cnt[c.section_id] = {};
+        cnt[c.section_id][c.period] = Number(c.c);
+      });
+      (fast.data.absentees || []).forEach((a) => {
+        if (studIds.has(a.student_id)) absentBy[a.student_id] = [...a.periods];
+      });
+    } else {
+      const recRes = await fetchAllRows(() => supabase.from('attendance_records').select('id, student_id, period, status').eq('date', date).order('id'));
+      const sectionOf = {};
+      studs.forEach((s) => { sectionOf[s.id] = s.section_id; });
+      const seen = new Set(); // one record per student+period (a double save counts once)
+      (recRes.data || []).forEach((r) => {
+        if (!studIds.has(r.student_id) || r.period == null) return;
+        const key = `${r.student_id}:${r.period}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        const sec = sectionOf[r.student_id];
+        if (!cnt[sec]) cnt[sec] = {};
+        cnt[sec][r.period] = (cnt[sec][r.period] || 0) + 1;
+        if (r.status === 'absent') { if (!absentBy[r.student_id]) absentBy[r.student_id] = []; absentBy[r.student_id].push(r.period); }
+      });
+    }
     setSections(sortSections(secs));
     setStudents(studs);
-    setRecords((recRes.data || []).filter((r) => studIds.has(r.student_id) && r.period != null));
+    setDayStat({ counts: cnt, absent: absentBy });
     setPicked(new Set());
     setLoading(false);
   }, [staff, date]);
@@ -69,31 +100,13 @@ export default function RecordingStatus() {
   const { totals, counts, absentees } = useMemo(() => {
     const totalBySection = {};
     students.forEach((s) => { totalBySection[s.section_id] = (totalBySection[s.section_id] || 0) + 1; });
-    const sectionOf = {};
-    students.forEach((s) => { sectionOf[s.id] = s.section_id; });
-
-    // one record per student+period (a double save counts once)
-    const seen = new Set();
-    const byStudent = {};
-    const cnt = {};
-    records.forEach((r) => {
-      const key = `${r.student_id}:${r.period}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      const sec = sectionOf[r.student_id];
-      if (!cnt[sec]) cnt[sec] = {};
-      cnt[sec][r.period] = (cnt[sec][r.period] || 0) + 1;
-      if (!byStudent[r.student_id]) byStudent[r.student_id] = { absent: [] };
-      if (r.status === 'absent') byStudent[r.student_id].absent.push(r.period);
-    });
-
     const list = students
-      .filter((s) => byStudent[s.id] && byStudent[s.id].absent.length > 0)
-      .map((s) => ({ ...s, absent: byStudent[s.id].absent.sort((a, b) => a - b) }))
+      .filter((s) => dayStat.absent[s.id] && dayStat.absent[s.id].length > 0)
+      .map((s) => ({ ...s, absent: [...dayStat.absent[s.id]].sort((a, b) => a - b) }))
       .sort((a, b) => b.absent.length - a.absent.length || (a.name_ar || '').localeCompare(b.name_ar || '', 'ar'));
 
-    return { totals: totalBySection, counts: cnt, absentees: list };
-  }, [students, records]);
+    return { totals: totalBySection, counts: dayStat.counts, absentees: list };
+  }, [students, dayStat]);
 
   const sectionMap = useMemo(() => {
     const m = {};

@@ -79,12 +79,13 @@ export default function RecorderDashboard() {
 
     // 14 days × up to 8 periods per student is far past the 1000-row cap,
     // so both of these page through all rows instead of a single request
-    const [{ data: todayRecs }, { data: rangeRecs }] = await Promise.all([
+    // today's rows are few; the 14-day absence counts come from the database
+    // (student_attendance_summary, already limited to this teacher's sections)
+    // instead of downloading every period row of two weeks
+    const [{ data: todayRecs }, { data: rangeSummary }] = await Promise.all([
       fetchAllRowsByIds(studentIds, (chunk) => supabase.from('attendance_records')
         .select('id, student_id, date, status, period').eq('date', today).in('student_id', chunk).order('id')),
-      fetchAllRowsByIds(studentIds, (chunk) => supabase.from('attendance_records')
-        .select('id, student_id, date, status, period')
-        .gte('date', daysAgoStr(NEEDS_ATTENTION_WINDOW_DAYS - 1)).lte('date', today).in('student_id', chunk).order('id')),
+      supabase.rpc('student_attendance_summary', { p_from: daysAgoStr(NEEDS_ATTENTION_WINDOW_DAYS - 1), p_to: today }),
     ]);
 
     // today's per-section completion + overall rate
@@ -114,12 +115,11 @@ export default function RecorderDashboard() {
     setTodayRate(decisiveCount > 0 ? Math.round((presentCount / decisiveCount) * 100) : null);
 
     // needs-attention: students with 3+ absent days in the last 14 days
-    const derivedRange = deriveByStudentAndDate(rangeRecs || []);
+    const absentBy = {};
+    (rangeSummary || []).forEach((r) => { absentBy[r.student_id] = r.absent_days; });
     const flagged = list
       .map((s) => {
-        const dayMap = derivedRange.get(s.id);
-        if (!dayMap) return null;
-        const absentCount = [...dayMap.values()].filter((d) => d.status === 'absent').length;
+        const absentCount = absentBy[s.id] || 0;
         return absentCount >= NEEDS_ATTENTION_MIN_ABSENCES ? { ...s, absentCount } : null;
       })
       .filter(Boolean)

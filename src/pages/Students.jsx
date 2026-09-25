@@ -91,7 +91,7 @@ export default function Students() {
     setLoading(true);
     const [secRes, studRes] = await Promise.all([
       supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number'),
-      fetchAllRows(() => supabase.from('students').select('id, sis_no, name_ar, name_en, section_id, emirates_id, id_4_digits, email, parent_email, moe_username, is_active').order('name_ar', { ascending: true })),
+      fetchAllRows(() => supabase.from('students').select('id, sis_no, name_ar, name_en, section_id, emirates_id, id_4_digits, email, parent_email, moe_username, is_active').order('name_ar', { ascending: true }).order('id')),
     ]);
     setSections(secRes.data || []);
     setStudents(studRes.data || []);

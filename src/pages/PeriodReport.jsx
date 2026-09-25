@@ -9,6 +9,7 @@ import { sectionLabel as fmtSectionLabel, sectionsFor, streamLabel, gradeLabel }
 import { isSchoolDay } from '../lib/schoolCalendar';
 import { fetchAllRowsByIds } from '../lib/fetchAll';
 import { deriveByStudentAndDate, periodsForDate } from '../lib/attendanceDerive';
+import { fetchAttendanceCompact } from '../lib/attendanceFetch';
 import { exportXlsxSheets } from '../lib/exportXlsx';
 import { printWithTitle, reportName, rangeLabel, groupRowsBySection, printSectionLabel, weekdayName } from '../lib/print';
 import { PrintSheet, PrintTable, StatusPill } from '../components/PrintSheet';
@@ -99,13 +100,15 @@ export default function PeriodReport() {
     if (list.length === 0) { setRows([]); setLoading(false); return; }
 
     const ids = list.map((s) => s.id);
-    const { data: records } = await fetchAllRowsByIds(ids, (chunk) => supabase
+    // one compact answer from the database; the row-by-row download is the fallback
+    const compact = await fetchAttendanceCompact(activeSectionIds, fromDate, toDate);
+    const records = compact.data ? compact.data : (await fetchAllRowsByIds(ids, (chunk) => supabase
       .from('attendance_records')
       .select('id, student_id, date, status, period')
       .gte('date', fromDate)
       .lte('date', toDate)
       .in('student_id', chunk)
-      .order('id'));
+      .order('id'))).data;
 
     const derived = deriveByStudentAndDate(records || []);
     const schoolDays = schoolDaysInRange(fromDate, toDate);

@@ -29,9 +29,8 @@ export default function AuthShell({ children }) {
             {/* one line lockup: the emblem (light version for the dark panel), a thin gold divider, then the school name */}
             <div className="flex items-center gap-4">
               <img src="/logo-mark-light.png" alt={t.school} className="h-16 w-auto shrink-0 object-contain" />
-              <div className="border-s-2 border-gold-light ps-4 py-1">
-                <div className="text-xl font-semibold leading-snug">{t.school}</div>
-                <div className="text-sm text-slate-300 mt-0.5">{t.schoolSub}</div>
+              <div className="border-s-2 border-gold-light ps-4 py-1 text-xl font-semibold leading-snug">
+                {t.school} - {t.schoolSub}
               </div>
             </div>
           </motion.div>

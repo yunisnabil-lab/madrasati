@@ -143,6 +143,14 @@ export default function Dashboard() {
 
   const loadRecent = useCallback(async () => {
     setRecentLoading(true);
+    // counted inside the database (supabase/dashboard_speed.sql); the plain query
+    // below is the fallback while that function isn't installed
+    const { data: fast, error: fastErr } = await supabase.rpc('dashboard_recent', { p_limit: 5 });
+    if (!fastErr && Array.isArray(fast)) {
+      setRecent(fast);
+      setRecentLoading(false);
+      return;
+    }
     const { data } = await supabase
       .from('attendance_records')
       .select('status, date, created_at, students(name_ar, name_en, sections(grade_name, grade_name_en, section_name, stream, section_number))')

@@ -237,7 +237,7 @@ export default function Sidebar() {
                   type="button"
                   onClick={() => toggleGroup(groupKey)}
                   aria-expanded={open}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[17px] font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-royal/40 ${
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[16px] font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-royal/40 ${
                     hasActive && !open
                       ? (dark ? 'text-royal-light' : 'text-royal')
                       : (dark ? 'text-white hover:text-royal-light' : 'text-navy hover:text-royal')
@@ -249,7 +249,7 @@ export default function Sidebar() {
                 </button>
               )}
               {open && (
-                <div className={foldable ? `mt-1 space-y-0.5 ms-3 ps-2 border-s ${dark ? 'border-white/10' : 'border-slate-200'}` : 'space-y-0.5'}>
+                <div className={foldable ? `mt-1 space-y-0.5 ms-1.5 ps-1 border-s ${dark ? 'border-white/10' : 'border-slate-200'}` : 'space-y-0.5'}>
                   {groupItems.map((item) => {
                     const Icon = item.icon;
                     return (
@@ -259,7 +259,7 @@ export default function Sidebar() {
                         end={item.end}
                         onClick={guardNav}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2.5 rounded-xl text-[15px] font-medium transition-colors ${
+                          `flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14.5px] font-medium transition-colors ${
                             isActive
                               ? dark
                                 ? 'bg-royal/25 text-white font-semibold'
@@ -281,11 +281,6 @@ export default function Sidebar() {
           );
         })}
       </nav>
-
-      <div className={`shrink-0 px-4 py-3 text-center border-t ${dark ? 'border-white/10' : 'border-slate-100'}`}>
-        <div className={`text-[11px] ${dark ? 'text-slate-300' : 'text-slate-400'}`}>{t.developedBy}</div>
-        <div className={`text-xs font-semibold tracking-wide mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{t.developerName}</div>
-      </div>
     </aside>
   );
 }

@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { useApp } from '../lib/AppContext';
+import AppFooter from './AppFooter';
 
 export default function AuthShell({ children }) {
   const { lang, setLang, t } = useApp();
@@ -41,14 +42,11 @@ export default function AuthShell({ children }) {
             {lang === 'ar'
               ? 'حضور وغياب، تقارير، وصلاحيات — كل شيء في مكان واحد'
               : 'Attendance, reports, and permissions — all in one place'}
-            <div className="mt-5 pt-4 border-t border-white/10 text-[13px] text-slate-400">
-              {t.developedBy} <span className="font-semibold text-slate-200 tracking-wide">{t.developerName}</span>
-            </div>
           </motion.div>
         </aside>
 
         {/* Form pane */}
-        <main className="relative flex flex-col justify-center p-8 md:p-14">
+        <main className="relative flex flex-col justify-center p-8 pb-20 md:p-14 md:pb-20">
           <div className="absolute top-6 md:top-8 end-6 md:end-8 flex items-center bg-royal/10 rounded-full p-1">
             {['ar', 'en'].map((l) => (
               <button
@@ -67,11 +65,8 @@ export default function AuthShell({ children }) {
             {/* the brand pane is hidden on phones, so the logo goes above the form there */}
             <img src="/logo.png" alt={t.school} className="md:hidden h-24 w-auto mx-auto mb-6 object-contain" />
             {children}
-            {/* on phones the dark panel is hidden, so the credit sits under the form */}
-            <div className="md:hidden mt-10 text-center text-xs text-slate-400">
-              {t.developedBy} <span className="font-semibold text-slate-600 tracking-wide">{t.developerName}</span>
-            </div>
           </motion.div>
+          <AppFooter t={t} dark={false} className="absolute bottom-4 inset-x-0 px-4" />
         </main>
       </div>
     </div>

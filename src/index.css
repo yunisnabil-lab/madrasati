@@ -104,3 +104,6 @@ html.dark { color-scheme: dark; }
 .ps-info { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 14px; margin-bottom: 12px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; break-inside: avoid; }
 .ps-info div span { display: block; font-size: 9.5px; color: #64748b; }
 .ps-info div b { font-size: 11px; }
+
+/* pages fill the screen down to the footer (header + footer take the rest), so the footer sits at the bottom even on short pages */
+.app-content .min-h-screen { min-height: calc(100vh - 8rem); }

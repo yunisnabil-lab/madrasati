@@ -59,6 +59,13 @@ export async function sheetToPdfBase64(sheet) {
   const copy = sheet.cloneNode(true);
   copy.classList.remove('hidden', 'print:block');
   copy.style.display = 'block';
+  // html2canvas doesn't understand the invisible direction marks around
+  // section names (see sections.js) and draws their brackets mirrored, so
+  // take them out of the copy; the plain text lays out correctly on its own
+  const walker = document.createTreeWalker(copy, 4 /* NodeFilter.SHOW_TEXT */);
+  for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+    n.nodeValue = n.nodeValue.replace(/[⁦-⁩]/g, '');
+  }
   holder.appendChild(copy);
   document.body.appendChild(holder);
 

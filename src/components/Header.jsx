@@ -120,12 +120,12 @@ export default function Header() {
             <div className={`text-xs font-medium ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
           </div>
           {/* the emblem alone (the school name is written next to it) — it stays
-              readable at this size; a light tile keeps it visible in dark mode */}
-          <div className={`h-11 w-12 flex items-center justify-center shrink-0 ${dark ? 'rounded-xl bg-white/95 p-1.5' : ''}`}>
+              readable at this size; dark mode uses the light version of it */}
+          <div className="h-11 w-12 flex items-center justify-center shrink-0">
             {staff && staff.school_logo_url ? (
               <img src={staff.school_logo_url} alt="" className="h-full w-full object-cover rounded-xl" />
             ) : (
-              <img src="/logo-mark.png" alt={t.school} className="h-full w-full object-contain" />
+              <img src={dark ? '/logo-mark-light.png' : '/logo-mark.png'} alt={t.school} className="h-full w-full object-contain" />
             )}
           </div>
         </div>

@@ -4,6 +4,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import AuthShell from '../components/AuthShell';
+import { passwordProblem, passwordServerError } from '../lib/passwordRules';
 
 export default function ResetPassword() {
   const { t } = useApp();
@@ -18,14 +19,15 @@ export default function ResetPassword() {
   async function handleSubmit(e) {
     e.preventDefault();
     setError('');
-    if (password.length < 8) { setError(t.errPasswordShort); return; }
+    const problem = passwordProblem(password);
+    if (problem) { setError(t[problem]); return; }
     if (password !== confirm) { setError(t.errPasswordMismatch); return; }
 
     setLoading(true);
     const { error: err } = await supabase.auth.updateUser({ password });
     setLoading(false);
 
-    if (err) { setError(t.errGeneric); return; }
+    if (err) { setError(t[passwordServerError(err)]); return; }
     setDone(true);
     setTimeout(() => navigate('/login'), 1800);
   }

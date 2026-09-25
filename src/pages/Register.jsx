@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { Mail, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
+import { passwordProblem } from '../lib/passwordRules';
 import { CYCLE_KEYS, SUBJECT_KEYS } from '../lib/i18n';
 import AuthShell from '../components/AuthShell';
 import ChipMultiSelect from '../components/ChipMultiSelect';
@@ -29,7 +30,8 @@ export default function Register() {
     setError('');
 
     if (!fullName.trim() || !email.trim() || !password || cycles.length === 0 || (isTeacher && subjects.length === 0)) { setError(t.errRequired); return; }
-    if (password.length < 8) { setError(t.errPasswordShort); return; }
+    const problem = passwordProblem(password);
+    if (problem) { setError(t[problem]); return; }
     if (password !== confirmPassword) { setError(t.errPasswordMismatch); return; }
 
     setLoading(true);

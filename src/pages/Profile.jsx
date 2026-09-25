@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
+import { passwordProblem, passwordServerError } from '../lib/passwordRules';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
 import { staffCycles, shownSubjects, namesOf } from '../lib/staffInfo';
 
@@ -292,12 +293,13 @@ export default function Profile() {
 
   async function handlePasswordUpdate() {
     setPwMsg(null);
-    if (newPassword.length < 8) { setPwMsg({ type: 'err', text: t.errPasswordShort }); return; }
+    const problem = passwordProblem(newPassword);
+    if (problem) { setPwMsg({ type: 'err', text: t[problem] }); return; }
     if (newPassword !== confirmPassword) { setPwMsg({ type: 'err', text: t.errPasswordMismatch }); return; }
     setPwSaving(true);
     const { error } = await supabase.auth.updateUser({ password: newPassword });
     setPwSaving(false);
-    if (error) { setPwMsg({ type: 'err', text: t.errGeneric }); return; }
+    if (error) { setPwMsg({ type: 'err', text: t[passwordServerError(error)] }); return; }
     setNewPassword('');
     setConfirmPassword('');
     setPwMsg({ type: 'ok', text: t.passwordUpdated });

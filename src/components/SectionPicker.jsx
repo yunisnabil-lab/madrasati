@@ -58,7 +58,7 @@ export default function SectionPicker({
         <select
           value={stream}
           onChange={(e) => onStreamChange(e.target.value)}
-          disabled={!grade || streams.length === 0}
+          disabled={!grade || streams.length <= 1}
           className={`${inputCls} disabled:opacity-50`}
         >
           <option value="">{streams.length ? t.chooseStream : '—'}</option>

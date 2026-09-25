@@ -54,6 +54,21 @@ export async function sheetToPdfBase64(sheet) {
     .pdf-cap .ps-signs { margin-top: 44px; }
     .pdf-cap .ps-sign { line-height: 1.7; }
   `;
+  // html2canvas re-loads the page's stylesheet files inside its own frame; if
+  // the site was redeployed while this tab stayed open, those files are gone
+  // and the report comes out unstyled. Copy the report's own rules (already in
+  // memory) inline so the capture never depends on that.
+  const inlineRules = [];
+  Array.from(document.styleSheets).forEach((sheetCss) => {
+    try {
+      Array.from(sheetCss.cssRules).forEach((r) => {
+        if (r.selectorText && /\.ps-/.test(r.selectorText)) inlineRules.push(r.cssText);
+      });
+    } catch { /* a stylesheet from another site can't be read — skip it */ }
+  });
+  style.textContent = inlineRules.join('\n') + style.textContent;
+  holder.style.fontFamily = window.getComputedStyle(document.body).fontFamily;
+  holder.style.color = '#0f172a';
   holder.classList.add('pdf-cap');
   holder.appendChild(style);
   const copy = sheet.cloneNode(true);

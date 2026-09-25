@@ -352,8 +352,15 @@ export default function Violations() {
     setEditingActionId(null);
   };
 
+  // in a message to the parent, an "other" violation reads better with what it was
+  const violationLabel = (v) => (v.violation_type === 'other' && v.description && v.description.trim()
+    ? `${t.violationTypeNames.other}: ${v.description.trim().slice(0, 80)}`
+    : (t.violationTypeNames[v.violation_type] || v.violation_type));
+
   const save = async () => {
     if (!selected || !violationType) return;
+    // "other" says nothing by itself, so it needs a description
+    if (violationType === 'other' && !description.trim()) { setSaveMsg({ type: 'err', text: t.violationOtherNeedsDescription }); return; }
     setSaving(true);
     setSaveMsg(null);
     const { error } = await supabase.from('behavior_violations').insert({
@@ -874,8 +881,8 @@ export default function Violations() {
                   sectionLabel={fmtSectionLabel(selected.sections, lang)}
                   defaultNote={approvedViolation
                     ? (lang === 'ar'
-                      ? `تم رصد مخالفة سلوكية لهذا الطالب (${t.violationTypeNames[approvedViolation.violation_type] || approvedViolation.violation_type}) بتاريخ ${approvedViolation.date}، ونرجو منكم متابعة الأمر معه.`
-                      : `A behavioral violation (${t.violationTypeNames[approvedViolation.violation_type] || approvedViolation.violation_type}) was recorded for this student on ${approvedViolation.date} — we'd like to bring this to your attention.`)
+                      ? `تم رصد مخالفة سلوكية لهذا الطالب (${violationLabel(approvedViolation)}) بتاريخ ${approvedViolation.date}، ونرجو منكم متابعة الأمر معه.`
+                      : `A behavioral violation (${violationLabel(approvedViolation)}) was recorded for this student on ${approvedViolation.date} — we'd like to bring this to your attention.`)
                     : (lang === 'ar'
                       ? 'تم رصد مخالفة سلوكية لهذا الطالب، ونرجو منكم متابعة الأمر معه.'
                       : "A behavioral violation was recorded for this student — we'd like to bring this to your attention.")}

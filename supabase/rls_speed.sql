@@ -46,3 +46,8 @@ alter policy "staff can view own school students" on public.students
   );
 
 commit;
+
+-- indexes for the big attendance table (it only had the primary key and the
+-- student+date+period key, so any query by date read every row)
+create index if not exists attendance_records_date_student_idx on public.attendance_records (date, student_id);
+create index if not exists attendance_records_school_created_idx on public.attendance_records (school_id, created_at desc);

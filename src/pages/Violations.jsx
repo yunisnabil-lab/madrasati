@@ -12,11 +12,12 @@ import { matchesStudentSearch, searchStudents, studentMatchRank } from '../lib/s
 import { fetchAllRows } from '../lib/fetchAll';
 import { periodsForDate } from '../lib/attendanceDerive';
 import { sectionLabel as fmtSectionLabel, sectionsFor } from '../lib/sections';
-import { VIOLATION_TYPE_KEYS } from '../lib/i18n';
+import { violationKeys } from '../lib/i18n';
 import { shownSubjects, namesOf } from '../lib/staffInfo';
 import SectionPicker from '../components/SectionPicker';
 import ContactParentPanel from '../components/ContactParentPanel';
 import BulkContactModal from '../components/BulkContactModal';
+import ViolationTypesModal from '../components/ViolationTypesModal';
 import { RangeChips, useContactChannels, SentMarks } from '../components/ListFilters';
 
 const REPEAT_THRESHOLD = 3;
@@ -33,7 +34,8 @@ function todayStr() {
 }
 
 export default function Violations() {
-  const { t, lang, dark, staff } = useApp();
+  const { t, lang, dark, staff, customTypes, loadViolationTypes } = useApp();
+  const [typesOpen, setTypesOpen] = useState(false); // admin: manage the violation types list
   const { confirm, notify } = useDialogs();
   const alertMsg = (m) => notify(m, 'error');
   const canManage = staff && (staff.role === 'admin' || staff.role === 'supervisor' || staff.role === 'edari');
@@ -492,6 +494,11 @@ export default function Violations() {
         <main className="max-w-5xl mx-auto px-5 py-7">
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="mb-6">
             <h1 className={`text-2xl font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.violationsTitle}</h1>
+            {staff && staff.role === 'admin' && (
+              <button onClick={() => setTypesOpen(true)} className={`mt-2 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-white'}`}>
+                {t.violationTypesBtn}
+              </button>
+            )}
           </motion.div>
 
           {!selected ? (
@@ -598,7 +605,7 @@ export default function Violations() {
                         <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.violationType}</label>
                         <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} className={inputCls}>
                           <option value="">{t.allViolationTypes}</option>
-                          {VIOLATION_TYPE_KEYS.map((k) => <option key={k} value={k}>{t.violationTypeNames[k]}</option>)}
+                          {violationKeys(t).map((k) => <option key={k} value={k}>{t.violationTypeNames[k]}</option>)}
                         </select>
                       </div>
                       <div>
@@ -793,7 +800,7 @@ export default function Violations() {
                         <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.violationType}</label>
                         <select value={violationType} onChange={(e) => setViolationType(e.target.value)} className={inputCls}>
                           <option value="">{t.chooseViolationType}</option>
-                          {VIOLATION_TYPE_KEYS.map((k) => <option key={k} value={k}>{t.violationTypeNames[k]}</option>)}
+                          {violationKeys(t).map((k) => <option key={k} value={k}>{t.violationTypeNames[k]}</option>)}
                         </select>
                       </div>
                       <div>
@@ -969,6 +976,18 @@ export default function Violations() {
           )}
         </main>
       </div>
+
+      {typesOpen && (
+        <ViolationTypesModal
+          customTypes={customTypes}
+          schoolId={staff.school_id}
+          t={t}
+          dark={dark}
+          inputCls={inputCls}
+          onClose={() => setTypesOpen(false)}
+          onChanged={loadViolationTypes}
+        />
+      )}
 
       {mode === null && canManage && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={(e) => e.target === e.currentTarget && leavePage()}>

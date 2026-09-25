@@ -134,6 +134,19 @@ export const TEXT = {
     dateLabel: 'التاريخ',
     colDay: 'اليوم',
     colPeriod: 'الحصة',
+    violationTypesTitle: 'أنواع المخالفات',
+    violationTypesBtn: 'إدارة أنواع المخالفات',
+    violationTypesHint: 'أضف أنواعًا جديدة لقائمة المخالفات. الأنواع الأساسية ثابتة. إخفاء نوع يوقف ظهوره عند تسجيل مخالفة جديدة، وتظل المخالفات القديمة تعرض اسمه.',
+    violationTypeNameArPlaceholder: 'اسم النوع بالعربي *',
+    violationTypeNameEnPlaceholder: 'Name in English (optional)',
+    violationTypeAddBtn: 'إضافة النوع',
+    violationTypeNameRequired: 'اكتب اسم النوع بالعربي.',
+    violationTypesAdded: 'الأنواع التي أضفتها',
+    violationTypesNone: 'لم تُضف أنواعًا بعد.',
+    violationTypesBuiltin: 'الأنواع الأساسية',
+    violationTypeHide: 'إخفاء',
+    violationTypeShow: 'إظهار',
+    violationTypesError: 'تعذّر الحفظ. تأكد من تشغيل تحديث قاعدة البيانات ثم أعد المحاولة.',
     violationOtherNeedsDescription: 'اكتب وصف المخالفة عند اختيار «أخرى».',
     emailSubjectViolation: 'إشعار مخالفة سلوكية للطالب: {name} — مجمع زايد التعليمي',
     emailSubjectLateness: 'إشعار تأخر صباحي للطالب: {name} — مجمع زايد التعليمي',
@@ -772,6 +785,19 @@ export const TEXT = {
     dateLabel: 'Date',
     colDay: 'Day',
     colPeriod: 'Period',
+    violationTypesTitle: 'Violation types',
+    violationTypesBtn: 'Manage violation types',
+    violationTypesHint: 'Add new types to the violations list. The built-in types are fixed. Hiding a type stops it being offered for new violations; old violations keep showing its name.',
+    violationTypeNameArPlaceholder: 'Name in Arabic *',
+    violationTypeNameEnPlaceholder: 'Name in English (optional)',
+    violationTypeAddBtn: 'Add type',
+    violationTypeNameRequired: 'Enter the type name in Arabic.',
+    violationTypesAdded: 'Types you added',
+    violationTypesNone: 'No types added yet.',
+    violationTypesBuiltin: 'Built-in types',
+    violationTypeHide: 'Hide',
+    violationTypeShow: 'Show',
+    violationTypesError: 'Could not save. Make sure the database update was run, then try again.',
     violationOtherNeedsDescription: 'Please describe the violation when you choose "Other".',
     emailSubjectViolation: 'Behaviour notice for student: {name} — Zayed Educational Complex',
     emailSubjectLateness: 'Morning lateness notice for student: {name} — Zayed Educational Complex',
@@ -1291,3 +1317,9 @@ export const SUBJECT_KEYS = [
   'physics', 'chemistry', 'biology', 'health_sciences', 'other',
 ];
 export const VIOLATION_TYPE_KEYS = ['fighting', 'phone', 'no_homework', 'disrespect', 'uniform', 'bullying', 'other'];
+
+// The violation types to offer: the built-in ones plus the active types the admin
+// added (AppContext puts them in t.violationTypeKeys); the built-in list otherwise.
+export function violationKeys(t) {
+  return t.violationTypeKeys || VIOLATION_TYPE_KEYS;
+}

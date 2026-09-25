@@ -10,7 +10,6 @@ import { fetchAllRows } from '../lib/fetchAll';
 import { exportXlsx } from '../lib/exportXlsx';
 import { printWithTitle, reportName, rangeLabel, weekdayName } from '../lib/print';
 import { PrintSheet, PrintHeading, PrintTable, StatusPill } from '../components/PrintSheet';
-import { VIOLATION_TYPE_KEYS } from '../lib/i18n';
 
 const REPEAT_THRESHOLD = 3;
 const VIOLATION_COLORS = ['#ee5d50', '#ffb800', '#8b5cf6', '#05cd99', '#3b82f6', '#f472b6', '#94a3b8'];
@@ -238,7 +237,8 @@ export default function SupervisorReport() {
     dark ? 'bg-navy border-slate-700 text-slate-200' : 'bg-slate-50 border-slate-200 text-slate-700'
   }`;
 
-  const pieData = VIOLATION_TYPE_KEYS
+  // every type that has cases (built-in, added by the admin, or since removed)
+  const pieData = [...new Set([...Object.keys(t.violationTypeNames), ...Object.keys(violationTypeCounts)])]
     .map((key, i) => ({ name: t.violationTypeNames[key] || key, value: violationTypeCounts[key] || 0, color: VIOLATION_COLORS[i % VIOLATION_COLORS.length] }))
     .filter((d) => d.value > 0);
 

@@ -1,6 +1,6 @@
-import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { supabase } from './supabase';
-import { TEXT } from './i18n';
+import { TEXT, VIOLATION_TYPE_KEYS } from './i18n';
 
 const AppCtx = createContext(null);
 
@@ -14,7 +14,28 @@ export function AppProvider({ children }) {
   // links elsewhere in the layout can ask before throwing them away
   const [hasUnsaved, setHasUnsaved] = useState(false);
 
-  const t = TEXT[lang];
+  // violation types the admin added (supabase/violation_types.sql), merged into
+  // the texts so every page that shows a type name or lists the types picks
+  // them up: t.violationTypeNames gets their names, t.violationTypeKeys is the
+  // list to offer (active types only). With none added, t is the plain text.
+  const [customTypes, setCustomTypes] = useState([]);
+  const t = useMemo(() => {
+    const base = TEXT[lang];
+    if (customTypes.length === 0) return base;
+    const names = { ...base.violationTypeNames };
+    customTypes.forEach((c) => { names[c.key] = (lang === 'ar' ? c.name_ar : (c.name_en || c.name_ar)) || c.name_ar; });
+    const fixed = VIOLATION_TYPE_KEYS.filter((k) => k !== 'other');
+    const active = customTypes.filter((c) => c.is_active).map((c) => c.key);
+    return { ...base, violationTypeNames: names, violationTypeKeys: [...fixed, ...active, 'other'] };
+  }, [lang, customTypes]);
+
+  const loadViolationTypes = useCallback(async () => {
+    const { data, error } = await supabase.from('violation_types').select('id, key, name_ar, name_en, is_active').order('created_at');
+    if (error) return; // the table isn't there yet: only the built-in types
+    setCustomTypes((prev) => (JSON.stringify(prev) === JSON.stringify(data || []) ? prev : (data || [])));
+  }, []);
+  const staffId = staff ? staff.id : null;
+  useEffect(() => { if (staffId) loadViolationTypes(); else setCustomTypes([]); }, [staffId, loadViolationTypes]);
 
   // true = OK to leave; asks first when the current page has unsaved edits
   const confirmLeave = useCallback(
@@ -104,6 +125,7 @@ export function AppProvider({ children }) {
     dark, setDark,
     session, staff, staffLoading,
     refreshStaff,
+    customTypes, loadViolationTypes,
     fetchStaff,
     signOut,
     setHasUnsaved,

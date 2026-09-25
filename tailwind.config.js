@@ -7,6 +7,7 @@ export default {
       fontFamily: {
         ar: ['"Plex Arabic"', 'Tahoma', 'sans-serif'],
         en: ['Inter', 'sans-serif'],
+        menu: ['Cairo', '"Plex Arabic"', 'Tahoma', 'sans-serif'],
       },
       colors: {
         navy: { DEFAULT: '#131B2E', soft: '#212C42' },

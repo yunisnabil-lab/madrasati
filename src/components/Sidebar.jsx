@@ -154,7 +154,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`no-print hidden md:flex flex-col w-[232px] shrink-0 fixed top-0 start-0 h-screen z-40 border-e transition-colors duration-300 ${
+      className={`font-menu no-print hidden md:flex flex-col w-[232px] shrink-0 fixed top-0 start-0 h-screen z-40 border-e transition-colors duration-300 ${
         dark ? 'bg-navy border-slate-800' : 'bg-white border-slate-200/60'
       }`}
     >

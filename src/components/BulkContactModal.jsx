@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import useEscape from '../lib/useEscape';
 import { MessageCircle, Mail, Loader2, X, Check } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { buildWhatsAppLink } from '../lib/whatsapp';
@@ -12,6 +13,7 @@ import { emailErrorText, realEmail } from '../lib/emailErrors';
 // list instead of opening every student one by one. Every send is logged in
 // parent_contacts, so the "parent contacted" marks appear afterwards.
 export default function BulkContactModal({ students, contextType, defaultNote, staff, t, lang, dark, inputCls, onClose, onSent }) {
+  useEscape(onClose);
   const [note, setNote] = useState(defaultNote);
   // behaviour / lateness messages can carry a PDF listing the recorded cases
   const canAttach = contextType === 'violation' || contextType === 'lateness';

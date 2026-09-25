@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import useEscape from '../lib/useEscape';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Search, Pencil, UserX, X, Loader2, FolderPlus, Users, Upload, PlusCircle, Trash } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
@@ -69,6 +70,13 @@ export default function Students() {
   const MAX_BULK_SELECT = 15;
 
   const [bulkModalOpen, setBulkModalOpen] = useState(false);
+  // Esc closes whichever popup is open (the last one opened wins)
+  useEscape(() => {
+    if (deleteTarget) setDeleteTarget(null);
+    else if (sectionModalOpen) setSectionModalOpen(false);
+    else if (bulkModalOpen) { setBulkModalOpen(false); resetBulk(); }
+    else setModalOpen(false);
+  }, modalOpen || sectionModalOpen || bulkModalOpen || !!deleteTarget);
   const [bulkGrade, setBulkGrade] = useState('');
   const [bulkStream, setBulkStream] = useState('');
   const [bulkSectionId, setBulkSectionId] = useState('');

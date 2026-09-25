@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import useEscape from '../lib/useEscape';
 import { motion } from 'framer-motion';
 import {
   Camera, Pencil, Check, X, Sun, Moon, LogOut, Loader2,
@@ -73,6 +74,7 @@ function AvatarCropperModal({ imageSrc, dark, t, onCancel, onConfirm, saving }) 
 
   const handlePointerMoveRef = useRef(() => {});
   const handlePointerUpRef = useRef(() => {});
+  useEscape(onCancel);
 
   if (!natural) {
     return (

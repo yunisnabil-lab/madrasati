@@ -1,5 +1,7 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import useEscape from '../lib/useEscape';
 import { Search, Loader2, Trash2, AlertTriangle, Inbox, Check, X, MessageCircle, ClipboardPlus, ListFilter } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import EmptyState from '../components/EmptyState';
@@ -45,6 +47,10 @@ export default function Violations() {
   // admin / supervisor / edari choose on entry between recording a violation
   // and looking up the recorded ones; a teacher only ever records (reports)
   const [mode, setMode] = useState(() => (canManage ? null : 'record'));
+  // the choice popup can be dismissed (Esc, click outside, close button): that leaves the page
+  const navigate = useNavigate();
+  const leavePage = () => (window.history.length > 1 ? navigate(-1) : navigate('/'));
+  useEscape(leavePage, mode === null && !!canManage);
 
   const [pendingList, setPendingList] = useState(null); // reports awaiting review
   const [reviewingId, setReviewingId] = useState(null);
@@ -958,7 +964,7 @@ export default function Violations() {
       </div>
 
       {mode === null && canManage && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40" onClick={(e) => e.target === e.currentTarget && leavePage()}>
           <motion.div initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className={`w-full max-w-md rounded-2xl p-6 shadow-2xl ${dark ? 'bg-navy-soft text-slate-100' : 'bg-white text-slate-800'}`}>
             <h2 className={`text-lg font-bold mb-4 text-center ${dark ? 'text-white' : 'text-navy'}`}>{t.chooseActionTitle}</h2>
             <div className="grid gap-3">
@@ -980,6 +986,7 @@ export default function Violations() {
                 </button>
               ))}
             </div>
+            <button onClick={leavePage} className={`mt-4 w-full text-sm font-medium py-2.5 rounded-lg ${dark ? 'text-slate-300 hover:bg-white/5' : 'text-slate-500 hover:bg-slate-50'}`}>{t.closeBtn}</button>
           </motion.div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import useEscape from '../lib/useEscape';
 import { X } from 'lucide-react';
 import { sortSections, gradeLabel } from '../lib/sections';
 import { cycleForGradeOrder } from '../lib/staffInfo';
@@ -7,6 +8,7 @@ import { cycleForGradeOrder } from '../lib/staffInfo';
 // (the cycles they chose at registration), only sections in those cycles are
 // listed at first, with a toggle to show every grade.
 export default function SectionChecklistModal({ title, hint, sections, initial, cycles, onDone, onClose, t, lang, dark }) {
+  useEscape(onClose);
   const [checked, setChecked] = useState(() => new Set(initial || []));
   const [showAll, setShowAll] = useState(!cycles || cycles.length === 0);
 

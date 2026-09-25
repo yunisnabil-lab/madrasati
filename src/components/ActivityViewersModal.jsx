@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import useEscape from '../lib/useEscape';
 import { X, Loader2, Search } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { normalizeArabic } from '../lib/search';
@@ -8,6 +9,7 @@ import { useDialogs } from '../lib/Dialogs';
 // members that person may see the activity of. Stored in activity_viewers;
 // the database enforces it (see supabase/activity_viewers.sql).
 export default function ActivityViewersModal({ staff, t, dark, inputCls, onClose, onSaved }) {
+  useEscape(onClose);
   const { notify } = useDialogs();
   const [edaris, setEdaris] = useState(null);
   const [targets, setTargets] = useState([]);

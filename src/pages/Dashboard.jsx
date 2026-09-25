@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
+import useEscape from '../lib/useEscape';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Users, GraduationCap, School as SchoolIcon, Clock, AlertTriangle, Loader2 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, LabelList } from 'recharts';
@@ -549,6 +550,7 @@ function StaffManagement({ t, lang, dark, currentStaffId, schoolId }) {
   // several of each). Subjects are only edited for teachers; for other roles
   // they're kept untouched (hidden) in case the person goes back to teaching.
   const [editing, setEditing] = useState(null); // { id, role, cycles, subjects }
+  useEscape(() => setEditing(null), !!editing);
 
   const saveCyclesSubjects = async () => {
     if (!editing) return;

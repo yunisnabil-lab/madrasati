@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
+import useEscape from '../lib/useEscape';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Loader2, Users2, Search } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
@@ -20,6 +21,7 @@ export default function StaffAssignments() {
   const [loading, setLoading] = useState(true);
 
   const [editing, setEditing] = useState(null); // teacher row being edited
+  useEscape(() => setEditing(null), !!editing);
   const [checked, setChecked] = useState(new Set());
   const [saving, setSaving] = useState(false);
 

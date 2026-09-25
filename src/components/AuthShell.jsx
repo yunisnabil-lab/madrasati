@@ -25,8 +25,9 @@ export default function AuthShell({ children }) {
           />
 
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="relative">
-            <div className="h-24 w-24 rounded-2xl bg-white shadow-lg flex items-center justify-center p-2 mb-5">
-              <img src="/logo.png" alt={t.school} className="h-full w-full object-contain" />
+            {/* the emblem alone: the school name is written right under it */}
+            <div className="h-24 w-24 rounded-2xl bg-white shadow-lg flex items-center justify-center p-4 mb-5">
+              <img src="/logo-mark.png" alt={t.school} className="h-full w-full object-contain" />
             </div>
             <div className="text-xl font-semibold">{t.school}</div>
             <div className="text-xs text-slate-400 mt-1">{t.schoolSub}</div>

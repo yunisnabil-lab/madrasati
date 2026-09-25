@@ -119,11 +119,13 @@ export default function Header() {
             <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.school} — {t.schoolSub}</div>
             <div className={`text-xs font-medium ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
           </div>
-          <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-white ring-1 ring-slate-200">
+          {/* the emblem alone (the school name is written next to it) — it stays
+              readable at this size; a light tile keeps it visible in dark mode */}
+          <div className={`h-11 w-12 flex items-center justify-center shrink-0 ${dark ? 'rounded-xl bg-white/95 p-1.5' : ''}`}>
             {staff && staff.school_logo_url ? (
-              <img src={staff.school_logo_url} alt="" className="h-full w-full object-cover" />
+              <img src={staff.school_logo_url} alt="" className="h-full w-full object-cover rounded-xl" />
             ) : (
-              <img src="/logo.png" alt={t.school} className="h-full w-full object-contain p-0.5" />
+              <img src="/logo-mark.png" alt={t.school} className="h-full w-full object-contain" />
             )}
           </div>
         </div>

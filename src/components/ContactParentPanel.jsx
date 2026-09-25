@@ -8,8 +8,8 @@ import { emailErrorText, realEmail } from '../lib/emailErrors';
 
 export function buildDefaultMessage({ name, sectionLabel, note, lang, t }) {
   return lang === 'ar'
-    ? `${t.school} - ${t.schoolSub}\nبخصوص الطالب: ${name}\nالصف - الشعبة: ${sectionLabel || '—'}\n\n${note}\n\nيرجى التواصل مع إدارة المدرسة لمزيد من التفاصيل.`
-    : `${t.school} - ${t.schoolSub}\nRegarding student: ${name}\nGrade - Section: ${sectionLabel || '—'}\n\n${note}\n\nPlease contact the school administration for more details.`;
+    ? `${t.school} - ${t.schoolSub}\nبخصوص الطالب: ${name}\nالصف - الشعبة: ${sectionLabel || '—'}\n\n${note}\n\nيرجى التواصل مع إدارة المجمع لمزيد من التفاصيل.`
+    : `${t.school} - ${t.schoolSub}\nRegarding student: ${name}\nGrade - Section: ${sectionLabel || '—'}\n\n${note}\n\nPlease contact the complex administration for more details.`;
 }
 
 // Contact-parent panel used in two modes:

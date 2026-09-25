@@ -184,7 +184,7 @@ export default function Dashboard() {
     // recording attendance right away instead of a second trip to
     // "Staff assignments"
     const chosen = sectionChoice[id] || [];
-    if ((role === 'recorder' || role === 'supervisor') && chosen.length) {
+    if ((role === 'recorder' || role === 'supervisor' || role === 'edari') && chosen.length) {
       const { error: asgErr } = await supabase.from('staff_sections').insert(
         chosen.map((section_id) => ({ school_id: staff.school_id, staff_id: id, section_id }))
       );
@@ -436,7 +436,7 @@ export default function Dashboard() {
                                 <option value="edari">{t.roleNames.edari}</option>
                                 <option value="admin">{t.roleNames.admin}</option>
                               </select>
-                              {['recorder', 'supervisor'].includes(roleChoice[r.id] || 'recorder') && (
+                              {['recorder', 'supervisor', 'edari'].includes(roleChoice[r.id] || 'recorder') && (
                                 <button
                                   onClick={() => setSectionModalFor(r)}
                                   className={`rounded-full px-3.5 py-2 text-xs font-semibold border whitespace-nowrap ${dark ? 'border-slate-700 text-slate-200 hover:bg-white/5' : 'border-slate-300 text-slate-700 hover:bg-slate-50'}`}

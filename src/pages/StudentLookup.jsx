@@ -87,7 +87,7 @@ export default function StudentLookup() {
         .select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
       let list = data || [];
       // a supervisor looks students up scoped to their own assigned sections too.
-      if (staff.role === 'recorder' || staff.role === 'supervisor') {
+      if (staff.role === 'recorder' || staff.role === 'supervisor' || staff.role === 'edari') {
         const { data: assigned } = await supabase.from('staff_sections').select('section_id').eq('staff_id', staff.id);
         const allowed = new Set((assigned || []).map((a) => a.section_id));
         list = list.filter((s) => allowed.has(s.id));
@@ -154,7 +154,7 @@ export default function StudentLookup() {
     // a recorder (teacher) or supervisor only searches within their own
     // assigned sections — "sections" here is already pre-scoped to those for
     // that role (see above)
-    const searchScope = (staff?.role === 'recorder' || staff?.role === 'supervisor') ? new Set(sections.map((s) => s.id)) : null;
+    const searchScope = (staff?.role === 'recorder' || staff?.role === 'supervisor' || staff?.role === 'edari') ? new Set(sections.map((s) => s.id)) : null;
     const matched = (data || [])
       .filter((s) => !searchScope || searchScope.has(s.section_id))
       .filter((s) => matchesStudentSearch(s, q));

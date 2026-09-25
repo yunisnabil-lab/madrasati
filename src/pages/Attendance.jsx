@@ -94,7 +94,7 @@ export default function Attendance() {
       let list = data || [];
       // a supervisor now also takes attendance, scoped to the sections
       // they've been assigned — same mechanism as a recorder (teacher).
-      if (staff.role === 'recorder' || staff.role === 'supervisor') {
+      if (staff.role === 'recorder' || staff.role === 'supervisor' || staff.role === 'edari') {
         const { data: assigned } = await supabase.from('staff_sections').select('section_id').eq('staff_id', staff.id);
         const allowed = new Set((assigned || []).map((a) => a.section_id));
         list = list.filter((s) => allowed.has(s.id));

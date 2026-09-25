@@ -189,16 +189,12 @@ export default function StaffAssignments() {
                         </div>
                       )}
                     </div>
-                    {tch.role === 'edari' ? (
-                      <span className={`shrink-0 text-xs font-medium px-3.5 py-2 rounded-lg ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.allSections}</span>
-                    ) : (
                     <button
                       onClick={() => openEdit(tch)}
                       className={`shrink-0 text-xs font-medium px-3.5 py-2 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
                     >
                       {t.assignedSectionsCount.replace('{n}', sectionCountFor(tch.id))}
                     </button>
-                    )}
                   </li>
                 ))}
               </ul>
@@ -220,7 +216,23 @@ export default function StaffAssignments() {
                   <X size={15} />
                 </button>
               </div>
-              <p className={`text-xs mb-3 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.assignSectionsHint}</p>
+              <p className={`text-xs mb-2 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.assignSectionsHint}</p>
+              <div className="flex gap-2 mb-3">
+                <button
+                  type="button"
+                  onClick={() => setChecked(new Set(sections.map((s) => s.id)))}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
+                >
+                  {t.selectAllSections}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setChecked(new Set())}
+                  className={`text-xs font-medium px-3 py-1.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
+                >
+                  {t.clearAllSections}
+                </button>
+              </div>
 
               <div className="flex-1 overflow-y-auto space-y-4 pe-1">
                 {grouped.map((g) => (

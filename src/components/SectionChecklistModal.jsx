@@ -36,6 +36,22 @@ export default function SectionChecklistModal({ title, hint, sections, initial, 
           </button>
         </div>
         {hint && <p className={`text-xs mb-2 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{hint}</p>}
+        <div className="flex gap-2 mb-3">
+          <button
+            type="button"
+            onClick={() => setChecked(new Set(sections.map((s) => s.id)))}
+            className={`text-xs font-medium px-3 py-1.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
+          >
+            {t.selectAllSections}
+          </button>
+          <button
+            type="button"
+            onClick={() => setChecked(new Set())}
+            className={`text-xs font-medium px-3 py-1.5 rounded-lg border ${dark ? 'border-slate-700 hover:bg-white/5' : 'border-slate-200 hover:bg-slate-50'}`}
+          >
+            {t.clearAllSections}
+          </button>
+        </div>
         {cycles && cycles.length > 0 && (
           <label className={`flex items-center gap-2 text-xs font-medium mb-3 w-fit cursor-pointer ${dark ? 'text-slate-200' : 'text-slate-600'}`}>
             <input type="checkbox" checked={showAll} onChange={(e) => setShowAll(e.target.checked)} className="accent-royal" />

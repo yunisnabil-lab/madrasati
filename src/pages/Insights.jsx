@@ -59,7 +59,7 @@ export default function Insights() {
       .from('sections')
       .select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
     let secs = secRes.data || [];
-    if (staff.role === 'supervisor') {
+    if (staff.role === 'supervisor' || staff.role === 'edari') {
       const { data: assigned } = await supabase.from('staff_sections').select('section_id').eq('staff_id', staff.id);
       const allowed = new Set((assigned || []).map((a) => a.section_id));
       secs = secs.filter((s) => allowed.has(s.id));

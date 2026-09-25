@@ -60,7 +60,7 @@ export default function PeriodReport() {
       const { data } = await supabase.from('sections').select('id, grade_name, grade_name_en, section_name, grade_order, stream, section_number');
       let list = data || [];
       // a supervisor sees this report scoped to their own assigned sections too.
-      if (staff.role === 'recorder' || staff.role === 'supervisor') {
+      if (staff.role === 'recorder' || staff.role === 'supervisor' || staff.role === 'edari') {
         const { data: assigned } = await supabase.from('staff_sections').select('section_id').eq('staff_id', staff.id);
         const allowed = new Set((assigned || []).map((a) => a.section_id));
         list = list.filter((s) => allowed.has(s.id));

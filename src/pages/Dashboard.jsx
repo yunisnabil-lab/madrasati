@@ -69,6 +69,15 @@ export default function Dashboard() {
 
   const loadStats = useCallback(async () => {
     setStatsLoading(true);
+    // one call that counts inside the viewer's scope (supabase/dashboard_counts.sql);
+    // if the function isn't installed yet, fall back to the plain counts below
+    const { data: scoped, error: scopedErr } = await supabase.rpc('dashboard_counts');
+    const row = Array.isArray(scoped) ? scoped[0] : scoped;
+    if (!scopedErr && row) {
+      setKpi({ students: Number(row.students), staffCount: Number(row.staff_count), sections: Number(row.sections) });
+      setStatsLoading(false);
+      return;
+    }
     const [s, st, sec] = await Promise.all([
       supabase.from('students').select('id', { count: 'exact', head: true }).eq('is_active', true),
       supabase.from('staff').select('id', { count: 'exact', head: true }).eq('status', 'approved'),

@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { cardFloating } from '../lib/theme';
 import { buildWhatsAppLink } from '../lib/whatsapp';
 import { buildNoticePdf } from '../lib/noticePdf';
-import { emailErrorText, realEmail } from '../lib/emailErrors';
+import { emailErrorText, realEmail, emailSubject } from '../lib/emailErrors';
 
 export function buildDefaultMessage({ name, sectionLabel, note, lang, t }) {
   return lang === 'ar'
@@ -99,7 +99,7 @@ export default function ContactParentPanel({ student, name, sectionLabel, defaul
       }
     }
     const { data, error } = await supabase.functions.invoke('send-report-email', {
-      body: { studentId: student.id, to: email.trim(), message: attachment ? `${message}\n\n${t.noticePdfLine}` : message, attachment },
+      body: { studentId: student.id, to: email.trim(), subject: emailSubject(contextType, name, t), message: attachment ? `${message}\n\n${t.noticePdfLine}` : message, attachment },
     });
     setSendingEmail(false);
     if (error || (data && data.error)) {

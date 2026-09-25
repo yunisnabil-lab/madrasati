@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { MessageCircle, Mail, Check, X, Loader2, Inbox, History, ChevronDown, Trash2 } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { useDialogs } from '../lib/Dialogs';
-import { emailErrorText } from '../lib/emailErrors';
+import { emailErrorText, emailSubject } from '../lib/emailErrors';
 import EmptyState from '../components/EmptyState';
 import { supabase } from '../lib/supabase';
 import { cardFloating, pageBg, skeleton } from '../lib/theme';
@@ -60,7 +60,7 @@ export default function ContactRequests() {
     // email: send first, and only mark the request approved once it went out
     setActingId(row.id);
     const { data, error } = await supabase.functions.invoke('send-report-email', {
-      body: { studentId: row.student_id, to: row.recipient, message: row.message },
+      body: { studentId: row.student_id, to: row.recipient, subject: emailSubject('general', row.students?.name_ar || row.students?.name_en, t), message: row.message },
     });
     if (error || (data && data.error)) {
       setActingId(null);

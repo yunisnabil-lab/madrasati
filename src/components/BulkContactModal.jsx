@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { buildWhatsAppLink } from '../lib/whatsapp';
 import { buildDefaultMessage } from './ContactParentPanel';
 import { buildNoticePdf } from '../lib/noticePdf';
-import { emailErrorText, realEmail } from '../lib/emailErrors';
+import { emailErrorText, realEmail, emailSubject } from '../lib/emailErrors';
 
 // Contact the parents of several students in one pass. WhatsApp can't send to
 // many people at once, so each student gets their own row (phone + send
@@ -70,7 +70,7 @@ export default function BulkContactModal({ students, contextType, defaultNote, s
     }
     const message = attachment ? `${messageFor(s)}\n\n${t.noticePdfLine}` : messageFor(s);
     const { data, error } = await supabase.functions.invoke('send-report-email', {
-      body: { studentId: s.id, to: email, message, attachment },
+      body: { studentId: s.id, to: email, subject: emailSubject(contextType, s.name, t), message, attachment },
     });
     if (error || (data && data.error)) { patch(s.id, { sending: false, err: emailErrorText(data, t) }); return; }
     patch(s.id, { sending: false, mail: true });

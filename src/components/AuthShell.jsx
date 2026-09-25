@@ -25,6 +25,9 @@ export default function AuthShell({ children }) {
           />
 
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }} className="relative">
+            <div className="h-24 w-24 rounded-2xl bg-white shadow-lg flex items-center justify-center p-2 mb-5">
+              <img src="/logo.png" alt={t.school} className="h-full w-full object-contain" />
+            </div>
             <div className="text-xl font-semibold">{t.school}</div>
             <div className="text-xs text-slate-400 mt-1">{t.schoolSub}</div>
           </motion.div>
@@ -59,6 +62,8 @@ export default function AuthShell({ children }) {
           </div>
 
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="w-full max-w-[400px] mx-auto">
+            {/* the brand pane is hidden on phones, so the logo goes above the form there */}
+            <img src="/logo.png" alt={t.school} className="md:hidden h-24 w-auto mx-auto mb-6 object-contain" />
             {children}
           </motion.div>
         </main>

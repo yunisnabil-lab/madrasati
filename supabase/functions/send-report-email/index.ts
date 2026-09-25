@@ -173,9 +173,20 @@ Deno.serve(async (req) => {
       <tr><td align="center">
         <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:600px; background:#ffffff; border-radius:12px; overflow:hidden; border:1px solid #dbe3ee;">
           <tr>
-            <td style="background:#0f1b3c; padding:22px 26px; font-family:Tahoma, Arial, sans-serif; direction:rtl; text-align:right;">
-              <div style="font-size:19px; font-weight:bold; color:#ffffff;">مجمع زايد التعليمي — الخوانيج</div>
-              <div style="font-size:13px; color:#c7d2e6; margin-top:4px;">تقرير رسمي صادر من نظام مدرستي</div>
+            <td style="background:#0f1b3c; padding:18px 26px; font-family:Tahoma, Arial, sans-serif; direction:rtl; text-align:right;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td style="font-family:Tahoma, Arial, sans-serif; direction:rtl; text-align:right; vertical-align:middle;">
+                    <div style="font-size:19px; font-weight:bold; color:#ffffff;">مجمع زايد التعليمي — الخوانيج</div>
+                    <div style="font-size:13px; color:#c7d2e6; margin-top:4px;">تقرير رسمي صادر من نظام مدرستي</div>
+                  </td>
+                  <td width="84" style="width:84px; vertical-align:middle; text-align:left;">
+                    <div style="background:#ffffff; border-radius:10px; padding:6px; width:60px; height:60px;">
+                      <img src="https://madrasati.app/logo.png" width="60" height="60" alt="شعار المجمع" style="display:block; width:60px; height:60px; object-fit:contain;" />
+                    </div>
+                  </td>
+                </tr>
+              </table>
             </td>
           </tr>
           <tr><td style="height:4px; background:#e0b04a; font-size:0; line-height:0;">&nbsp;</td></tr>
@@ -184,7 +195,7 @@ Deno.serve(async (req) => {
           </tr>
           <tr>
             <td style="padding:16px 26px; background:#f6f8fb; border-top:1px solid #e3e9f2; font-family:Tahoma, Arial, sans-serif; font-size:12px; color:#7a869a; direction:rtl; text-align:right;">
-              هذه رسالة آلية من نظام مدرستي، يرجى عدم الرد عليها مباشرة. للاستفسار تواصل مع إدارة المدرسة.
+              هذه رسالة آلية من نظام مدرستي، يرجى عدم الرد عليها مباشرة. للاستفسار تواصل مع إدارة المجمع.
             </td>
           </tr>
         </table>

@@ -85,6 +85,10 @@ export async function sheetToPdfBase64(sheet) {
   document.body.appendChild(holder);
 
   try {
+    // the logo must be loaded before the capture, or the header comes out blank
+    await Promise.all(Array.from(holder.querySelectorAll('img')).map((img) => (
+      img.complete ? null : new Promise((resolve) => { img.onload = resolve; img.onerror = resolve; })
+    )));
     const canvas = await window.html2canvas(holder, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
     const { jsPDF } = window.jspdf;
     const pdf = new jsPDF({ unit: 'mm', format: 'a4', orientation: 'portrait' });

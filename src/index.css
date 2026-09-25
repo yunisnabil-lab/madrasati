@@ -79,6 +79,8 @@ html.dark { color-scheme: dark; }
 .ps-sheet { font-size: 10.5px; line-height: 1.4; color: #0f172a; }
 .ps-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; padding-bottom: 6px; margin-bottom: 10px; border-bottom: 2px solid #0f1b3c; }
 .ps-school { font-size: 15px; font-weight: 700; }
+.ps-brand { display: flex; align-items: center; gap: 12px; }
+.ps-logo { height: 56px; width: auto; flex: none; }
 .ps-muted { font-size: 10px; color: #64748b; }
 .ps-end { text-align: end; }
 .ps-title { font-size: 18px; font-weight: 700; margin: 0 0 6px; }

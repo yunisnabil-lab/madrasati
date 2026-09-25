@@ -13,9 +13,12 @@ export function PrintSheet({ t, lang, title, meta = [], stats = [], signatures =
   return (
     <div className="ps-sheet hidden print:block text-black bg-white">
       <div className="ps-head">
-        <div>
-          <div className="ps-school">{t.school} — {t.schoolSub}</div>
-          <div className="ps-muted">{t.printOfficialLine}</div>
+        <div className="ps-brand">
+          <img className="ps-logo" src="/logo.png" alt="" />
+          <div>
+            <div className="ps-school">{t.school} — {t.schoolSub}</div>
+            <div className="ps-muted">{t.printOfficialLine}</div>
+          </div>
         </div>
         <div className="ps-muted ps-end">{t.printedOn}: {printedNow(lang)}</div>
       </div>

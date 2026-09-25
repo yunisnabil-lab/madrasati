@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, Bell, LogOut, GraduationCap } from 'lucide-react';
+import { Search, Bell, LogOut } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 
@@ -119,11 +119,11 @@ export default function Header() {
             <div className={`text-sm font-bold ${dark ? 'text-white' : 'text-navy'}`}>{t.school} — {t.schoolSub}</div>
             <div className={`text-xs font-medium ${dark ? 'text-slate-300' : 'text-slate-500'}`}>{lang === 'ar' ? 'مدرستي' : 'Madrasati'}</div>
           </div>
-          <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 overflow-hidden ${dark ? 'bg-royal/15' : 'bg-royal/10'}`}>
+          <div className="h-11 w-11 rounded-xl flex items-center justify-center shrink-0 overflow-hidden bg-white ring-1 ring-slate-200">
             {staff && staff.school_logo_url ? (
               <img src={staff.school_logo_url} alt="" className="h-full w-full object-cover" />
             ) : (
-              <GraduationCap size={20} className={dark ? 'text-royal-light' : 'text-royal'} />
+              <img src="/logo.png" alt={t.school} className="h-full w-full object-contain p-0.5" />
             )}
           </div>
         </div>

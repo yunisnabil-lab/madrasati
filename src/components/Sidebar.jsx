@@ -281,6 +281,11 @@ export default function Sidebar() {
           );
         })}
       </nav>
+
+      <div className={`shrink-0 px-4 py-3 text-center border-t ${dark ? 'border-white/10' : 'border-slate-100'}`}>
+        <div className={`text-[11px] ${dark ? 'text-slate-300' : 'text-slate-400'}`}>{t.developedBy}</div>
+        <div className={`text-xs font-semibold tracking-wide mt-0.5 ${dark ? 'text-slate-200' : 'text-slate-600'}`}>{t.developerName}</div>
+      </div>
     </aside>
   );
 }

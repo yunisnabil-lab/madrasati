@@ -41,6 +41,9 @@ export default function AuthShell({ children }) {
             {lang === 'ar'
               ? 'حضور وغياب، تقارير، وصلاحيات — كل شيء في مكان واحد'
               : 'Attendance, reports, and permissions — all in one place'}
+            <div className="mt-5 pt-4 border-t border-white/10 text-[13px] text-slate-400">
+              {t.developedBy} <span className="font-semibold text-slate-200 tracking-wide">{t.developerName}</span>
+            </div>
           </motion.div>
         </aside>
 
@@ -64,6 +67,10 @@ export default function AuthShell({ children }) {
             {/* the brand pane is hidden on phones, so the logo goes above the form there */}
             <img src="/logo.png" alt={t.school} className="md:hidden h-24 w-auto mx-auto mb-6 object-contain" />
             {children}
+            {/* on phones the dark panel is hidden, so the credit sits under the form */}
+            <div className="md:hidden mt-10 text-center text-xs text-slate-400">
+              {t.developedBy} <span className="font-semibold text-slate-600 tracking-wide">{t.developerName}</span>
+            </div>
           </motion.div>
         </main>
       </div>

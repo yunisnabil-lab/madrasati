@@ -45,8 +45,11 @@ export function PrintSheet({ t, lang, title, meta = [], stats = [], signatures =
 
       {signatures.length > 0 && (
         <div className="ps-signs">
-          {signatures.map((label) => (
-            <div key={label} className="ps-sign"><span>{label}:</span><i /></div>
+          {signatures.map((sig) => (
+            typeof sig === 'string'
+              ? <div key={sig} className="ps-sign"><span>{sig}:</span><i /></div>
+              // { text }: an electronic signature — just the name, no line to sign
+              : <div key={sig.text} className="ps-esign">{sig.text}</div>
           ))}
         </div>
       )}

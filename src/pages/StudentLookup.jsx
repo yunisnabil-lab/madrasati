@@ -232,7 +232,7 @@ export default function StudentLookup() {
           { label: t.daysLate, value: stats.late, color: '#ffb800' },
           { label: t.daysExcused, value: stats.excused, color: '#8b5cf6' },
         ]}
-        signatures={[t.signGuardian, t.signSchoolAdmin]}
+        signatures={[t.signGuardian, { text: t.signSchoolAdmin }]}
       >
         <div className="ps-info">
           <div><span>{t.studentInfoName}</span><b>{nm}</b></div>

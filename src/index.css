@@ -98,6 +98,7 @@ html.dark { color-scheme: dark; }
 .ps-signs { display: flex; justify-content: space-between; gap: 40px; margin-top: 34px; break-inside: avoid; }
 .ps-sign { flex: 1; display: flex; align-items: flex-end; gap: 6px; font-size: 11px; }
 .ps-sign i { flex: 1; border-bottom: 1px solid #0f172a; height: 1px; }
+.ps-esign { font-size: 14px; font-weight: 700; color: #0f1b3c; align-self: flex-end; padding: 2px 4px; }
 .ps-info { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px 14px; margin-bottom: 12px; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; break-inside: avoid; }
 .ps-info div span { display: block; font-size: 9.5px; color: #64748b; }
 .ps-info div b { font-size: 11px; }

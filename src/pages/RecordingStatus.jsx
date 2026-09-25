@@ -167,7 +167,7 @@ export default function RecordingStatus() {
           <div className={cardFloating(dark, 'p-5 mb-5')}>
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs mb-3">
               <span className="flex items-center gap-1.5 text-emerald-600"><Check size={13} /> {t.recLegendDone}</span>
-              <span className="flex items-center gap-1.5 text-amber-600"><span className="font-en font-semibold">n/m</span> {t.recLegendPartial}</span>
+              <span className="flex items-center gap-1.5 text-amber-600"><span className="font-en font-semibold">12/25</span> {t.recLegendPartial}</span>
               <span className={`flex items-center gap-1.5 ${dark ? 'text-rose-400' : 'text-rose-500'}`}><span className="font-semibold">—</span> {t.recLegendMissing}</span>
             </div>
             {loading ? (

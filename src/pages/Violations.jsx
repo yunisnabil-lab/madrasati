@@ -797,7 +797,14 @@ export default function Violations() {
 
                     <div className="grid sm:grid-cols-3 gap-3">
                       <div>
-                        <label className={`block text-xs font-medium mb-1.5 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.violationType}</label>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <label className={`block text-xs font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.violationType}</label>
+                          {staff && staff.role === 'admin' && (
+                            <button type="button" onClick={() => setTypesOpen(true)} className={`text-xs font-semibold ${dark ? 'text-royal-light' : 'text-royal'} hover:underline`}>
+                              + {t.violationTypesBtn}
+                            </button>
+                          )}
+                        </div>
                         <select value={violationType} onChange={(e) => setViolationType(e.target.value)} className={inputCls}>
                           <option value="">{t.chooseViolationType}</option>
                           {violationKeys(t).map((k) => <option key={k} value={k}>{t.violationTypeNames[k]}</option>)}

@@ -66,7 +66,7 @@ export async function buildNoticePdf({ kind, studentId, name, sisNo, sectionLabe
         [t.colGradeSection, sectionLabel],
       ]}
       stats={[{ label: countLabel, value: rows.length }]}
-      signatures={[t.signGuardian, { text: t.signSchoolAdmin }]}
+      signatures={[{ text: t.signSchoolAdmin }]}
     >
       <PrintTable columns={columns} groups={[{ rows }]} />
     </PrintSheet>,

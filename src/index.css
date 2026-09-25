@@ -106,4 +106,4 @@ html.dark { color-scheme: dark; }
 .ps-info div b { font-size: 11px; }
 
 /* pages fill the screen down to the footer (header + footer take the rest), so the footer sits at the bottom even on short pages */
-.app-content .min-h-screen { min-height: calc(100vh - 8rem); }
+.app-content .min-h-screen { min-height: calc(100vh - 9.5rem); }

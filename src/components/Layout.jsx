@@ -20,7 +20,7 @@ export default function Layout({ children }) {
       <div className="app-content flex-1 min-w-0 pb-16 md:pb-0 md:ms-56 print:ms-0 print:pb-0">
         <Header />
         <Fragment key={location.key}>{children}</Fragment>
-        <AppFooter t={t} dark={dark} className={`px-4 py-4 border-t ${dark ? 'border-white/10 bg-navy' : 'border-slate-200 bg-slate-100'}`} />
+        <AppFooter t={t} dark={dark} className={`px-4 py-5 ${dark ? 'bg-navy' : 'bg-slate-100'}`} />
       </div>
       <MobileNav />
     </div>

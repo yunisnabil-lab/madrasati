@@ -259,14 +259,14 @@ export default function Sidebar() {
                         end={item.end}
                         onClick={guardNav}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14.5px] font-medium transition-colors ${
+                          `flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14.5px] font-medium border-s-[3px] transition-colors ${
                             isActive
                               ? dark
-                                ? 'bg-royal/25 text-white font-semibold'
-                                : 'bg-royal text-white font-semibold shadow-sm'
+                                ? 'bg-royal/25 text-white font-semibold border-gold-light'
+                                : 'bg-royal text-white font-semibold shadow-sm border-gold-light'
                               : dark
-                              ? 'text-slate-200 hover:bg-white/5'
-                              : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                              ? 'border-transparent text-slate-200 hover:bg-white/5'
+                              : 'border-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                           }`
                         }
                       >

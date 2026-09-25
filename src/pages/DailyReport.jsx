@@ -116,7 +116,17 @@ export default function DailyReport() {
     setLoading(false);
   };
 
-  const filtered = rows ? rows.filter((r) => filter === 'all' || statusFor(r, view) === filter) : [];
+  // inside each section, everyone who is not simply "present" comes first
+  // (absent, then late, excused, not recorded) so they are seen without scrolling
+  const STATUS_RANK = { absent: 0, late: 1, excused: 2, not_recorded: 3, present: 4 };
+  const sectionOrder = new Map();
+  if (rows) rows.forEach((r) => { if (!sectionOrder.has(r.section_id)) sectionOrder.set(r.section_id, sectionOrder.size); });
+  const filtered = rows
+    ? rows
+      .filter((r) => filter === 'all' || statusFor(r, view) === filter)
+      .sort((a, b) => sectionOrder.get(a.section_id) - sectionOrder.get(b.section_id)
+        || STATUS_RANK[statusFor(a, view)] - STATUS_RANK[statusFor(b, view)])
+    : [];
   const printRows = printSelection.size > 0 ? filtered.filter((r) => printSelection.has(r.id)) : filtered;
 
   const sectionGroups = useMemo(() => {

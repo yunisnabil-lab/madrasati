@@ -187,7 +187,7 @@ export default function RecorderDashboard() {
                   {loading ? (
                     <div className={skeleton(dark, 'h-10 w-20 mt-3')} />
                   ) : (
-                    <div className={`mt-3 text-4xl font-bold tracking-tight font-en ${dark ? 'text-white' : 'text-navy'}`}>{item.value}</div>
+                    <div className={`mt-2 text-3xl font-bold tracking-tight font-en ${dark ? 'text-white' : 'text-navy'}`}>{item.value}</div>
                   )}
                 </motion.div>
               );

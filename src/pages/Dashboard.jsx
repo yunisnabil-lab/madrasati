@@ -238,18 +238,18 @@ export default function Dashboard() {
                 <motion.div
                   key={item.label}
                   initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06, duration: 0.4 }}
-                  className={`${cardFloating(dark)} p-6`}
+                  className={`${cardFloating(dark)} p-5`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className={`text-[15px] font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{item.label}</span>
-                    <div className={`h-11 w-11 rounded-full flex items-center justify-center ${item.accent}`}>
-                      <Icon size={19} />
+                    <span className={`text-sm font-medium ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{item.label}</span>
+                    <div className={`h-10 w-10 rounded-full flex items-center justify-center ${item.accent}`}>
+                      <Icon size={18} />
                     </div>
                   </div>
                   {statsLoading ? (
-                    <div className={skeleton(dark, 'h-10 w-28 mt-3')} />
+                    <div className={skeleton(dark, 'h-9 w-24 mt-2')} />
                   ) : (
-                    <div className={`mt-3 text-4xl font-bold tracking-tight font-en ${dark ? 'text-white' : 'text-navy'}`}>
+                    <div className={`mt-2 text-3xl font-bold tracking-tight font-en ${dark ? 'text-white' : 'text-navy'}`}>
                       {item.value != null ? item.value.toLocaleString('en-US') : '—'}
                     </div>
                   )}

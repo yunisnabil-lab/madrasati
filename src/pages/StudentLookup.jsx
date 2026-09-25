@@ -74,8 +74,8 @@ export default function StudentLookup() {
   const [history, setHistory] = useState([]); // all records for selected student
   const [historyLoading, setHistoryLoading] = useState(false);
 
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [fromDate, setFromDate] = useState(todayStr());
+  const [toDate, setToDate] = useState(todayStr());
 
   // load sections once — a recorder (teacher) only sees the sections
   // they've been assigned by the admin (staff_sections), same as Attendance
@@ -172,8 +172,8 @@ export default function StudentLookup() {
 
   const openProfile = async (student) => {
     setSelected(student);
-    setFromDate('');
-    setToDate('');
+    setFromDate(todayStr());
+    setToDate(todayStr());
     setHistoryLoading(true);
     const { data } = await fetchAllRows(() => supabase
       .from('attendance_records')
@@ -707,8 +707,8 @@ function WhatsAppShare({ student, name, stats, history, sectionLabel, t, lang, d
 }
 
 function DeleteRecordsPanel({ student, t, lang, dark, inputCls, onDeleted }) {
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [fromDate, setFromDate] = useState(todayStr());
+  const [toDate, setToDate] = useState(todayStr());
   const [confirming, setConfirming] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [msg, setMsg] = useState(null);

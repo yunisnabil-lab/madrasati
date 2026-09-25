@@ -56,8 +56,8 @@ export default function ActivityLog() {
 
   const [staffFilter, setStaffFilter] = useState('');
   const [groupFilter, setGroupFilter] = useState('');
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [fromDate, setFromDate] = useState(todayStr());
+  const [toDate, setToDate] = useState(todayStr());
 
   const locale = lang === 'ar' ? 'ar-u-nu-latn' : 'en-US';
   const fmtDateTime = (iso) => (iso

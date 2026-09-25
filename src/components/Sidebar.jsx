@@ -154,7 +154,7 @@ export default function Sidebar() {
 
   return (
     <aside
-      className={`no-print hidden md:flex flex-col w-56 shrink-0 fixed top-0 start-0 h-screen z-40 border-e transition-colors duration-300 ${
+      className={`no-print hidden md:flex flex-col w-[232px] shrink-0 fixed top-0 start-0 h-screen z-40 border-e transition-colors duration-300 ${
         dark ? 'bg-navy border-slate-800' : 'bg-white border-slate-200/60'
       }`}
     >
@@ -237,7 +237,7 @@ export default function Sidebar() {
                   type="button"
                   onClick={() => toggleGroup(groupKey)}
                   aria-expanded={open}
-                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[16px] font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-royal/40 ${
+                  className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-[15px] font-bold transition-colors outline-none focus-visible:ring-2 focus-visible:ring-royal/40 ${
                     hasActive && !open
                       ? (dark ? 'text-royal-light' : 'text-royal')
                       : (dark ? 'text-white hover:text-royal-light' : 'text-navy hover:text-royal')
@@ -259,7 +259,7 @@ export default function Sidebar() {
                         end={item.end}
                         onClick={guardNav}
                         className={({ isActive }) =>
-                          `flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14.5px] font-medium border-s-[3px] transition-colors ${
+                          `flex items-center gap-3 px-3 py-2.5 rounded-xl text-[14px] font-medium border-s-[3px] transition-colors ${
                             isActive
                               ? dark
                                 ? 'bg-royal/25 text-white font-semibold border-gold-light'

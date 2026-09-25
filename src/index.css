@@ -44,6 +44,8 @@
 }
 
 html, body, #root { height: 100%; }
+/* a little smaller than the browser default so screens with 150% display scaling don't feel oversized (all rem-based sizes follow) */
+html { font-size: 15px; }
 body { margin: 0; }
 
 /* Tells the browser which theme is active so native form controls (date

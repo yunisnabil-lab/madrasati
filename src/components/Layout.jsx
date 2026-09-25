@@ -17,7 +17,7 @@ export default function Layout({ children }) {
       {/* the sidebar is fixed (out of flow) on desktop so it never scrolls
           with the page — this margin reserves its width so content doesn't
           slide underneath it. */}
-      <div className="app-content flex-1 min-w-0 pb-16 md:pb-0 md:ms-56 print:ms-0 print:pb-0">
+      <div className="app-content flex-1 min-w-0 pb-16 md:pb-0 md:ms-[232px] print:ms-0 print:pb-0">
         <Header />
         <Fragment key={location.key}>{children}</Fragment>
         <AppFooter t={t} dark={dark} className={`px-4 py-5 ${dark ? 'bg-navy' : 'bg-slate-100'}`} />

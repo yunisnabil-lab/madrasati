@@ -23,7 +23,7 @@ function isSequenceOrRepeat(pw) {
 }
 
 export function passwordProblem(pw) {
-  if (!pw || pw.length < 8) return 'errPasswordShort';
+  if (!pw || pw.length < 10) return 'errPasswordShort';
   const hasLetter = /\p{L}/u.test(pw);
   const hasDigit = /\d/.test(pw);
   if (!hasLetter || !hasDigit) return 'errPasswordWeak';

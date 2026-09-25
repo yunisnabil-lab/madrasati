@@ -9,6 +9,7 @@ import { supabase } from '../lib/supabase';
 import { STATUS_META } from '../lib/status';
 import { cardFloating, skeleton } from '../lib/theme';
 import { deriveByStudentAndDate } from '../lib/attendanceDerive';
+import { isSchoolDay } from '../lib/schoolCalendar';
 import { CYCLE_KEYS, SUBJECT_KEYS } from '../lib/i18n';
 import { staffCycles, staffSubjects, shownSubjects, namesOf } from '../lib/staffInfo';
 import { fetchAllRows } from '../lib/fetchAll';
@@ -31,7 +32,7 @@ const AVATAR_COLORS = [
 ];
 
 function CustomTooltip({ active, payload, label, dark }) {
-  if (!active || !payload || !payload.length) return null;
+  if (!active || !payload || !payload.length || payload[0].value == null) return null;
   return (
     <div className={`rounded-lg px-3 py-2 text-xs shadow-lg border ${dark ? 'bg-navy-soft border-slate-700 text-slate-200' : 'bg-white border-slate-200 text-slate-700'}`}>
       <div className="font-medium">{label}</div>
@@ -79,12 +80,15 @@ export default function Dashboard() {
 
   const loadAbsenceRateChart = useCallback(async () => {
     setChartLoading(true);
+    // the last 7 SCHOOL days (weekends and official holidays are skipped —
+    // they used to show up as a misleading 0%)
     const days = [];
     const pad = (n) => String(n).padStart(2, '0');
-    for (let i = 6; i >= 0; i--) {
+    for (let i = 0; days.length < 7 && i < 60; i++) {
       const d = new Date();
       d.setDate(d.getDate() - i);
-      days.push(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`);
+      const s = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      if (isSchoolDay(s)) days.unshift(s);
     }
     // 7 days x up to 8 periods x every student is far past the 1000-row
     // response cap, so page through all rows instead of one request
@@ -115,9 +119,10 @@ export default function Dashboard() {
         if (info.status === 'absent') byDay[date].absent += 1;
       });
     });
+    // a day with no decisive attendance yet gets no bar (null), not 0%
     const rows = days.map((d) => ({
-      name: new Intl.DateTimeFormat(lang === 'ar' ? 'ar-u-nu-latn' : 'en', { weekday: 'short' }).format(new Date(`${d}T00:00:00`)),
-      v: byDay[d].total > 0 ? Math.round((byDay[d].absent / byDay[d].total) * 100) : 0,
+      name: `${new Intl.DateTimeFormat(lang === 'ar' ? 'ar-u-nu-latn' : 'en', { weekday: 'short' }).format(new Date(`${d}T00:00:00`))} ${Number(d.slice(8))}/${Number(d.slice(5, 7))}`,
+      v: byDay[d].total > 0 ? Math.round((byDay[d].absent / byDay[d].total) * 100) : null,
     }));
     setGradeData(rows);
     setChartLoading(false);
@@ -271,7 +276,7 @@ export default function Dashboard() {
               </div>
               {chartLoading ? (
                 <div className={skeleton(dark, 'h-[280px] w-full')} />
-              ) : gradeData.length > 0 ? (
+              ) : gradeData.some((r) => r.v != null) ? (
                 <div dir="ltr">
                   <ResponsiveContainer width="100%" height={300}>
                     {chartType === 'bar' ? (
@@ -287,7 +292,7 @@ export default function Dashboard() {
                         <YAxis domain={[0, (max) => Math.max(10, Math.ceil((max * 1.3) / 5) * 5)]} allowDecimals={false} tickFormatter={(v) => v + '%'} tick={{ fontSize: 12, fill: dark ? '#CBD5E1' : '#475569' }} axisLine={false} tickLine={false} width={44} />
                         <Tooltip content={<CustomTooltip dark={dark} />} cursor={{ fill: dark ? '#ffffff10' : '#0000000a' }} />
                         <Bar dataKey="v" fill="url(#barGradient)" radius={[8, 8, 0, 0]} maxBarSize={48}>
-                          <LabelList dataKey="v" position="top" formatter={(v) => v + '%'} style={{ fontSize: 13, fontWeight: 700, fill: dark ? '#F1F5F9' : '#0F172A' }} />
+                          <LabelList dataKey="v" position="top" formatter={(v) => (v == null ? '' : v + '%')} style={{ fontSize: 13, fontWeight: 700, fill: dark ? '#F1F5F9' : '#0F172A' }} />
                         </Bar>
                       </BarChart>
                     ) : (
@@ -303,14 +308,14 @@ export default function Dashboard() {
                         <YAxis domain={[0, (max) => Math.max(10, Math.ceil((max * 1.3) / 5) * 5)]} allowDecimals={false} tickFormatter={(v) => v + '%'} tick={{ fontSize: 12, fill: dark ? '#CBD5E1' : '#475569' }} axisLine={false} tickLine={false} width={44} />
                         <Tooltip content={<CustomTooltip dark={dark} />} />
                         <Area type="monotone" dataKey="v" stroke="#2563EB" strokeWidth={2.5} fill="url(#areaGradient)" dot={{ r: 4, fill: '#2563EB', strokeWidth: 0 }} activeDot={{ r: 6 }}>
-                          <LabelList dataKey="v" position="top" offset={10} formatter={(v) => v + '%'} style={{ fontSize: 13, fontWeight: 700, fill: dark ? '#F1F5F9' : '#0F172A' }} />
+                          <LabelList dataKey="v" position="top" offset={10} formatter={(v) => (v == null ? '' : v + '%')} style={{ fontSize: 13, fontWeight: 700, fill: dark ? '#F1F5F9' : '#0F172A' }} />
                         </Area>
                       </AreaChart>
                     )}
                   </ResponsiveContainer>
                 </div>
               ) : (
-                <div className={`text-sm text-center py-16 ${dark ? 'text-slate-200' : 'text-slate-500'}`}>—</div>
+                <div className={`text-sm text-center py-16 px-4 leading-relaxed ${dark ? 'text-slate-200' : 'text-slate-500'}`}>{t.gradeEmpty}</div>
               )}
             </motion.div>
 

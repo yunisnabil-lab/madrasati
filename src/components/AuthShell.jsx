@@ -65,8 +65,14 @@ export default function AuthShell({ children }) {
           </div>
 
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }} className="w-full max-w-[400px] mx-auto">
-            {/* the brand pane is hidden on phones, so the logo goes above the form there */}
-            <img src="/logo.png" alt={t.school} className="md:hidden h-24 w-auto mx-auto mb-6 object-contain" />
+            {/* the brand pane is hidden on phones, so the same lockup (emblem, gold divider,
+                school name) goes above the form there */}
+            <div className="md:hidden flex items-center justify-center gap-3 mb-8 mt-6">
+              <img src="/logo-mark.png" alt={t.school} className="h-14 w-auto shrink-0 object-contain" />
+              <div className="border-s-2 border-gold ps-3 py-0.5 text-[17px] font-semibold leading-snug text-navy">
+                {t.school} - {t.schoolSub}
+              </div>
+            </div>
             {children}
           </motion.div>
           <AppFooter t={t} dark={false} className="absolute bottom-4 inset-x-0 px-4" />

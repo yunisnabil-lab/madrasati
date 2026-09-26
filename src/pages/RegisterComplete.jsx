@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
+import { createPendingStaff } from '../lib/registerStaff';
 import AuthShell from '../components/AuthShell';
 
 export default function RegisterComplete() {
@@ -18,36 +19,7 @@ export default function RegisterComplete() {
 
       if (!user) { if (!cancelled) setStatus('error'); return; }
 
-      const { data: existing } = await supabase
-        .from('staff')
-        .select('id')
-        .eq('id', user.id)
-        .maybeSingle();
-
-      if (existing) {
-        await fetchStaff(user.id);
-        if (!cancelled) setStatus('done');
-        return;
-      }
-
-      const { data: school } = await supabase.from('schools').select('id').limit(1).maybeSingle();
-      if (!school) { if (!cancelled) setStatus('error'); return; }
-
-      const meta = user.user_metadata || {};
-      const { error } = await supabase.from('staff').insert({
-        id: user.id,
-        school_id: school.id,
-        full_name: (user.user_metadata && user.user_metadata.full_name) || user.email,
-        email: user.email,
-        status: 'pending',
-        role: null,
-        // lists — a teacher can pick several cycles and several subjects;
-        // the single columns keep the first one for older code paths
-        cycles: meta.cycles || (meta.cycle ? [meta.cycle] : []),
-        subjects: meta.subjects || (meta.subject ? [meta.subject] : []),
-        cycle: (meta.cycles && meta.cycles[0]) || meta.cycle || null,
-        subject: (meta.subjects && meta.subjects[0]) || meta.subject || null,
-      });
+      const { error } = await createPendingStaff(user);
 
       if (!error) await fetchStaff(user.id);
       if (!cancelled) setStatus(error ? 'error' : 'done');

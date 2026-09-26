@@ -5,12 +5,13 @@ import { Mail, Eye, EyeOff } from 'lucide-react';
 import { useApp } from '../lib/AppContext';
 import { supabase } from '../lib/supabase';
 import { passwordProblem } from '../lib/passwordRules';
+import { createPendingStaff } from '../lib/registerStaff';
 import { CYCLE_KEYS, SUBJECT_KEYS } from '../lib/i18n';
 import AuthShell from '../components/AuthShell';
 import ChipMultiSelect from '../components/ChipMultiSelect';
 
 export default function Register() {
-  const { t } = useApp();
+  const { t, fetchStaff } = useApp();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -58,6 +59,18 @@ export default function Register() {
     const identities = signUpData && signUpData.user ? signUpData.user.identities : null;
     if (identities && identities.length === 0) {
       setError('errExists');
+      return;
+    }
+
+    // When e-mail confirmation is switched off, sign-up already signs the person
+    // in: create the "waiting for approval" request right now (with confirmation
+    // on, this happens from the link in the e-mail instead — RegisterComplete).
+    if (signUpData && signUpData.session && signUpData.user) {
+      setLoading(true);
+      const { error: staffError } = await createPendingStaff(signUpData.user);
+      if (staffError) { setLoading(false); setError('errGeneric'); return; }
+      await fetchStaff(signUpData.user.id); // the app then opens the "waiting for approval" page
+      setLoading(false);
       return;
     }
 
